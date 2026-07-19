@@ -267,6 +267,44 @@ function ExerciciosPage() {
   );
 }
 
+function EquipChip({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  count?: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
+        (active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground")
+      }
+    >
+      {label}
+      {typeof count === "number" && (
+        <span
+          className={
+            "rounded-full px-1.5 py-0.5 text-[10px] leading-none " +
+            (active ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground")
+          }
+        >
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
 function ExerciseDialog({
   open,
   onOpenChange,
@@ -282,6 +320,7 @@ function ExerciseDialog({
   const [nome, setNome] = useState("");
   const [padrao, setPadrao] = useState("");
   const [metods, setMetods] = useState<Methodology[]>([]);
+  const [equip, setEquip] = useState<Equipamento | "">("");
   const [unilateral, setUnilateral] = useState(false);
   const [instr, setInstr] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -295,6 +334,7 @@ function ExerciseDialog({
     setNome(editing?.nome_pt ?? "");
     setPadrao(editing?.padrao_movimento ?? "");
     setMetods(editing?.metodologias ?? []);
+    setEquip(((editing?.equipamento ?? [])[0] as Equipamento) ?? "");
     setUnilateral(editing?.unilateral ?? false);
     setInstr(editing?.instrucoes ?? "");
     setFile(null);
@@ -312,6 +352,7 @@ function ExerciseDialog({
             nome_pt: nome,
             padrao_movimento: padrao || null,
             metodologias: metods,
+            equipamento: equip ? [equip] : [],
             unilateral,
             instrucoes: instr || null,
             atualizado_em: new Date().toISOString(),
@@ -326,6 +367,7 @@ function ExerciseDialog({
             nome_pt: nome,
             padrao_movimento: padrao || null,
             metodologias: metods,
+            equipamento: equip ? [equip] : [],
             unilateral,
             instrucoes: instr || null,
           })
@@ -381,6 +423,22 @@ function ExerciseDialog({
               value={padrao}
               onChange={(e) => setPadrao(e.target.value)}
             />
+          </div>
+          <div>
+            <Label>Equipamento</Label>
+            <Select value={equip || "nenhum"} onValueChange={(v) => setEquip(v === "nenhum" ? "" : (v as Equipamento))}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nenhum">Sem equipamento</SelectItem>
+                {EQUIPAMENTOS.map((e) => (
+                  <SelectItem key={e} value={e}>
+                    {e}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Metodologias</Label>
