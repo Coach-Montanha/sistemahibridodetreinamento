@@ -16,6 +16,7 @@ import { Route as AuthPrimeiroAcessoRouteImport } from './routes/auth.primeiro-a
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAlunoRouteImport } from './routes/_authenticated/aluno'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppProgramasRouteImport } from './routes/_authenticated/app.programas'
 import { Route as AuthenticatedAppMarcaRouteImport } from './routes/_authenticated/app.marca'
 import { Route as AuthenticatedAppGerarRouteImport } from './routes/_authenticated/app.gerar'
 import { Route as AuthenticatedAppExerciciosRouteImport } from './routes/_authenticated/app.exercicios'
@@ -58,6 +59,12 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppProgramasRoute =
+  AuthenticatedAppProgramasRouteImport.update({
+    id: '/programas',
+    path: '/programas',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppMarcaRoute = AuthenticatedAppMarcaRouteImport.update({
   id: '/marca',
   path: '/marca',
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/app/exercicios': typeof AuthenticatedAppExerciciosRoute
   '/app/gerar': typeof AuthenticatedAppGerarRoute
   '/app/marca': typeof AuthenticatedAppMarcaRoute
+  '/app/programas': typeof AuthenticatedAppProgramasRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/aluno/sessao/$id': typeof AuthenticatedAlunoSessaoIdRoute
   '/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
@@ -122,6 +130,7 @@ export interface FileRoutesByTo {
   '/app/exercicios': typeof AuthenticatedAppExerciciosRoute
   '/app/gerar': typeof AuthenticatedAppGerarRoute
   '/app/marca': typeof AuthenticatedAppMarcaRoute
+  '/app/programas': typeof AuthenticatedAppProgramasRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/aluno/sessao/$id': typeof AuthenticatedAlunoSessaoIdRoute
   '/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
@@ -139,6 +148,7 @@ export interface FileRoutesById {
   '/_authenticated/app/exercicios': typeof AuthenticatedAppExerciciosRoute
   '/_authenticated/app/gerar': typeof AuthenticatedAppGerarRoute
   '/_authenticated/app/marca': typeof AuthenticatedAppMarcaRoute
+  '/_authenticated/app/programas': typeof AuthenticatedAppProgramasRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/aluno/sessao/$id': typeof AuthenticatedAlunoSessaoIdRoute
   '/_authenticated/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/app/exercicios'
     | '/app/gerar'
     | '/app/marca'
+    | '/app/programas'
     | '/app/'
     | '/aluno/sessao/$id'
     | '/app/sessoes/$id'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/app/exercicios'
     | '/app/gerar'
     | '/app/marca'
+    | '/app/programas'
     | '/app'
     | '/aluno/sessao/$id'
     | '/app/sessoes/$id'
@@ -186,6 +198,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/exercicios'
     | '/_authenticated/app/gerar'
     | '/_authenticated/app/marca'
+    | '/_authenticated/app/programas'
     | '/_authenticated/app/'
     | '/_authenticated/aluno/sessao/$id'
     | '/_authenticated/app/sessoes/$id'
@@ -247,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/programas': {
+      id: '/_authenticated/app/programas'
+      path: '/programas'
+      fullPath: '/app/programas'
+      preLoaderRoute: typeof AuthenticatedAppProgramasRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/marca': {
@@ -317,6 +337,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppExerciciosRoute: typeof AuthenticatedAppExerciciosRoute
   AuthenticatedAppGerarRoute: typeof AuthenticatedAppGerarRoute
   AuthenticatedAppMarcaRoute: typeof AuthenticatedAppMarcaRoute
+  AuthenticatedAppProgramasRoute: typeof AuthenticatedAppProgramasRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppSessoesIdRoute: typeof AuthenticatedAppSessoesIdRoute
   AuthenticatedAppSessoesNovaRoute: typeof AuthenticatedAppSessoesNovaRoute
@@ -327,6 +348,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppExerciciosRoute: AuthenticatedAppExerciciosRoute,
   AuthenticatedAppGerarRoute: AuthenticatedAppGerarRoute,
   AuthenticatedAppMarcaRoute: AuthenticatedAppMarcaRoute,
+  AuthenticatedAppProgramasRoute: AuthenticatedAppProgramasRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppSessoesIdRoute: AuthenticatedAppSessoesIdRoute,
   AuthenticatedAppSessoesNovaRoute: AuthenticatedAppSessoesNovaRoute,
