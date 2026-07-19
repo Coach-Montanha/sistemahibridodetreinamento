@@ -127,7 +127,12 @@ async function gerarSessao(
     })
     .select("id")
     .single();
-  if (se || !session) throw new Error(se?.message ?? "Falha ao criar sessão");
+  if (se || !session) {
+    console.error("[gerador] falha ao criar sessão", { args, se });
+    throw new Error(
+      `Falha ao criar sessão: ${se?.message ?? "sem detalhes"}${se?.details ? " — " + se.details : ""}${se?.hint ? " (" + se.hint + ")" : ""}`,
+    );
+  }
 
   const { data: templates } = await supabase
     .from("block_templates")
