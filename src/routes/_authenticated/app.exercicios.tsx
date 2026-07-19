@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ const METHODS = Object.keys(METHODOLOGY_LABEL) as Methodology[];
 
 function ExerciciosPage() {
   const { data: coach } = useCoach();
+  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [metFilter, setMetFilter] = useState<Methodology | "todos">("todos");
   const [editing, setEditing] = useState<any | null>(null);
@@ -80,10 +81,11 @@ function ExerciciosPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link to="/app/exercicios/duplicados">
-              <GitMerge className="mr-2 h-4 w-4" /> Duplicados
-            </Link>
+          <Button
+            variant="outline"
+            onClick={() => navigate({ to: "/app/exercicios/duplicados" })}
+          >
+            <GitMerge className="mr-2 h-4 w-4" /> Duplicados
           </Button>
           <Button
           onClick={() => {
@@ -132,7 +134,16 @@ function ExerciciosPage() {
           {exercises.map((ex: any) => (
             <Card key={ex.id} className="flex items-center justify-between p-4">
               <div className="min-w-0">
-                <div className="font-semibold">{ex.nome_pt}</div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(ex);
+                    setOpen(true);
+                  }}
+                  className="rounded-sm text-left font-semibold text-foreground outline-none transition-colors duration-150 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  {ex.nome_pt}
+                </button>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {(ex.metodologias ?? []).map((m: Methodology) => (
                     <Badge key={m} variant="secondary" className="text-xs">
@@ -207,20 +218,18 @@ function ExerciseDialog({
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Reset form when opening
   const isEdit = !!editing;
-  useState(() => {
-    // noop; state below is reset via key on Dialog content
-  });
 
-  function resetFromEditing() {
+  // Populate form whenever the dialog opens (or the target exercise changes).
+  useEffect(() => {
+    if (!open) return;
     setNome(editing?.nome_pt ?? "");
     setPadrao(editing?.padrao_movimento ?? "");
     setMetods(editing?.metodologias ?? []);
     setUnilateral(editing?.unilateral ?? false);
     setInstr(editing?.instrucoes ?? "");
     setFile(null);
-  }
+  }, [open, editing]);
 
   async function save() {
     if (!coachId) return toast.error("Perfil de treinador não encontrado");
@@ -286,13 +295,7 @@ function ExerciseDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (v) resetFromEditing();
-        onOpenChange(v);
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-lg overflow-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar exercício" : "Novo exercício"}</DialogTitle>
