@@ -16,6 +16,7 @@ import { Route as AuthPrimeiroAcessoRouteImport } from './routes/auth.primeiro-a
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAlunoRouteImport } from './routes/_authenticated/aluno'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppGerarRouteImport } from './routes/_authenticated/app.gerar'
 import { Route as AuthenticatedAppExerciciosRouteImport } from './routes/_authenticated/app.exercicios'
 import { Route as AuthenticatedAppSessoesNovaRouteImport } from './routes/_authenticated/app.sessoes.nova'
 import { Route as AuthenticatedAppSessoesIdRouteImport } from './routes/_authenticated/app.sessoes.$id'
@@ -54,6 +55,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppGerarRoute = AuthenticatedAppGerarRouteImport.update({
+  id: '/gerar',
+  path: '/gerar',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppExerciciosRoute =
   AuthenticatedAppExerciciosRouteImport.update({
     id: '/exercicios',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
   '/app/exercicios': typeof AuthenticatedAppExerciciosRoute
+  '/app/gerar': typeof AuthenticatedAppGerarRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
   '/app/sessoes/nova': typeof AuthenticatedAppSessoesNovaRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/aluno': typeof AuthenticatedAlunoRoute
   '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
   '/app/exercicios': typeof AuthenticatedAppExerciciosRoute
+  '/app/gerar': typeof AuthenticatedAppGerarRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
   '/app/sessoes/nova': typeof AuthenticatedAppSessoesNovaRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
   '/_authenticated/app/exercicios': typeof AuthenticatedAppExerciciosRoute
+  '/_authenticated/app/gerar': typeof AuthenticatedAppGerarRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
   '/_authenticated/app/sessoes/nova': typeof AuthenticatedAppSessoesNovaRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth/primeiro-acesso'
     | '/app/exercicios'
+    | '/app/gerar'
     | '/app/'
     | '/app/sessoes/$id'
     | '/app/sessoes/nova'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/aluno'
     | '/auth/primeiro-acesso'
     | '/app/exercicios'
+    | '/app/gerar'
     | '/app'
     | '/app/sessoes/$id'
     | '/app/sessoes/nova'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/auth/primeiro-acesso'
     | '/_authenticated/app/exercicios'
+    | '/_authenticated/app/gerar'
     | '/_authenticated/app/'
     | '/_authenticated/app/sessoes/$id'
     | '/_authenticated/app/sessoes/nova'
@@ -200,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/gerar': {
+      id: '/_authenticated/app/gerar'
+      path: '/gerar'
+      fullPath: '/app/gerar'
+      preLoaderRoute: typeof AuthenticatedAppGerarRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/exercicios': {
       id: '/_authenticated/app/exercicios'
       path: '/exercicios'
@@ -226,6 +245,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppExerciciosRoute: typeof AuthenticatedAppExerciciosRoute
+  AuthenticatedAppGerarRoute: typeof AuthenticatedAppGerarRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppSessoesIdRoute: typeof AuthenticatedAppSessoesIdRoute
   AuthenticatedAppSessoesNovaRoute: typeof AuthenticatedAppSessoesNovaRoute
@@ -233,6 +253,7 @@ interface AuthenticatedAppRouteChildren {
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppExerciciosRoute: AuthenticatedAppExerciciosRoute,
+  AuthenticatedAppGerarRoute: AuthenticatedAppGerarRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppSessoesIdRoute: AuthenticatedAppSessoesIdRoute,
   AuthenticatedAppSessoesNovaRoute: AuthenticatedAppSessoesNovaRoute,
@@ -272,13 +293,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
