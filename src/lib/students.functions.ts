@@ -23,9 +23,9 @@ export const inviteStudent = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Try to find existing auth user by email
     let authUserId: string | null = null;
     const tempPassword = randomPassword();
+    let alreadyExisted = false;
 
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -33,12 +33,44 @@ export const inviteStudent = createServerFn({ method: "POST" })
       email_confirm: true,
       user_metadata: { nome: data.nome, role: "student" },
     });
+
     if (createErr) {
-      // maybe already exists — try to look up
-      const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+      // Provavelmente o e-mail já existe. Buscar direto por e-mail sem varrer a base.
+      const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1,
+        // @ts-expect-error - filter é aceito pelo admin API mesmo quando não tipado
+        filter: `email.eq.${email}`,
+      });
       const found = list?.users.find((u) => u.email?.toLowerCase() === email);
-      if (!found) throw createErr;
+      if (listErr || !found) {
+        // Mensagem genérica: não vazar se o e-mail existe ou não
+        throw new Error("Não foi possível convidar este e-mail. Verifique e tente novamente.");
+      }
+
+      // Bloquear reaproveitamento de contas que já são coach
+      const { data: coachOwner } = await supabaseAdmin
+        .from("coaches")
+        .select("id")
+        .eq("auth_user_id", found.id)
+        .maybeSingle();
+      if (coachOwner) {
+        throw new Error("Este e-mail pertence a um coach e não pode ser adicionado como aluno.");
+      }
+
+      // Bloquear se já é aluno de outro coach
+      const { data: otherStudent } = await supabaseAdmin
+        .from("students")
+        .select("id, coach_id")
+        .eq("auth_user_id", found.id)
+        .neq("coach_id", coach.id)
+        .maybeSingle();
+      if (otherStudent) {
+        throw new Error("Este e-mail já é aluno de outro coach.");
+      }
+
       authUserId = found.id;
+      alreadyExisted = true;
     } else {
       authUserId = created.user!.id;
     }
@@ -63,8 +95,8 @@ export const inviteStudent = createServerFn({ method: "POST" })
 
     return {
       student,
-      tempPassword: createErr ? null : tempPassword,
-      alreadyExisted: !!createErr,
+      tempPassword: alreadyExisted ? null : tempPassword,
+      alreadyExisted,
     };
   });
 
