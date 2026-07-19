@@ -371,8 +371,8 @@ function ExerciseDialog({
     setDuplicates(null);
   }, [open, editing]);
 
-  function findDuplicates(): any[] {
-    const target = normalizeName(nome);
+  function findDuplicatesFor(name: string): any[] {
+    const target = normalizeName(name);
     if (!target) return [];
     return existingExercises.filter((ex) => {
       if (editing?.id && ex.id === editing.id) return false;
@@ -380,8 +380,13 @@ function ExerciseDialog({
     });
   }
 
-  async function persist() {
-    if (!coachId) return toast.error("Perfil de treinador não encontrado");
+  /** Salva de fato. Retorna null em sucesso ou mensagem de erro amigável. */
+  async function persist(): Promise<string | null> {
+    if (!coachId) {
+      const m = "Perfil de treinador não encontrado";
+      toast.error(m);
+      return m;
+    }
     setSaving(true);
     try {
       let exerciseId = editing?.id;
@@ -438,29 +443,25 @@ function ExerciseDialog({
       toast.success(isEdit ? "Exercício atualizado" : "Exercício criado");
       qc.invalidateQueries({ queryKey: ["exercises"] });
       onOpenChange(false);
+      return null;
     } catch (e: any) {
-      const msg: string = e?.message ?? "Falha ao salvar";
+      const raw: string = e?.message ?? "Falha ao salvar";
       const isRls =
         e?.code === "42501" ||
-        /row-level security|row level security/i.test(msg);
-      if (isRls) {
-        const dups = findDuplicates();
-        if (dups.length > 0) {
-          toast.error("Já existe um exercício parecido", {
-            description: "Escolha entre fundir ou manter os dois.",
-          });
-          setDuplicates(dups);
-          return;
-        }
-      }
-      toast.error(msg);
+        /row-level security|row level security/i.test(raw);
+      const friendly = isRls
+        ? "Este nome bate com um exercício existente que você não pode sobrescrever. Ajuste o nome e tente de novo."
+        : raw;
+      // Se o dialog de duplicados NÃO está aberto, cai no toast padrão.
+      if (!duplicates) toast.error(friendly);
+      return friendly;
     } finally {
       setSaving(false);
     }
   }
 
   function save() {
-    const dups = findDuplicates();
+    const dups = findDuplicatesFor(nome);
     if (dups.length > 0) {
       setDuplicates(dups);
       return;
@@ -566,14 +567,19 @@ function ExerciseDialog({
       open={!!duplicates}
       onOpenChange={(v) => !v && setDuplicates(null)}
       typedName={nome}
+      onRename={(newName) => {
+        setNome(newName);
+        // Re-avalia duplicados com o novo nome. Se sumiram, fecha o diálogo.
+        const dups = findDuplicatesFor(newName);
+        if (dups.length === 0) setDuplicates(null);
+        else setDuplicates(dups);
+      }}
       candidates={duplicates ?? []}
       isEdit={isEdit}
       editingId={editing?.id}
       coachId={coachId}
-      onIgnoreAndSave={() => {
-        setDuplicates(null);
-        void persist();
-      }}
+      persist={persist}
+      onPersisted={() => setDuplicates(null)}
       onKeep={(existing) => {
         setDuplicates(null);
         onOpenChange(false);
@@ -593,34 +599,73 @@ function DuplicateResolverDialog({
   open,
   onOpenChange,
   typedName,
+  onRename,
   candidates,
   isEdit,
   editingId,
   coachId,
-  onIgnoreAndSave,
+  persist,
+  onPersisted,
   onKeep,
   onMerged,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   typedName: string;
+  onRename: (newName: string) => void;
   candidates: any[];
   isEdit: boolean;
   editingId?: string;
   coachId?: string;
-  onIgnoreAndSave: () => void;
+  persist: () => Promise<string | null>;
+  onPersisted: () => void;
   onKeep: (existing: any) => void;
   onMerged: () => void;
 }) {
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [savingAnyway, setSavingAnyway] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameOpen, setRenameOpen] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setErrorMsg(null);
+      setRenameValue(`${typedName.trim()} (meu)`);
+      setRenameOpen(false);
+    }
+  }, [open, typedName]);
+
+  async function saveAnyway() {
+    setSavingAnyway(true);
+    setErrorMsg(null);
+    const err = await persist();
+    setSavingAnyway(false);
+    if (err) setErrorMsg(err);
+    else onPersisted();
+  }
+
+  async function renameAndSave() {
+    const next = renameValue.trim();
+    if (!next) return;
+    onRename(next);
+    // dá um tick pro state subir e depois tenta persistir
+    setSavingAnyway(true);
+    setErrorMsg(null);
+    await new Promise((r) => setTimeout(r, 0));
+    const err = await persist();
+    setSavingAnyway(false);
+    if (err) setErrorMsg(err);
+    else onPersisted();
+  }
 
   async function fuseIntoExisting(existing: any) {
     if (!isEdit || !editingId) {
-      // Modo criar: nada a fundir ainda — só abrir o existente para editar.
       onKeep(existing);
       return;
     }
     setBusyId(existing.id);
+    setErrorMsg(null);
     try {
       const { error } = await supabase.rpc("merge_exercises", {
         _keeper_id: existing.id,
@@ -630,51 +675,57 @@ function DuplicateResolverDialog({
       toast.success("Exercícios fundidos");
       onMerged();
     } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao fundir");
+      setErrorMsg(e?.message ?? "Falha ao fundir");
     } finally {
       setBusyId(null);
     }
   }
 
+  const hasGlobal = candidates.some((c) => !c.coach_id);
+  const busy = savingAnyway || !!busyId;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-lg overflow-hidden p-0 sm:w-full">
-        <div className="border-b border-border/60 px-6 py-5">
+      <DialogContent className="max-h-[92vh] w-[calc(100vw-1.5rem)] max-w-lg overflow-hidden p-0 sm:w-full">
+        <div className="border-b border-border/60 px-5 py-4 sm:px-6 sm:py-5">
           <div className="flex items-start gap-3">
-            <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
+            <div className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
               <AlertTriangle className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <DialogTitle className="text-base font-semibold leading-tight">
+              <DialogTitle className="text-base font-semibold leading-tight tracking-tight sm:text-lg">
                 Já existe algo parecido
               </DialogTitle>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                Encontramos {candidates.length}{" "}
-                {candidates.length === 1 ? "exercício" : "exercícios"} com nome
-                equivalente a{" "}
-                <span className="font-medium text-foreground">
-                  “{typedName.trim()}”
+                {hasGlobal
+                  ? "Esse nome já existe no banco base. Você pode usar o exercício existente ou criar uma versão sua."
+                  : "Você já tem um exercício com esse nome."}{" "}
+                <span className="text-foreground/80">
+                  Equivalente a{" "}
+                  <span className="font-medium text-foreground">
+                    “{typedName.trim()}”
+                  </span>
+                  .
                 </span>
-                .
               </p>
             </div>
           </div>
         </div>
 
-        <div className="max-h-[50vh] space-y-2 overflow-y-auto px-6 py-4">
+        <div className="max-h-[48vh] space-y-2 overflow-y-auto px-5 py-4 sm:px-6">
           {candidates.map((ex) => {
             const isGlobal = !ex.coach_id;
-            const canFuse = !isGlobal || !isEdit; // pode abrir global; não pode apagar global
-            const busy = busyId === ex.id;
+            const canFuseInto = isEdit && !isGlobal; // só funde num alvo do próprio coach durante edição
+            const rowBusy = busyId === ex.id;
             return (
               <div
                 key={ex.id}
-                className="group rounded-lg border border-border/60 bg-card p-3 transition-colors duration-200 hover:border-primary/40"
+                className="group rounded-xl border border-border/60 bg-card p-3.5 transition-all duration-200 hover:border-primary/50 hover:bg-primary/[0.02] sm:p-4"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-medium text-foreground">
+                      <p className="truncate text-sm font-semibold text-foreground">
                         {ex.nome_pt}
                       </p>
                       {isGlobal && (
@@ -708,23 +759,23 @@ function DuplicateResolverDialog({
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="h-8"
+                      className="h-8 transition-colors duration-150"
                       onClick={() => onKeep(ex)}
                       disabled={busy}
                     >
-                      Abrir este
+                      Usar este
                     </Button>
-                    {canFuse && isEdit && (
+                    {canFuseInto && (
                       <Button
-                        variant="outline"
+                        variant="default"
                         size="sm"
-                        className="h-8 gap-1.5"
+                        className="h-8 gap-1.5 transition-colors duration-150"
                         onClick={() => fuseIntoExisting(ex)}
                         disabled={busy || !coachId}
                       >
-                        {busy ? (
+                        {rowBusy ? (
                           <>
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             Fundindo…
@@ -742,25 +793,91 @@ function DuplicateResolverDialog({
               </div>
             );
           })}
+
+          {errorMsg && (
+            <div
+              role="alert"
+              className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-xs leading-relaxed text-destructive"
+            >
+              {errorMsg}
+            </div>
+          )}
+
+          {renameOpen && (
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5 sm:p-4">
+              <Label htmlFor="rename-input" className="text-xs font-medium text-muted-foreground">
+                Novo nome
+              </Label>
+              <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
+                <Input
+                  id="rename-input"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  className="h-9"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void renameAndSave();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  className="h-9 shrink-0"
+                  onClick={() => void renameAndSave()}
+                  disabled={busy || !renameValue.trim()}
+                >
+                  {savingAnyway ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      Salvando…
+                    </>
+                  ) : (
+                    "Renomear e salvar"
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
-        <DialogFooter className="border-t border-border/60 px-6 py-4 sm:justify-between">
+        <DialogFooter className="flex-col-reverse gap-2 border-t border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <Button
             variant="ghost"
             size="sm"
+            className="h-9 sm:w-auto"
             onClick={() => onOpenChange(false)}
-            disabled={!!busyId}
+            disabled={busy}
           >
             Voltar
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onIgnoreAndSave}
-            disabled={!!busyId}
-          >
-            Salvar mesmo assim
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9"
+              onClick={() => setRenameOpen((v) => !v)}
+              disabled={busy}
+            >
+              {renameOpen ? "Ocultar renomear" : "Ajustar nome"}
+            </Button>
+            <Button
+              size="sm"
+              className="h-9 gap-1.5"
+              onClick={() => void saveAnyway()}
+              disabled={busy}
+            >
+              {savingAnyway && !renameOpen ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Salvando…
+                </>
+              ) : (
+                "Criar assim mesmo"
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
