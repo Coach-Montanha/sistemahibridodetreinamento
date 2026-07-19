@@ -1,0 +1,50 @@
+export type Methodology =
+  | "hibrido"
+  | "kettlebell_sport"
+  | "kettlebell_fitness"
+  | "levantamento_peso"
+  | "musculacao";
+
+export const METHODOLOGY_LABEL: Record<Methodology, string> = {
+  hibrido: "Híbrido",
+  kettlebell_sport: "Kettlebell Sport",
+  kettlebell_fitness: "Kettlebell Fitness",
+  levantamento_peso: "Levantamento de Peso",
+  musculacao: "Musculação",
+};
+
+export type BlockFormat =
+  | "preparacao_movimento"
+  | "forca_tecnica_pct"
+  | "emom"
+  | "e2mom"
+  | "amrap"
+  | "circuito"
+  | "kb_timed_sets"
+  | "metcon"
+  | "bodybuilding_sets"
+  | "finalizador"
+  | "livre";
+
+export const BLOCK_FORMAT_LABEL: Record<BlockFormat, string> = {
+  preparacao_movimento: "Preparação de Movimento",
+  forca_tecnica_pct: "Força/Técnica (%1RM)",
+  emom: "EMOM",
+  e2mom: "E2MOM",
+  amrap: "AMRAP",
+  circuito: "Circuito",
+  kb_timed_sets: "Kettlebell Sport (AQ/TR)",
+  metcon: "MetCon",
+  bodybuilding_sets: "Musculação (séries × reps)",
+  finalizador: "Finalizador",
+  livre: "Bloco livre",
+};
+
+/** Formatos que a 1ª entrega expõe no menu de "novo bloco". */
+export const ENABLED_FORMATS: BlockFormat[] = [
+  "preparacao_movimento",
+  "e2mom",
+  "amrap",
+  "forca_tecnica_pct",
+  "kb_timed_sets",
+];

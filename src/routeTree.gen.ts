@@ -9,38 +9,162 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthPrimeiroAcessoRouteImport } from './routes/auth.primeiro-acesso'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as AuthenticatedAlunoRouteImport } from './routes/_authenticated/aluno'
+import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppExerciciosRouteImport } from './routes/_authenticated/app.exercicios'
+import { Route as AuthenticatedAppSessoesNovaRouteImport } from './routes/_authenticated/app.sessoes.nova'
+import { Route as AuthenticatedAppSessoesIdRouteImport } from './routes/_authenticated/app.sessoes.$id'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthPrimeiroAcessoRoute = AuthPrimeiroAcessoRouteImport.update({
+  id: '/primeiro-acesso',
+  path: '/primeiro-acesso',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAlunoRoute = AuthenticatedAlunoRouteImport.update({
+  id: '/aluno',
+  path: '/aluno',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppExerciciosRoute =
+  AuthenticatedAppExerciciosRouteImport.update({
+    id: '/exercicios',
+    path: '/exercicios',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSessoesNovaRoute =
+  AuthenticatedAppSessoesNovaRouteImport.update({
+    id: '/sessoes/nova',
+    path: '/sessoes/nova',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSessoesIdRoute =
+  AuthenticatedAppSessoesIdRouteImport.update({
+    id: '/sessoes/$id',
+    path: '/sessoes/$id',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/aluno': typeof AuthenticatedAlunoRoute
+  '/app': typeof AuthenticatedAppRouteWithChildren
+  '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
+  '/app/exercicios': typeof AuthenticatedAppExerciciosRoute
+  '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
+  '/app/sessoes/nova': typeof AuthenticatedAppSessoesNovaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/aluno': typeof AuthenticatedAlunoRoute
+  '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
+  '/app/exercicios': typeof AuthenticatedAppExerciciosRoute
+  '/app': typeof AuthenticatedAppIndexRoute
+  '/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
+  '/app/sessoes/nova': typeof AuthenticatedAppSessoesNovaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRouteWithChildren
+  '/_authenticated/aluno': typeof AuthenticatedAlunoRoute
+  '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
+  '/_authenticated/app/exercicios': typeof AuthenticatedAppExerciciosRoute
+  '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
+  '/_authenticated/app/sessoes/nova': typeof AuthenticatedAppSessoesNovaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/aluno'
+    | '/app'
+    | '/auth/primeiro-acesso'
+    | '/app/exercicios'
+    | '/app/'
+    | '/app/sessoes/$id'
+    | '/app/sessoes/nova'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/aluno'
+    | '/auth/primeiro-acesso'
+    | '/app/exercicios'
+    | '/app'
+    | '/app/sessoes/$id'
+    | '/app/sessoes/nova'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/aluno'
+    | '/_authenticated/app'
+    | '/auth/primeiro-acesso'
+    | '/_authenticated/app/exercicios'
+    | '/_authenticated/app/'
+    | '/_authenticated/app/sessoes/$id'
+    | '/_authenticated/app/sessoes/nova'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +172,103 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/primeiro-acesso': {
+      id: '/auth/primeiro-acesso'
+      path: '/primeiro-acesso'
+      fullPath: '/auth/primeiro-acesso'
+      preLoaderRoute: typeof AuthPrimeiroAcessoRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_authenticated/app': {
+      id: '/_authenticated/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/aluno': {
+      id: '/_authenticated/aluno'
+      path: '/aluno'
+      fullPath: '/aluno'
+      preLoaderRoute: typeof AuthenticatedAlunoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/': {
+      id: '/_authenticated/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/exercicios': {
+      id: '/_authenticated/app/exercicios'
+      path: '/exercicios'
+      fullPath: '/app/exercicios'
+      preLoaderRoute: typeof AuthenticatedAppExerciciosRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/sessoes/nova': {
+      id: '/_authenticated/app/sessoes/nova'
+      path: '/sessoes/nova'
+      fullPath: '/app/sessoes/nova'
+      preLoaderRoute: typeof AuthenticatedAppSessoesNovaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/sessoes/$id': {
+      id: '/_authenticated/app/sessoes/$id'
+      path: '/sessoes/$id'
+      fullPath: '/app/sessoes/$id'
+      preLoaderRoute: typeof AuthenticatedAppSessoesIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
+interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppExerciciosRoute: typeof AuthenticatedAppExerciciosRoute
+  AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppSessoesIdRoute: typeof AuthenticatedAppSessoesIdRoute
+  AuthenticatedAppSessoesNovaRoute: typeof AuthenticatedAppSessoesNovaRoute
+}
+
+const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppExerciciosRoute: AuthenticatedAppExerciciosRoute,
+  AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppSessoesIdRoute: AuthenticatedAppSessoesIdRoute,
+  AuthenticatedAppSessoesNovaRoute: AuthenticatedAppSessoesNovaRoute,
+}
+
+const AuthenticatedAppRouteWithChildren =
+  AuthenticatedAppRoute._addFileChildren(AuthenticatedAppRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAlunoRoute: typeof AuthenticatedAlunoRoute
+  AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAlunoRoute: AuthenticatedAlunoRoute,
+  AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface AuthRouteChildren {
+  AuthPrimeiroAcessoRoute: typeof AuthPrimeiroAcessoRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthPrimeiroAcessoRoute: AuthPrimeiroAcessoRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
