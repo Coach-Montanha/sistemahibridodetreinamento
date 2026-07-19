@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Trash2, Pencil, Upload } from "lucide-react";
+import { Plus, Search, Trash2, Pencil, Upload, GitMerge } from "lucide-react";
 import { toast } from "sonner";
 import {
   METHODOLOGY_LABEL,
@@ -79,7 +79,13 @@ function ExerciciosPage() {
             Cadastre exercícios com mídia para usar no construtor de sessão.
           </p>
         </div>
-        <Button
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link to="/app/exercicios/duplicados">
+              <GitMerge className="mr-2 h-4 w-4" /> Duplicados
+            </Link>
+          </Button>
+          <Button
           onClick={() => {
             setEditing(null);
             setOpen(true);
@@ -87,6 +93,7 @@ function ExerciciosPage() {
         >
           <Plus className="mr-2 h-4 w-4" /> Novo exercício
         </Button>
+        </div>
       </div>
 
       <div className="mb-4 flex gap-3">
