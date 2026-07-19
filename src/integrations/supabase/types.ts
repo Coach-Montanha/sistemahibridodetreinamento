@@ -872,6 +872,11 @@ export type Database = {
     Functions: {
       auth_coach_id: { Args: never; Returns: string }
       auth_student_id: { Args: never; Returns: string }
+      merge_exercises: {
+        Args: { _duplicate_ids: string[]; _keeper_id: string }
+        Returns: undefined
+      }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       block_format:
