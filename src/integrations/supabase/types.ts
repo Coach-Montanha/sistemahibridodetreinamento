@@ -876,6 +876,18 @@ export type Database = {
         Args: { _duplicate_ids: string[]; _keeper_id: string }
         Returns: undefined
       }
+      student_can_read_program: {
+        Args: { _program_id: string }
+        Returns: boolean
+      }
+      student_can_read_program_week: {
+        Args: { _pw_id: string }
+        Returns: boolean
+      }
+      student_can_read_session: {
+        Args: { _session_id: string }
+        Returns: boolean
+      }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
