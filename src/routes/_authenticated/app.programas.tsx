@@ -37,7 +37,6 @@ import {
   FileText,
   Trash2,
   FolderKanban,
-  Sparkles,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
