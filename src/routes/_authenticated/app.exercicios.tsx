@@ -134,7 +134,7 @@ function ExerciciosPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todos">Todas as metodologias</SelectItem>
+            <SelectItem value="todos">Todas as modalidades</SelectItem>
             {METHODS.map((m) => (
               <SelectItem key={m} value={m}>
                 {METHODOLOGY_LABEL[m]}
@@ -441,7 +441,7 @@ function ExerciseDialog({
             </Select>
           </div>
           <div>
-            <Label>Metodologias</Label>
+            <Label>Modalidades</Label>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {METHODS.map((m) => (
                 <label key={m} className="flex items-center gap-2 text-sm">
