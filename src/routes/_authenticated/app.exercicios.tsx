@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,9 @@ import {
   AlertTriangle,
   Loader2,
   Globe2,
+  CheckSquare,
+  Wand2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -67,6 +71,9 @@ function ExerciciosPage() {
   const [equipFilter, setEquipFilter] = useState<Equipamento | "todos">("todos");
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
   const qc = useQueryClient();
 
   const { data: exercises = [] } = useQuery({
@@ -103,16 +110,57 @@ function ExerciciosPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const visibleIds = useMemo(
+    () => (exercises as any[]).map((ex) => ex.id as string),
+    [exercises]
+  );
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
+
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function selectAllVisible() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const id of visibleIds) next.add(id);
+      return next;
+    });
+  }
+  function clearSelection() {
+    setSelected(new Set());
+  }
+  function exitSelectionMode() {
+    setSelectionMode(false);
+    clearSelection();
+  }
+
   return (
     <div className="mx-auto max-w-6xl p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
+      <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">Banco de Exercícios</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
             Cadastre exercícios com mídia para usar no construtor de sessão.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <Button
+            variant={selectionMode ? "secondary" : "ghost"}
+            onClick={() => {
+              if (selectionMode) exitSelectionMode();
+              else setSelectionMode(true);
+            }}
+            className="gap-2"
+          >
+            <CheckSquare className="h-4 w-4" />
+            {selectionMode ? "Cancelar seleção" : "Selecionar"}
+          </Button>
           <Button
             variant="outline"
             onClick={() => navigate({ to: "/app/exercicios/duplicados" })}
@@ -202,70 +250,148 @@ function ExerciciosPage() {
           )}
         </Card>
       ) : (
-        <div className="grid gap-3">
-          {exercises.map((ex: any) => (
-            <Card key={ex.id} className="flex items-center justify-between p-4">
-              <div className="min-w-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditing(ex);
-                    setOpen(true);
-                  }}
-                  className="rounded-sm text-left font-semibold text-foreground outline-none transition-colors duration-150 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        <>
+          {selectionMode && (
+            <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2.5 text-sm">
+              <span className="font-medium text-foreground">
+                {selected.size} selecionado{selected.size === 1 ? "" : "s"}
+              </span>
+              <span className="text-muted-foreground">·</span>
+              <button
+                type="button"
+                onClick={allVisibleSelected ? clearSelection : selectAllVisible}
+                className="rounded-sm text-sm font-medium text-primary outline-none transition-colors duration-150 hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                {allVisibleSelected
+                  ? `Desmarcar visíveis (${visibleIds.length})`
+                  : `Selecionar todos visíveis (${visibleIds.length})`}
+              </button>
+              {selected.size > 0 && (
+                <>
+                  <span className="text-muted-foreground">·</span>
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    className="rounded-sm text-sm text-muted-foreground outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
+                    Limpar seleção
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          <div className={"grid gap-3 " + (selectionMode && selected.size > 0 ? "pb-28 sm:pb-24" : "")}>
+            {exercises.map((ex: any) => {
+              const isSel = selected.has(ex.id);
+              const clickable = selectionMode;
+              return (
+                <Card
+                  key={ex.id}
+                  role={clickable ? "button" : undefined}
+                  tabIndex={clickable ? 0 : undefined}
+                  onClick={clickable ? () => toggleSelected(ex.id) : undefined}
+                  onKeyDown={
+                    clickable
+                      ? (e) => {
+                          if (e.key === " " || e.key === "Enter") {
+                            e.preventDefault();
+                            toggleSelected(ex.id);
+                          }
+                        }
+                      : undefined
+                  }
+                  className={
+                    "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 transition-all duration-200 sm:flex sm:justify-between " +
+                    (clickable ? "cursor-pointer " : "") +
+                    (isSel
+                      ? "border-primary/60 bg-primary/[0.04] ring-1 ring-primary/20"
+                      : "hover:border-primary/30")
+                  }
                 >
-                  {ex.nome_pt}
-                </button>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {(ex.equipamento ?? []).map((eq: string) => (
-                    <Badge
-                      key={eq}
-                      className="border-transparent bg-primary/10 text-primary text-xs hover:bg-primary/15"
-                    >
-                      {eq}
-                    </Badge>
-                  ))}
-                  {(ex.metodologias ?? []).map((m: Methodology) => (
-                    <Badge key={m} variant="secondary" className="text-xs">
-                      {METHODOLOGY_LABEL[m]}
-                    </Badge>
-                  ))}
-                  {ex.padrao_movimento && (
-                    <Badge variant="outline" className="text-xs">
-                      {ex.padrao_movimento}
-                    </Badge>
+                  <div className="flex min-w-0 items-start gap-3">
+                    {selectionMode && (
+                      <Checkbox
+                        checked={isSel}
+                        onCheckedChange={() => toggleSelected(ex.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1 shrink-0"
+                        aria-label={`Selecionar ${ex.nome_pt}`}
+                      />
+                    )}
+                    <div className="min-w-0">
+                      {selectionMode ? (
+                        <span className="block truncate font-semibold text-foreground">
+                          {ex.nome_pt}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(ex);
+                            setOpen(true);
+                          }}
+                          className="rounded-sm text-left font-semibold text-foreground outline-none transition-colors duration-150 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        >
+                          {ex.nome_pt}
+                        </button>
+                      )}
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {(ex.equipamento ?? []).map((eq: string) => (
+                          <Badge
+                            key={eq}
+                            className="border-transparent bg-primary/10 text-primary text-xs hover:bg-primary/15"
+                          >
+                            {eq}
+                          </Badge>
+                        ))}
+                        {(ex.metodologias ?? []).map((m: Methodology) => (
+                          <Badge key={m} variant="secondary" className="text-xs">
+                            {METHODOLOGY_LABEL[m]}
+                          </Badge>
+                        ))}
+                        {ex.padrao_movimento && (
+                          <Badge variant="outline" className="text-xs">
+                            {ex.padrao_movimento}
+                          </Badge>
+                        )}
+                        {ex.unilateral && (
+                          <Badge variant="outline" className="text-xs">
+                            unilateral
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {!selectionMode && (
+                    <div className="flex shrink-0 gap-2 justify-self-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditing(ex);
+                          setOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Remover "${ex.nome_pt}"?`)) del.mutate(ex.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
-                  {ex.unilateral && (
-                    <Badge variant="outline" className="text-xs">
-                      unilateral
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setEditing(ex);
-                    setOpen(true);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    if (confirm(`Remover "${ex.nome_pt}"?`)) del.mutate(ex.id);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+                </Card>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <ExerciseDialog
@@ -277,6 +403,52 @@ function ExerciciosPage() {
         onOpenExisting={(ex) => {
           setEditing(ex);
           setOpen(true);
+        }}
+      />
+
+      {selectionMode && selected.size > 0 && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+          <div className="pointer-events-auto flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-border/70 bg-card/95 px-4 py-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
+              <CheckSquare className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {selected.size} exercício{selected.size === 1 ? "" : "s"} selecionado{selected.size === 1 ? "" : "s"}
+              </p>
+              <p className="hidden text-xs text-muted-foreground sm:block">
+                Ajuste modalidades e equipamento em lote.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelection}
+              className="hidden sm:inline-flex"
+            >
+              Limpar
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setBulkOpen(true)}
+            >
+              <Wand2 className="h-3.5 w-3.5" />
+              Editar em massa
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <BulkEditDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        selectedIds={Array.from(selected)}
+        exercises={exercises as any[]}
+        onApplied={() => {
+          setBulkOpen(false);
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["exercises"] });
         }}
       />
     </div>
@@ -878,6 +1050,373 @@ function DuplicateResolverDialog({
               )}
             </Button>
           </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+type BulkMode = "manter" | "adicionar" | "remover" | "substituir";
+
+const MODE_LABEL: Record<BulkMode, string> = {
+  manter: "Manter",
+  adicionar: "Adicionar",
+  remover: "Remover",
+  substituir: "Substituir",
+};
+
+function applyMode(current: string[], mode: BulkMode, values: string[]): string[] {
+  const cur = Array.from(new Set(current ?? []));
+  const val = Array.from(new Set(values));
+  switch (mode) {
+    case "manter":
+      return cur;
+    case "adicionar":
+      return Array.from(new Set([...cur, ...val]));
+    case "remover":
+      return cur.filter((x) => !val.includes(x));
+    case "substituir":
+      return val;
+  }
+}
+
+function ModeTabs({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: BulkMode;
+  onChange: (v: BulkMode) => void;
+  disabled?: boolean;
+}) {
+  const modes: BulkMode[] = ["manter", "adicionar", "remover", "substituir"];
+  return (
+    <div
+      role="tablist"
+      className="inline-flex w-full items-center gap-1 rounded-lg border border-border/60 bg-muted/60 p-1"
+    >
+      {modes.map((m) => {
+        const active = value === m;
+        return (
+          <button
+            key={m}
+            role="tab"
+            aria-selected={active}
+            disabled={disabled}
+            onClick={() => onChange(m)}
+            className={
+              "flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 " +
+              (active
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground")
+            }
+          >
+            {MODE_LABEL[m]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function BulkChip({
+  label,
+  active,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 " +
+        (active
+          ? "border-primary bg-primary text-primary-foreground shadow-sm"
+          : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground")
+      }
+    >
+      {label}
+    </button>
+  );
+}
+
+function BulkEditDialog({
+  open,
+  onOpenChange,
+  selectedIds,
+  exercises,
+  onApplied,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  selectedIds: string[];
+  exercises: any[];
+  onApplied: () => void;
+}) {
+  const [metMode, setMetMode] = useState<BulkMode>("manter");
+  const [metValues, setMetValues] = useState<Methodology[]>([]);
+  const [equipMode, setEquipMode] = useState<BulkMode>("manter");
+  const [equipValues, setEquipValues] = useState<Equipamento[]>([]);
+  const [applying, setApplying] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (open) {
+      setMetMode("manter");
+      setMetValues([]);
+      setEquipMode("manter");
+      setEquipValues([]);
+      setProgress(0);
+    }
+  }, [open]);
+
+  const willChange =
+    (metMode !== "manter" && metValues.length > 0) ||
+    (equipMode !== "manter" && equipValues.length > 0) ||
+    metMode === "substituir" ||
+    equipMode === "substituir";
+
+  const byId = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const ex of exercises) m.set(ex.id, ex);
+    return m;
+  }, [exercises]);
+
+  async function apply() {
+    if (!willChange || selectedIds.length === 0) return;
+    setApplying(true);
+    setProgress(0);
+    const batchSize = 20;
+    let done = 0;
+    let failed = 0;
+    try {
+      for (let i = 0; i < selectedIds.length; i += batchSize) {
+        const batch = selectedIds.slice(i, i + batchSize);
+        const results = await Promise.all(
+          batch.map(async (id) => {
+            const ex = byId.get(id);
+            if (!ex) return { ok: false };
+            const patch: Record<string, any> = {
+              atualizado_em: new Date().toISOString(),
+            };
+            if (metMode !== "manter") {
+              patch.metodologias = applyMode(
+                ex.metodologias ?? [],
+                metMode,
+                metValues
+              );
+            }
+            if (equipMode !== "manter") {
+              patch.equipamento = applyMode(
+                ex.equipamento ?? [],
+                equipMode,
+                equipValues
+              );
+            }
+            const { error } = await supabase
+              .from("exercises")
+              .update(patch as any)
+              .eq("id", id);
+            return { ok: !error };
+          })
+        );
+        for (const r of results) {
+          if (r.ok) done += 1;
+          else failed += 1;
+        }
+        setProgress(Math.round(((i + batch.length) / selectedIds.length) * 100));
+      }
+      if (failed === 0) {
+        toast.success(
+          `${done} exercício${done === 1 ? "" : "s"} atualizado${done === 1 ? "" : "s"}`
+        );
+      } else {
+        toast.warning(
+          `${done} atualizado${done === 1 ? "" : "s"} · ${failed} falharam`
+        );
+      }
+      onApplied();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha no ajuste em massa");
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  function summary(): string {
+    const parts: string[] = [];
+    if (metMode === "manter") parts.push("modalidades inalteradas");
+    else {
+      const labels = metValues.map((m) => METHODOLOGY_LABEL[m]).join(", ") || "—";
+      parts.push(
+        metMode === "adicionar"
+          ? `+ modalidades: ${labels}`
+          : metMode === "remover"
+            ? `− modalidades: ${labels}`
+            : `modalidades = ${labels}`
+      );
+    }
+    if (equipMode === "manter") parts.push("equipamento inalterado");
+    else {
+      const labels = equipValues.join(", ") || "—";
+      parts.push(
+        equipMode === "adicionar"
+          ? `+ equipamento: ${labels}`
+          : equipMode === "remover"
+            ? `− equipamento: ${labels}`
+            : `equipamento = ${labels}`
+      );
+    }
+    return parts.join(" · ");
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !applying && onOpenChange(v)}>
+      <DialogContent className="max-h-[92vh] w-[calc(100vw-1.5rem)] max-w-lg overflow-hidden p-0 sm:w-full">
+        <div className="border-b border-border/60 px-5 py-4 sm:px-6 sm:py-5">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Wand2 className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-semibold leading-tight tracking-tight sm:text-lg">
+                Ajuste em massa
+              </DialogTitle>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {selectedIds.length}
+                </span>{" "}
+                exercício{selectedIds.length === 1 ? "" : "s"} selecionado
+                {selectedIds.length === 1 ? "" : "s"}. Escolha o modo e os valores
+                para cada grupo.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-h-[52vh] space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
+          <section className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="text-sm font-semibold text-foreground">
+                Modalidades
+              </h3>
+              <span className="text-xs text-muted-foreground">
+                {metMode === "manter"
+                  ? "sem alterar"
+                  : `${metValues.length} selecionada${metValues.length === 1 ? "" : "s"}`}
+              </span>
+            </div>
+            <ModeTabs value={metMode} onChange={setMetMode} disabled={applying} />
+            <div className="flex flex-wrap gap-1.5">
+              {METHODS.map((m) => (
+                <BulkChip
+                  key={m}
+                  label={METHODOLOGY_LABEL[m]}
+                  active={metValues.includes(m)}
+                  disabled={metMode === "manter" || applying}
+                  onClick={() =>
+                    setMetValues((prev) =>
+                      prev.includes(m)
+                        ? prev.filter((x) => x !== m)
+                        : [...prev, m]
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </section>
+
+          <div className="h-px bg-border/60" />
+
+          <section className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="text-sm font-semibold text-foreground">
+                Equipamento
+              </h3>
+              <span className="text-xs text-muted-foreground">
+                {equipMode === "manter"
+                  ? "sem alterar"
+                  : `${equipValues.length} selecionado${equipValues.length === 1 ? "" : "s"}`}
+              </span>
+            </div>
+            <ModeTabs
+              value={equipMode}
+              onChange={setEquipMode}
+              disabled={applying}
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {EQUIPAMENTOS.map((eq) => (
+                <BulkChip
+                  key={eq}
+                  label={eq}
+                  active={equipValues.includes(eq)}
+                  disabled={equipMode === "manter" || applying}
+                  onClick={() =>
+                    setEquipValues((prev) =>
+                      prev.includes(eq)
+                        ? prev.filter((x) => x !== eq)
+                        : [...prev, eq]
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </section>
+
+          <div className="rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2.5">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Prévia
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-foreground/90">
+              {summary()}
+            </p>
+          </div>
+
+          {applying && (
+            <div className="space-y-1.5">
+              <Progress value={progress} className="h-1.5" />
+              <p className="text-[11px] text-muted-foreground">
+                Aplicando… {progress}%
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="flex-col-reverse gap-2 border-t border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => onOpenChange(false)}
+            disabled={applying}
+          >
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            className="h-9 gap-1.5"
+            onClick={() => void apply()}
+            disabled={!willChange || applying || selectedIds.length === 0}
+          >
+            {applying ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Aplicando…
+              </>
+            ) : (
+              <>
+                <Wand2 className="h-3.5 w-3.5" />
+                Aplicar em {selectedIds.length}
+              </>
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
