@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Dumbbell, PlusSquare, Users, Mountain, LogOut, Wand2 } from "lucide-react";
+import { LayoutDashboard, Dumbbell, PlusSquare, Users, Mountain, LogOut, Wand2, Palette } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +24,7 @@ const items = [
   { title: "Nova sessão", url: "/app/sessoes/nova", icon: PlusSquare, exact: false },
   { title: "Gerar treino", url: "/app/gerar", icon: Wand2, exact: false },
   { title: "Alunos", url: "/app/alunos", icon: Users, exact: false },
+  { title: "Marca", url: "/app/marca", icon: Palette, exact: false },
 ];
 
 export function AppSidebar() {

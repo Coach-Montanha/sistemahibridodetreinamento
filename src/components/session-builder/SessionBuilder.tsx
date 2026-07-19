@@ -23,12 +23,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Save } from "lucide-react";
+import { Plus, Save, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useBuilder } from "@/lib/session-builder-store";
 import { BLOCK_FORMAT_LABEL, ENABLED_FORMATS, type BlockFormat } from "@/lib/methodology";
 import { BlockCard } from "./BlockCard";
+import { exportarSessaoPDF, exportarSessaoExcel } from "@/lib/session-export";
 
 export function SessionBuilder({
   sessionId,
@@ -221,6 +222,31 @@ export function SessionBuilder({
           {sessionId ? "Editar sessão" : "Nova sessão"}
         </h1>
         <div className="flex gap-2">
+          {sessionId && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="mr-2 h-4 w-4" /> Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={() =>
+                    exportarSessaoPDF(sessionId).catch((e) => toast.error(e.message))
+                  }
+                >
+                  PDF com marca
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    exportarSessaoExcel(sessionId).catch((e) => toast.error(e.message))
+                  }
+                >
+                  Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <Button variant="outline" onClick={() => save(false)}>
             <Save className="mr-2 h-4 w-4" /> Salvar rascunho
           </Button>
