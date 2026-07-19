@@ -1055,3 +1055,370 @@ function DuplicateResolverDialog({
     </Dialog>
   );
 }
+type BulkMode = "manter" | "adicionar" | "remover" | "substituir";
+
+const MODE_LABEL: Record<BulkMode, string> = {
+  manter: "Manter",
+  adicionar: "Adicionar",
+  remover: "Remover",
+  substituir: "Substituir",
+};
+
+function applyMode(current: string[], mode: BulkMode, values: string[]): string[] {
+  const cur = Array.from(new Set(current ?? []));
+  const val = Array.from(new Set(values));
+  switch (mode) {
+    case "manter":
+      return cur;
+    case "adicionar":
+      return Array.from(new Set([...cur, ...val]));
+    case "remover":
+      return cur.filter((x) => !val.includes(x));
+    case "substituir":
+      return val;
+  }
+}
+
+function ModeTabs({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: BulkMode;
+  onChange: (v: BulkMode) => void;
+  disabled?: boolean;
+}) {
+  const modes: BulkMode[] = ["manter", "adicionar", "remover", "substituir"];
+  return (
+    <div
+      role="tablist"
+      className="inline-flex w-full items-center gap-1 rounded-lg border border-border/60 bg-muted/60 p-1"
+    >
+      {modes.map((m) => {
+        const active = value === m;
+        return (
+          <button
+            key={m}
+            role="tab"
+            aria-selected={active}
+            disabled={disabled}
+            onClick={() => onChange(m)}
+            className={
+              "flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 " +
+              (active
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground")
+            }
+          >
+            {MODE_LABEL[m]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function BulkChip({
+  label,
+  active,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 " +
+        (active
+          ? "border-primary bg-primary text-primary-foreground shadow-sm"
+          : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground")
+      }
+    >
+      {label}
+    </button>
+  );
+}
+
+function BulkEditDialog({
+  open,
+  onOpenChange,
+  selectedIds,
+  exercises,
+  onApplied,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  selectedIds: string[];
+  exercises: any[];
+  onApplied: () => void;
+}) {
+  const [metMode, setMetMode] = useState<BulkMode>("manter");
+  const [metValues, setMetValues] = useState<Methodology[]>([]);
+  const [equipMode, setEquipMode] = useState<BulkMode>("manter");
+  const [equipValues, setEquipValues] = useState<Equipamento[]>([]);
+  const [applying, setApplying] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (open) {
+      setMetMode("manter");
+      setMetValues([]);
+      setEquipMode("manter");
+      setEquipValues([]);
+      setProgress(0);
+    }
+  }, [open]);
+
+  const willChange =
+    (metMode !== "manter" && metValues.length > 0) ||
+    (equipMode !== "manter" && equipValues.length > 0) ||
+    metMode === "substituir" ||
+    equipMode === "substituir";
+
+  const byId = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const ex of exercises) m.set(ex.id, ex);
+    return m;
+  }, [exercises]);
+
+  async function apply() {
+    if (!willChange || selectedIds.length === 0) return;
+    setApplying(true);
+    setProgress(0);
+    const batchSize = 20;
+    let done = 0;
+    let failed = 0;
+    try {
+      for (let i = 0; i < selectedIds.length; i += batchSize) {
+        const batch = selectedIds.slice(i, i + batchSize);
+        const results = await Promise.all(
+          batch.map(async (id) => {
+            const ex = byId.get(id);
+            if (!ex) return { ok: false };
+            const patch: Record<string, any> = {
+              atualizado_em: new Date().toISOString(),
+            };
+            if (metMode !== "manter") {
+              patch.metodologias = applyMode(
+                ex.metodologias ?? [],
+                metMode,
+                metValues
+              );
+            }
+            if (equipMode !== "manter") {
+              patch.equipamento = applyMode(
+                ex.equipamento ?? [],
+                equipMode,
+                equipValues
+              );
+            }
+            const { error } = await supabase
+              .from("exercises")
+              .update(patch)
+              .eq("id", id);
+            return { ok: !error };
+          })
+        );
+        for (const r of results) {
+          if (r.ok) done += 1;
+          else failed += 1;
+        }
+        setProgress(Math.round(((i + batch.length) / selectedIds.length) * 100));
+      }
+      if (failed === 0) {
+        toast.success(
+          `${done} exercício${done === 1 ? "" : "s"} atualizado${done === 1 ? "" : "s"}`
+        );
+      } else {
+        toast.warning(
+          `${done} atualizado${done === 1 ? "" : "s"} · ${failed} falharam`
+        );
+      }
+      onApplied();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha no ajuste em massa");
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  function summary(): string {
+    const parts: string[] = [];
+    if (metMode === "manter") parts.push("modalidades inalteradas");
+    else {
+      const labels = metValues.map((m) => METHODOLOGY_LABEL[m]).join(", ") || "—";
+      parts.push(
+        metMode === "adicionar"
+          ? `+ modalidades: ${labels}`
+          : metMode === "remover"
+            ? `− modalidades: ${labels}`
+            : `modalidades = ${labels}`
+      );
+    }
+    if (equipMode === "manter") parts.push("equipamento inalterado");
+    else {
+      const labels = equipValues.join(", ") || "—";
+      parts.push(
+        equipMode === "adicionar"
+          ? `+ equipamento: ${labels}`
+          : equipMode === "remover"
+            ? `− equipamento: ${labels}`
+            : `equipamento = ${labels}`
+      );
+    }
+    return parts.join(" · ");
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !applying && onOpenChange(v)}>
+      <DialogContent className="max-h-[92vh] w-[calc(100vw-1.5rem)] max-w-lg overflow-hidden p-0 sm:w-full">
+        <div className="border-b border-border/60 px-5 py-4 sm:px-6 sm:py-5">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Wand2 className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-semibold leading-tight tracking-tight sm:text-lg">
+                Ajuste em massa
+              </DialogTitle>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {selectedIds.length}
+                </span>{" "}
+                exercício{selectedIds.length === 1 ? "" : "s"} selecionado
+                {selectedIds.length === 1 ? "" : "s"}. Escolha o modo e os valores
+                para cada grupo.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-h-[52vh] space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
+          <section className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="text-sm font-semibold text-foreground">
+                Modalidades
+              </h3>
+              <span className="text-xs text-muted-foreground">
+                {metMode === "manter"
+                  ? "sem alterar"
+                  : `${metValues.length} selecionada${metValues.length === 1 ? "" : "s"}`}
+              </span>
+            </div>
+            <ModeTabs value={metMode} onChange={setMetMode} disabled={applying} />
+            <div className="flex flex-wrap gap-1.5">
+              {METHODS.map((m) => (
+                <BulkChip
+                  key={m}
+                  label={METHODOLOGY_LABEL[m]}
+                  active={metValues.includes(m)}
+                  disabled={metMode === "manter" || applying}
+                  onClick={() =>
+                    setMetValues((prev) =>
+                      prev.includes(m)
+                        ? prev.filter((x) => x !== m)
+                        : [...prev, m]
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </section>
+
+          <div className="h-px bg-border/60" />
+
+          <section className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="text-sm font-semibold text-foreground">
+                Equipamento
+              </h3>
+              <span className="text-xs text-muted-foreground">
+                {equipMode === "manter"
+                  ? "sem alterar"
+                  : `${equipValues.length} selecionado${equipValues.length === 1 ? "" : "s"}`}
+              </span>
+            </div>
+            <ModeTabs
+              value={equipMode}
+              onChange={setEquipMode}
+              disabled={applying}
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {EQUIPAMENTOS.map((eq) => (
+                <BulkChip
+                  key={eq}
+                  label={eq}
+                  active={equipValues.includes(eq)}
+                  disabled={equipMode === "manter" || applying}
+                  onClick={() =>
+                    setEquipValues((prev) =>
+                      prev.includes(eq)
+                        ? prev.filter((x) => x !== eq)
+                        : [...prev, eq]
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </section>
+
+          <div className="rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2.5">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Prévia
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-foreground/90">
+              {summary()}
+            </p>
+          </div>
+
+          {applying && (
+            <div className="space-y-1.5">
+              <Progress value={progress} className="h-1.5" />
+              <p className="text-[11px] text-muted-foreground">
+                Aplicando… {progress}%
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="flex-col-reverse gap-2 border-t border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => onOpenChange(false)}
+            disabled={applying}
+          >
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            className="h-9 gap-1.5"
+            onClick={() => void apply()}
+            disabled={!willChange || applying || selectedIds.length === 0}
+          >
+            {applying ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Aplicando…
+              </>
+            ) : (
+              <>
+                <Wand2 className="h-3.5 w-3.5" />
+                Aplicar em {selectedIds.length}
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
