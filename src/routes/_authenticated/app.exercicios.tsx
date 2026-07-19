@@ -39,7 +39,16 @@ import {
   CheckSquare,
   Wand2,
   X,
+  ChevronDown,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   METHODOLOGY_LABEL,
@@ -74,6 +83,7 @@ function ExerciciosPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [selectingAll, setSelectingAll] = useState(false);
   const qc = useQueryClient();
 
   const { data: exercises = [] } = useQuery({
@@ -131,6 +141,26 @@ function ExerciciosPage() {
       for (const id of visibleIds) next.add(id);
       return next;
     });
+  }
+  async function selectAllInDatabase(opts: { onlyMine?: boolean } = {}) {
+    setSelectingAll(true);
+    try {
+      let query = supabase.from("exercises").select("id,coach_id");
+      if (opts.onlyMine && coach?.id) query = query.eq("coach_id", coach.id);
+      const { data, error } = await query;
+      if (error) throw error;
+      const ids = (data ?? []).map((r: any) => r.id as string);
+      setSelected(new Set(ids));
+      toast.success(
+        opts.onlyMine
+          ? `${ids.length} exercícios seus selecionados`
+          : `${ids.length} exercícios selecionados`,
+      );
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao selecionar");
+    } finally {
+      setSelectingAll(false);
+    }
   }
   function clearSelection() {
     setSelected(new Set());
@@ -252,31 +282,88 @@ function ExerciciosPage() {
       ) : (
         <>
           {selectionMode && (
-            <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2.5 text-sm">
-              <span className="font-medium text-foreground">
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-2 text-sm shadow-sm">
+              <span className="mr-1 font-medium text-foreground">
                 {selected.size} selecionado{selected.size === 1 ? "" : "s"}
               </span>
-              <span className="text-muted-foreground">·</span>
-              <button
-                type="button"
-                onClick={allVisibleSelected ? clearSelection : selectAllVisible}
-                className="rounded-sm text-sm font-medium text-primary outline-none transition-colors duration-150 hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              >
-                {allVisibleSelected
-                  ? `Desmarcar visíveis (${visibleIds.length})`
-                  : `Selecionar todos visíveis (${visibleIds.length})`}
-              </button>
+              <div className="inline-flex overflow-hidden rounded-md border border-border/70 bg-background shadow-sm">
+                <button
+                  type="button"
+                  disabled={selectingAll}
+                  onClick={() => selectAllInDatabase()}
+                  className="inline-flex h-8 items-center gap-1.5 px-3 text-sm font-medium text-foreground outline-none transition-colors duration-150 hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {selectingAll ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <CheckSquare className="h-3.5 w-3.5" />
+                  )}
+                  Selecionar todos
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      disabled={selectingAll}
+                      aria-label="Mais opções de seleção"
+                      className="inline-flex h-8 items-center border-l border-border/70 px-2 text-foreground outline-none transition-colors duration-150 hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64">
+                    <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                      Escolha o escopo
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem onSelect={() => selectAllInDatabase()}>
+                      <CheckSquare className="mr-2 h-4 w-4" />
+                      <div className="flex flex-col">
+                        <span>Todos os exercícios</span>
+                        <span className="text-xs text-muted-foreground">
+                          Ignora filtros e busca
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => selectAllInDatabase({ onlyMine: true })}
+                    >
+                      <Dumbbell className="mr-2 h-4 w-4" />
+                      <div className="flex flex-col">
+                        <span>Somente meus</span>
+                        <span className="text-xs text-muted-foreground">
+                          Exclui os globais
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={
+                        allVisibleSelected ? clearSelection : selectAllVisible
+                      }
+                    >
+                      <Search className="mr-2 h-4 w-4" />
+                      <div className="flex flex-col">
+                        <span>
+                          {allVisibleSelected
+                            ? "Desmarcar visíveis"
+                            : "Selecionar visíveis"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {visibleIds.length} com os filtros atuais
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               {selected.size > 0 && (
-                <>
-                  <span className="text-muted-foreground">·</span>
-                  <button
-                    type="button"
-                    onClick={clearSelection}
-                    className="rounded-sm text-sm text-muted-foreground outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  >
-                    Limpar seleção
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="ml-auto rounded-md px-2 py-1 text-sm text-muted-foreground outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  Limpar seleção
+                </button>
               )}
             </div>
           )}
