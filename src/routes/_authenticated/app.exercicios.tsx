@@ -1222,7 +1222,7 @@ function BulkEditDialog({
             }
             const { error } = await supabase
               .from("exercises")
-              .update(patch)
+              .update(patch as any)
               .eq("id", id);
             return { ok: !error };
           })
