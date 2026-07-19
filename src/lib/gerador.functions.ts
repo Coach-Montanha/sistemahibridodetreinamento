@@ -169,7 +169,7 @@ async function gerarSessao(
   }
 
   let ordem = 0;
-  for (const bloco of blocosPref) {
+  for (const bloco of blocosPref ?? []) {
     const { data: block, error: be } = await supabase
       .from("session_blocks")
       .insert({
