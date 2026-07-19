@@ -49,10 +49,10 @@ function Landing() {
           </p>
           <h1 className="text-5xl font-black leading-tight tracking-tight md:text-6xl">
             Prescreva treinos como você programa —{" "}
-            <span className="text-primary">em blocos, em 5 metodologias.</span>
+            <span className="text-primary">em blocos, em 5 modalidades.</span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            Híbrido, Kettlebell Sport, Kettlebell Fitness, Levantamento de Peso e
+            Treinamento Híbrido, Kettlebell Sport, Kettlebell Fitness, Levantamento de Peso e
             Musculação. Construtor visual de sessão, banco de exercícios com mídia
             e liberação individual por aluno.
           </p>

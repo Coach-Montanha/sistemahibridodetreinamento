@@ -6,7 +6,7 @@ export type Methodology =
   | "musculacao";
 
 export const METHODOLOGY_LABEL: Record<Methodology, string> = {
-  hibrido: "Híbrido",
+  hibrido: "Treinamento Híbrido",
   kettlebell_sport: "Kettlebell Sport",
   kettlebell_fitness: "Kettlebell Fitness",
   levantamento_peso: "Levantamento de Peso",

@@ -79,7 +79,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gerar treino</h1>
           <p className="text-sm text-muted-foreground">
-            Motor automático baseado nos templates da metodologia.
+            Motor automático baseado nos templates da modalidade.
           </p>
         </div>
       </div>
@@ -108,7 +108,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label>Metodologia</Label>
+              <Label>Modalidade</Label>
               <Select value={metodologia} onValueChange={(v) => setMetodologia(v as Methodology)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>

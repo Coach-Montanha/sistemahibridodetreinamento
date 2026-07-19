@@ -173,7 +173,7 @@ function ConfiguracoesPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Configurações de geração</h1>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Defina, por metodologia, quais blocos, séries, repetições e progressões o motor usa ao gerar
+              Defina, por modalidade, quais blocos, séries, repetições e progressões o motor usa ao gerar
               treinos. A seleção de exercícios continua vindo do seu banco.
             </p>
           </div>
@@ -539,7 +539,7 @@ function MethodologyPanel({
           </div>
           <div>
             <p className="text-sm font-medium">Nenhum bloco configurado</p>
-            <p className="mt-1 text-xs text-muted-foreground">Adicione blocos para personalizar essa metodologia.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Adicione blocos para personalizar essa modalidade.</p>
           </div>
           <Button size="sm" onClick={() => onUpdate((b) => [...b, novoBloco()])} className="gap-2">
             <Plus className="h-4 w-4" /> Adicionar bloco
