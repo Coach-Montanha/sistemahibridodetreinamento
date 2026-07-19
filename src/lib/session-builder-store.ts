@@ -34,7 +34,10 @@ type State = {
   data: string | null;
   blocks: BuilderBlock[];
   setMeta: (m: Partial<Pick<State, "titulo" | "numero_dia" | "data">>) => void;
-  addBlock: (formato: BlockFormat) => void;
+  addBlock: (
+    formato: BlockFormat,
+    extras?: { titulo?: string | null; config?: Record<string, any> }
+  ) => void;
   removeBlock: (tempId: string) => void;
   updateBlock: (tempId: string, patch: Partial<BuilderBlock>) => void;
   reorderBlocks: (from: number, to: number) => void;
