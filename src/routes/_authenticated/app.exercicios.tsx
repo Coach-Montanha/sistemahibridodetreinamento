@@ -1283,6 +1283,7 @@ function BulkEditDialog({
     const batchSize = 20;
     let done = 0;
     let failed = 0;
+    let firstError: string | null = null;
     try {
       for (let i = 0; i < selectedIds.length; i += batchSize) {
         const batch = selectedIds.slice(i, i + batchSize);
@@ -1311,12 +1312,15 @@ function BulkEditDialog({
               .from("exercises")
               .update(patch as any)
               .eq("id", id);
-            return { ok: !error };
+            return { ok: !error, message: error?.message };
           })
         );
         for (const r of results) {
           if (r.ok) done += 1;
-          else failed += 1;
+          else {
+            failed += 1;
+            if (!firstError && r.message) firstError = r.message;
+          }
         }
         setProgress(Math.round(((i + batch.length) / selectedIds.length) * 100));
       }
@@ -1324,9 +1328,15 @@ function BulkEditDialog({
         toast.success(
           `${done} exercício${done === 1 ? "" : "s"} atualizado${done === 1 ? "" : "s"}`
         );
+      } else if (done === 0) {
+        toast.error(
+          firstError
+            ? `Nenhum exercício atualizado — ${firstError}`
+            : `Nenhum exercício atualizado`
+        );
       } else {
         toast.warning(
-          `${done} atualizado${done === 1 ? "" : "s"} · ${failed} falharam`
+          `${done} atualizado${done === 1 ? "" : "s"} · ${failed} falharam${firstError ? ` — ${firstError}` : ""}`
         );
       }
       onApplied();
