@@ -24,7 +24,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Trash2, Pencil, Upload, GitMerge, Dumbbell } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Trash2,
+  Pencil,
+  Upload,
+  GitMerge,
+  Dumbbell,
+  AlertTriangle,
+  Loader2,
+  Globe2,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   METHODOLOGY_LABEL,
@@ -262,6 +273,11 @@ function ExerciciosPage() {
         onOpenChange={setOpen}
         editing={editing}
         coachId={coach?.id}
+        existingExercises={exercises as any[]}
+        onOpenExisting={(ex) => {
+          setEditing(ex);
+          setOpen(true);
+        }}
       />
     </div>
   );
@@ -305,16 +321,29 @@ function EquipChip({
   );
 }
 
+function normalizeName(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function ExerciseDialog({
   open,
   onOpenChange,
   editing,
   coachId,
+  existingExercises,
+  onOpenExisting,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: any | null;
   coachId: string | undefined;
+  existingExercises: any[];
+  onOpenExisting: (ex: any) => void;
 }) {
   const qc = useQueryClient();
   const [nome, setNome] = useState("");
@@ -325,6 +354,7 @@ function ExerciseDialog({
   const [instr, setInstr] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [duplicates, setDuplicates] = useState<any[] | null>(null);
 
   const isEdit = !!editing;
 
@@ -338,9 +368,19 @@ function ExerciseDialog({
     setUnilateral(editing?.unilateral ?? false);
     setInstr(editing?.instrucoes ?? "");
     setFile(null);
+    setDuplicates(null);
   }, [open, editing]);
 
-  async function save() {
+  function findDuplicates(): any[] {
+    const target = normalizeName(nome);
+    if (!target) return [];
+    return existingExercises.filter((ex) => {
+      if (editing?.id && ex.id === editing.id) return false;
+      return normalizeName(ex.nome_pt ?? "") === target;
+    });
+  }
+
+  async function persist() {
     if (!coachId) return toast.error("Perfil de treinador não encontrado");
     setSaving(true);
     try {
@@ -399,13 +439,37 @@ function ExerciseDialog({
       qc.invalidateQueries({ queryKey: ["exercises"] });
       onOpenChange(false);
     } catch (e: any) {
-      toast.error(e.message);
+      const msg: string = e?.message ?? "Falha ao salvar";
+      const isRls =
+        e?.code === "42501" ||
+        /row-level security|row level security/i.test(msg);
+      if (isRls) {
+        const dups = findDuplicates();
+        if (dups.length > 0) {
+          toast.error("Já existe um exercício parecido", {
+            description: "Escolha entre fundir ou manter os dois.",
+          });
+          setDuplicates(dups);
+          return;
+        }
+      }
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
   }
 
+  function save() {
+    const dups = findDuplicates();
+    if (dups.length > 0) {
+      setDuplicates(dups);
+      return;
+    }
+    void persist();
+  }
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-lg overflow-auto">
         <DialogHeader>
@@ -485,8 +549,217 @@ function ExerciseDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={save} disabled={saving || !nome}>
-            {saving ? "Salvando..." : "Salvar"}
+          <Button onClick={save} disabled={saving || !nome.trim()}>
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando…
+              </>
+            ) : (
+              "Salvar"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <DuplicateResolverDialog
+      open={!!duplicates}
+      onOpenChange={(v) => !v && setDuplicates(null)}
+      typedName={nome}
+      candidates={duplicates ?? []}
+      isEdit={isEdit}
+      editingId={editing?.id}
+      coachId={coachId}
+      onIgnoreAndSave={() => {
+        setDuplicates(null);
+        void persist();
+      }}
+      onKeep={(existing) => {
+        setDuplicates(null);
+        onOpenChange(false);
+        onOpenExisting(existing);
+      }}
+      onMerged={() => {
+        setDuplicates(null);
+        qc.invalidateQueries({ queryKey: ["exercises"] });
+        onOpenChange(false);
+      }}
+    />
+    </>
+  );
+}
+
+function DuplicateResolverDialog({
+  open,
+  onOpenChange,
+  typedName,
+  candidates,
+  isEdit,
+  editingId,
+  coachId,
+  onIgnoreAndSave,
+  onKeep,
+  onMerged,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  typedName: string;
+  candidates: any[];
+  isEdit: boolean;
+  editingId?: string;
+  coachId?: string;
+  onIgnoreAndSave: () => void;
+  onKeep: (existing: any) => void;
+  onMerged: () => void;
+}) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function fuseIntoExisting(existing: any) {
+    if (!isEdit || !editingId) {
+      // Modo criar: nada a fundir ainda — só abrir o existente para editar.
+      onKeep(existing);
+      return;
+    }
+    setBusyId(existing.id);
+    try {
+      const { error } = await supabase.rpc("merge_exercises", {
+        _keeper_id: existing.id,
+        _duplicate_ids: [editingId],
+      });
+      if (error) throw error;
+      toast.success("Exercícios fundidos");
+      onMerged();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao fundir");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-lg overflow-hidden p-0 sm:w-full">
+        <div className="border-b border-border/60 px-6 py-5">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
+              <AlertTriangle className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-semibold leading-tight">
+                Já existe algo parecido
+              </DialogTitle>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                Encontramos {candidates.length}{" "}
+                {candidates.length === 1 ? "exercício" : "exercícios"} com nome
+                equivalente a{" "}
+                <span className="font-medium text-foreground">
+                  “{typedName.trim()}”
+                </span>
+                .
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-h-[50vh] space-y-2 overflow-y-auto px-6 py-4">
+          {candidates.map((ex) => {
+            const isGlobal = !ex.coach_id;
+            const canFuse = !isGlobal || !isEdit; // pode abrir global; não pode apagar global
+            const busy = busyId === ex.id;
+            return (
+              <div
+                key={ex.id}
+                className="group rounded-lg border border-border/60 bg-card p-3 transition-colors duration-200 hover:border-primary/40"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {ex.nome_pt}
+                      </p>
+                      {isGlobal && (
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 gap-1 border-border/70 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+                        >
+                          <Globe2 className="h-3 w-3" /> Global
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {(ex.equipamento ?? []).map((eq: string) => (
+                        <Badge
+                          key={eq}
+                          className="border-transparent bg-primary/10 text-[10px] font-medium text-primary hover:bg-primary/15"
+                        >
+                          {eq}
+                        </Badge>
+                      ))}
+                      {(ex.metodologias ?? []).map((m: Methodology) => (
+                        <Badge
+                          key={m}
+                          variant="secondary"
+                          className="text-[10px] font-medium"
+                        >
+                          {METHODOLOGY_LABEL[m]}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => onKeep(ex)}
+                      disabled={busy}
+                    >
+                      Abrir este
+                    </Button>
+                    {canFuse && isEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5"
+                        onClick={() => fuseIntoExisting(ex)}
+                        disabled={busy || !coachId}
+                      >
+                        {busy ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Fundindo…
+                          </>
+                        ) : (
+                          <>
+                            <GitMerge className="h-3.5 w-3.5" />
+                            Fundir neste
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <DialogFooter className="border-t border-border/60 px-6 py-4 sm:justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            disabled={!!busyId}
+          >
+            Voltar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onIgnoreAndSave}
+            disabled={!!busyId}
+          >
+            Salvar mesmo assim
           </Button>
         </DialogFooter>
       </DialogContent>
