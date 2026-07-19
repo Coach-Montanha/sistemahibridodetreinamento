@@ -39,7 +39,16 @@ import {
   CheckSquare,
   Wand2,
   X,
+  ChevronDown,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   METHODOLOGY_LABEL,
@@ -74,6 +83,7 @@ function ExerciciosPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [selectingAll, setSelectingAll] = useState(false);
   const qc = useQueryClient();
 
   const { data: exercises = [] } = useQuery({
@@ -131,6 +141,26 @@ function ExerciciosPage() {
       for (const id of visibleIds) next.add(id);
       return next;
     });
+  }
+  async function selectAllInDatabase(opts: { onlyMine?: boolean } = {}) {
+    setSelectingAll(true);
+    try {
+      let query = supabase.from("exercises").select("id,coach_id");
+      if (opts.onlyMine && coach?.id) query = query.eq("coach_id", coach.id);
+      const { data, error } = await query;
+      if (error) throw error;
+      const ids = (data ?? []).map((r: any) => r.id as string);
+      setSelected(new Set(ids));
+      toast.success(
+        opts.onlyMine
+          ? `${ids.length} exercícios seus selecionados`
+          : `${ids.length} exercícios selecionados`,
+      );
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao selecionar");
+    } finally {
+      setSelectingAll(false);
+    }
   }
   function clearSelection() {
     setSelected(new Set());
