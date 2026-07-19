@@ -33,7 +33,7 @@ function SessaoAluno() {
       const { data, error } = await supabase
         .from("session_blocks")
         .select(
-          "id, ordem, formato, titulo, duracao_min, config, session_block_exercises(id, ordem, reps, series, pct_1rm, carga_kg, descanso_seg, lado, observacoes, nome_livre, exercises(nome, video_url))",
+          "id, ordem, formato, titulo, duracao_min, config, session_block_exercises(id, ordem, reps, series, pct_1rm, carga_kg, descanso_seg, lado, observacoes, nome_livre, exercises(nome_pt))",
         )
         .eq("session_id", id)
         .order("ordem");
@@ -87,7 +87,7 @@ function SessaoAluno() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="font-medium">
-                            {ex.exercises?.nome ?? ex.nome_livre ?? "Exercício"}
+                            {ex.exercises?.nome_pt ?? ex.nome_livre ?? "Exercício"}
                             {ex.lado ? ` · ${ex.lado}` : ""}
                           </div>
                           <div className="mt-0.5 text-sm text-muted-foreground">
@@ -103,16 +103,6 @@ function SessaoAluno() {
                             <div className="mt-1 text-xs text-muted-foreground">{ex.observacoes}</div>
                           )}
                         </div>
-                        {ex.exercises?.video_url && (
-                          <a
-                            href={ex.exercises.video_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="shrink-0"
-                          >
-                            <Button size="sm" variant="outline">Vídeo</Button>
-                          </a>
-                        )}
                       </div>
                     </div>
                   ))}
