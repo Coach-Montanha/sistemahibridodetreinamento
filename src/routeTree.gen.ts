@@ -21,6 +21,7 @@ import { Route as AuthenticatedAppProgramasRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppMarcaRouteImport } from './routes/_authenticated/app.marca'
 import { Route as AuthenticatedAppGerarRouteImport } from './routes/_authenticated/app.gerar'
 import { Route as AuthenticatedAppExerciciosRouteImport } from './routes/_authenticated/app.exercicios'
+import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app.configuracoes'
 import { Route as AuthenticatedAppArquivosRouteImport } from './routes/_authenticated/app.arquivos'
 import { Route as AuthenticatedAppAlunosRouteImport } from './routes/_authenticated/app.alunos'
 import { Route as AuthenticatedAppSessoesNovaRouteImport } from './routes/_authenticated/app.sessoes.nova'
@@ -89,6 +90,12 @@ const AuthenticatedAppExerciciosRoute =
     path: '/exercicios',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppConfiguracoesRoute =
+  AuthenticatedAppConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppArquivosRoute =
   AuthenticatedAppArquivosRouteImport.update({
     id: '/arquivos',
@@ -133,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
   '/app/alunos': typeof AuthenticatedAppAlunosRoute
   '/app/arquivos': typeof AuthenticatedAppArquivosRoute
+  '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/exercicios': typeof AuthenticatedAppExerciciosRouteWithChildren
   '/app/gerar': typeof AuthenticatedAppGerarRoute
   '/app/marca': typeof AuthenticatedAppMarcaRoute
@@ -151,6 +159,7 @@ export interface FileRoutesByTo {
   '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
   '/app/alunos': typeof AuthenticatedAppAlunosRoute
   '/app/arquivos': typeof AuthenticatedAppArquivosRoute
+  '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/exercicios': typeof AuthenticatedAppExerciciosRouteWithChildren
   '/app/gerar': typeof AuthenticatedAppGerarRoute
   '/app/marca': typeof AuthenticatedAppMarcaRoute
@@ -172,6 +181,7 @@ export interface FileRoutesById {
   '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
   '/_authenticated/app/alunos': typeof AuthenticatedAppAlunosRoute
   '/_authenticated/app/arquivos': typeof AuthenticatedAppArquivosRoute
+  '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/exercicios': typeof AuthenticatedAppExerciciosRouteWithChildren
   '/_authenticated/app/gerar': typeof AuthenticatedAppGerarRoute
   '/_authenticated/app/marca': typeof AuthenticatedAppMarcaRoute
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/auth/primeiro-acesso'
     | '/app/alunos'
     | '/app/arquivos'
+    | '/app/configuracoes'
     | '/app/exercicios'
     | '/app/gerar'
     | '/app/marca'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/auth/primeiro-acesso'
     | '/app/alunos'
     | '/app/arquivos'
+    | '/app/configuracoes'
     | '/app/exercicios'
     | '/app/gerar'
     | '/app/marca'
@@ -231,6 +243,7 @@ export interface FileRouteTypes {
     | '/auth/primeiro-acesso'
     | '/_authenticated/app/alunos'
     | '/_authenticated/app/arquivos'
+    | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/exercicios'
     | '/_authenticated/app/gerar'
     | '/_authenticated/app/marca'
@@ -335,6 +348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppExerciciosRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/configuracoes': {
+      id: '/_authenticated/app/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/app/configuracoes'
+      preLoaderRoute: typeof AuthenticatedAppConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/arquivos': {
       id: '/_authenticated/app/arquivos'
       path: '/arquivos'
@@ -409,6 +429,7 @@ const AuthenticatedAppExerciciosRouteWithChildren =
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAlunosRoute: typeof AuthenticatedAppAlunosRoute
   AuthenticatedAppArquivosRoute: typeof AuthenticatedAppArquivosRoute
+  AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppExerciciosRoute: typeof AuthenticatedAppExerciciosRouteWithChildren
   AuthenticatedAppGerarRoute: typeof AuthenticatedAppGerarRoute
   AuthenticatedAppMarcaRoute: typeof AuthenticatedAppMarcaRoute
@@ -422,6 +443,7 @@ interface AuthenticatedAppRouteChildren {
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAlunosRoute: AuthenticatedAppAlunosRoute,
   AuthenticatedAppArquivosRoute: AuthenticatedAppArquivosRoute,
+  AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppExerciciosRoute: AuthenticatedAppExerciciosRouteWithChildren,
   AuthenticatedAppGerarRoute: AuthenticatedAppGerarRoute,
   AuthenticatedAppMarcaRoute: AuthenticatedAppMarcaRoute,

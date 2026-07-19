@@ -13,7 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Wand2 } from "lucide-react";
+import { Wand2, Settings2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { getGeneratorPrefs } from "@/lib/generator-prefs.functions";
 import { gerarTreino } from "@/lib/gerador.functions";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 
@@ -34,6 +37,11 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const [titulo, setTitulo] = useState("Programa gerado");
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10));
   const [dias, setDias] = useState(3);
+
+  const prefs = useQuery({
+    queryKey: ["generator-prefs", metodologia],
+    queryFn: () => getGeneratorPrefs({ data: { metodologia } }),
+  });
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -78,6 +86,20 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       )}
 
       <Card className="p-6">
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-border/60 bg-muted/30 p-3 text-xs">
+          <Settings2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <p className="leading-relaxed text-muted-foreground">
+            {prefs.data?.origem === "custom"
+              ? <>Usando suas preferências de <strong className="text-foreground">{METHODOLOGY_LABEL[metodologia]}</strong>. </>
+              : <>Usando templates padrão de <strong className="text-foreground">{METHODOLOGY_LABEL[metodologia]}</strong>. </>}
+            <Link
+              to="/app/configuracoes"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {prefs.data?.origem === "custom" ? "Ajustar" : "Personalizar"}
+            </Link>
+          </p>
+        </div>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <Label>Título do programa</Label>
