@@ -49,7 +49,7 @@ export function setTheme(theme: Theme) {
 }
 
 export function useTheme(): { theme: Theme; setTheme: (t: Theme) => void; resolved: "light" | "dark" } {
-  const theme = useSyncExternalStore(subscribe, readStored, () => "dark");
+  const theme = useSyncExternalStore<Theme>(subscribe, readStored, () => "dark" as const);
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
