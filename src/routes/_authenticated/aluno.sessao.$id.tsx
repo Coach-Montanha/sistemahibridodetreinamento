@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mountain } from "lucide-react";
 import { BLOCK_FORMAT_LABEL, type BlockFormat } from "@/lib/methodology";
 
