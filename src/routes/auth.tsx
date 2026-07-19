@@ -23,6 +23,18 @@ function AuthPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<"login" | "cadastro">(modo ?? "login");
 
+  async function routeAfterLogin() {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return navigate({ to: "/auth" });
+    const { data: coach } = await supabase
+      .from("coaches")
+      .select("id")
+      .eq("auth_user_id", u.user.id)
+      .maybeSingle();
+    if (coach) navigate({ to: "/app" });
+    else navigate({ to: "/aluno" });
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
@@ -39,7 +51,7 @@ function AuthPage() {
               <TabsTrigger value="cadastro">Criar conta</TabsTrigger>
             </TabsList>
             <TabsContent value="login">
-              <LoginForm onDone={() => navigate({ to: "/app" })} />
+              <LoginForm onDone={routeAfterLogin} />
             </TabsContent>
             <TabsContent value="cadastro">
               <SignupForm onDone={() => navigate({ to: "/app" })} />
