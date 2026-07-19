@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Trash2, Pencil, Upload, GitMerge } from "lucide-react";
+import { Plus, Search, Trash2, Pencil, Upload, GitMerge, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 import {
   METHODOLOGY_LABEL,
@@ -38,26 +38,47 @@ export const Route = createFileRoute("/_authenticated/app/exercicios")({
 
 const METHODS = Object.keys(METHODOLOGY_LABEL) as Methodology[];
 
+const EQUIPAMENTOS = [
+  "Kettlebell",
+  "Ginásticos",
+  "Mobilidade",
+  "Barbell",
+  "Dumbbell",
+  "Objetos Alternativos",
+] as const;
+type Equipamento = (typeof EQUIPAMENTOS)[number];
+
 function ExerciciosPage() {
   const { data: coach } = useCoach();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [metFilter, setMetFilter] = useState<Methodology | "todos">("todos");
+  const [equipFilter, setEquipFilter] = useState<Equipamento | "todos">("todos");
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
 
   const { data: exercises = [] } = useQuery({
-    queryKey: ["exercises", q, metFilter],
+    queryKey: ["exercises", q, metFilter, equipFilter],
     queryFn: async () => {
       let query = supabase.from("exercises").select("*").order("nome_pt");
       if (q) query = query.ilike("nome_pt", `%${q}%`);
       if (metFilter !== "todos") query = query.contains("metodologias", [metFilter]);
+      if (equipFilter !== "todos") query = query.contains("equipamento", [equipFilter]);
       const { data, error } = await query;
       if (error) throw error;
       return data;
     },
   });
+
+  const equipCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const ex of exercises as any[]) {
+      const arr: string[] = ex.equipamento ?? [];
+      for (const e of arr) map.set(e, (map.get(e) ?? 0) + 1);
+    }
+    return map;
+  }, [exercises]);
 
   const del = useMutation({
     mutationFn: async (id: string) => {
@@ -98,7 +119,7 @@ function ExerciciosPage() {
         </div>
       </div>
 
-      <div className="mb-4 flex gap-3">
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -109,7 +130,7 @@ function ExerciciosPage() {
           />
         </div>
         <Select value={metFilter} onValueChange={(v) => setMetFilter(v as any)}>
-          <SelectTrigger className="w-64">
+          <SelectTrigger className="sm:w-64">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -123,11 +144,51 @@ function ExerciciosPage() {
         </Select>
       </div>
 
+      <div
+        role="group"
+        aria-label="Filtrar por equipamento"
+        className="mb-6 -mx-2 flex flex-nowrap gap-2 overflow-x-auto px-2 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+      >
+        <EquipChip
+          label="Todos"
+          active={equipFilter === "todos"}
+          onClick={() => setEquipFilter("todos")}
+        />
+        {EQUIPAMENTOS.map((e) => (
+          <EquipChip
+            key={e}
+            label={e}
+            count={equipCounts.get(e)}
+            active={equipFilter === e}
+            onClick={() => setEquipFilter(equipFilter === e ? "todos" : e)}
+          />
+        ))}
+      </div>
+
       {exercises.length === 0 ? (
         <Card className="p-12 text-center">
-          <p className="text-muted-foreground">
-            Nenhum exercício ainda. Clique em "Novo exercício" para começar.
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
+            <Dumbbell className="h-6 w-6" />
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {q || metFilter !== "todos" || equipFilter !== "todos"
+              ? "Nenhum exercício encontrado com esses filtros."
+              : "Nenhum exercício ainda. Clique em \"Novo exercício\" para começar."}
           </p>
+          {(q || metFilter !== "todos" || equipFilter !== "todos") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-3"
+              onClick={() => {
+                setQ("");
+                setMetFilter("todos");
+                setEquipFilter("todos");
+              }}
+            >
+              Limpar filtros
+            </Button>
+          )}
         </Card>
       ) : (
         <div className="grid gap-3">
@@ -145,6 +206,14 @@ function ExerciciosPage() {
                   {ex.nome_pt}
                 </button>
                 <div className="mt-1 flex flex-wrap gap-1">
+                  {(ex.equipamento ?? []).map((eq: string) => (
+                    <Badge
+                      key={eq}
+                      className="border-transparent bg-primary/10 text-primary text-xs hover:bg-primary/15"
+                    >
+                      {eq}
+                    </Badge>
+                  ))}
                   {(ex.metodologias ?? []).map((m: Methodology) => (
                     <Badge key={m} variant="secondary" className="text-xs">
                       {METHODOLOGY_LABEL[m]}
