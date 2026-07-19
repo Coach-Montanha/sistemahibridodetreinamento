@@ -22,6 +22,10 @@ export const Route = createFileRoute("/_authenticated/app/gerar")({
 });
 
 function GerarPage() {
+  return <GerarPanel />;
+}
+
+export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {}) {
   const navigate = useNavigate();
   const gerar = useServerFn(gerarTreino);
   const [loading, setLoading] = useState(false);
@@ -58,7 +62,8 @@ function GerarPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
+    <div className={showHeader ? "mx-auto max-w-2xl p-6" : "mx-auto max-w-2xl"}>
+      {showHeader && (
       <div className="mb-6 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
           <Wand2 className="h-5 w-5" />
@@ -70,6 +75,7 @@ function GerarPage() {
           </p>
         </div>
       </div>
+      )}
 
       <Card className="p-6">
         <form onSubmit={onSubmit} className="space-y-4">
