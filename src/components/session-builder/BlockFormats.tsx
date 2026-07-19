@@ -1,24 +1,53 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Flame, Wind } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ExercisePicker } from "./ExercisePicker";
 import { useBuilder, type BuilderBlock } from "@/lib/session-builder-store";
 
-function BlockExercises({ block }: { block: BuilderBlock }) {
+function BlockExercises({
+  block,
+  slot,
+  modo,
+}: {
+  block: BuilderBlock;
+  slot?: "mobilidade" | "aquecimento";
+  modo?: "circuito" | "series_fixas";
+}) {
   const addExercise = useBuilder((s) => s.addExercise);
   const removeExercise = useBuilder((s) => s.removeExercise);
   const updateExercise = useBuilder((s) => s.updateExercise);
+  const modoAtivo = modo ?? (block.config?.modo_execucao as any) ?? "circuito";
+  const lista = slot
+    ? block.exercises.filter((e) => (e.slot ?? "aquecimento") === slot)
+    : block.exercises;
 
   return (
-    <div className="mt-4 space-y-2">
-      {block.exercises.map((e) => (
-        <div key={e.tempId} className="flex items-center gap-2 rounded-md border border-border bg-background p-2">
-          <div className="flex-1 text-sm font-medium">
+    <div className="mt-3 space-y-2">
+      {lista.map((e) => (
+        <div
+          key={e.tempId}
+          className="group flex items-center gap-2 rounded-md border border-border/60 bg-background/60 p-2 transition-colors hover:border-border"
+        >
+          <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
             {e.nome_livre ?? "Exercício"}
           </div>
+          {modoAtivo === "series_fixas" && (
+            <Input
+              type="number"
+              className="h-8 w-16 text-center"
+              placeholder="séries"
+              value={e.series ?? ""}
+              onChange={(ev) =>
+                updateExercise(block.tempId, e.tempId, {
+                  series: ev.target.value === "" ? null : Number(ev.target.value),
+                })
+              }
+            />
+          )}
           <Input
-            className="h-8 w-20"
+            className="h-8 w-20 text-center"
             placeholder="reps"
             value={e.reps ?? ""}
             onChange={(ev) => updateExercise(block.tempId, e.tempId, { reps: ev.target.value })}
@@ -26,8 +55,9 @@ function BlockExercises({ block }: { block: BuilderBlock }) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 text-muted-foreground opacity-60 transition hover:text-destructive group-hover:opacity-100"
             onClick={() => removeExercise(block.tempId, e.tempId)}
+            aria-label="Remover exercício"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -38,9 +68,45 @@ function BlockExercises({ block }: { block: BuilderBlock }) {
           addExercise(block.tempId, {
             exercise_id: ex.id,
             nome_livre: ex.nome_pt,
+            slot: slot ?? null,
           })
         }
       />
+    </div>
+  );
+}
+
+function ModoToggle({ block }: { block: BuilderBlock }) {
+  const update = useBuilder((s) => s.updateBlock);
+  const modo = (block.config?.modo_execucao as any) ?? "circuito";
+  return (
+    <div className="flex items-center gap-2">
+      <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        Execução
+      </Label>
+      <ToggleGroup
+        type="single"
+        size="sm"
+        value={modo}
+        onValueChange={(v) => {
+          if (!v) return;
+          update(block.tempId, { config: { ...block.config, modo_execucao: v } });
+        }}
+        className="rounded-md border border-border/60 bg-muted/30 p-0.5"
+      >
+        <ToggleGroupItem
+          value="circuito"
+          className="h-7 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        >
+          Circuito
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value="series_fixas"
+          className="h-7 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        >
+          Séries fixas
+        </ToggleGroupItem>
+      </ToggleGroup>
     </div>
   );
 }
@@ -50,12 +116,14 @@ export function PrepMovimentoForm({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
   const cfg = block.config;
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="grid flex-1 grid-cols-2 gap-3 sm:max-w-sm">
         <div>
-          <Label>Rounds</Label>
+          <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Rounds</Label>
           <Input
             type="number"
+            min={0}
             value={cfg.rounds ?? 4}
             onChange={(e) =>
               update(block.tempId, {
@@ -65,9 +133,10 @@ export function PrepMovimentoForm({ block }: { block: BuilderBlock }) {
           />
         </div>
         <div>
-          <Label>Duração por round (min)</Label>
+          <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Round (min)</Label>
           <Input
             type="number"
+            min={0}
             value={cfg.round_min ?? 5}
             onChange={(e) =>
               update(block.tempId, {
@@ -76,8 +145,54 @@ export function PrepMovimentoForm({ block }: { block: BuilderBlock }) {
             }
           />
         </div>
+        </div>
+        <ModoToggle block={block} />
       </div>
-      <BlockExercises block={block} />
+
+      <SlotSection
+        icon={<Wind className="h-3.5 w-3.5" />}
+        label="Mobilidade"
+        hint="movimentos articulares, respiração, ativação leve"
+      >
+        <BlockExercises block={block} slot="mobilidade" />
+      </SlotSection>
+
+      <SlotSection
+        icon={<Flame className="h-3.5 w-3.5" />}
+        label="Aquecimento"
+        hint="progressão para a intensidade da sessão"
+      >
+        <BlockExercises block={block} slot="aquecimento" />
+      </SlotSection>
+    </div>
+  );
+}
+
+function SlotSection({
+  icon,
+  label,
+  hint,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+      <div className="flex items-center gap-2">
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+          {icon}
+        </span>
+        <div className="flex-1">
+          <div className="text-xs font-semibold uppercase tracking-wide text-foreground">
+            {label}
+          </div>
+          <div className="text-[11px] text-muted-foreground">{hint}</div>
+        </div>
+      </div>
+      {children}
     </div>
   );
 }
@@ -88,13 +203,15 @@ export function TimedForm({ block }: { block: BuilderBlock }) {
   const cfg = block.config;
   const isAmrap = block.formato === "amrap";
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="grid flex-1 grid-cols-2 gap-3 sm:max-w-sm">
         {isAmrap ? (
           <div>
-            <Label>Duração total (min)</Label>
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duração total (min)</Label>
             <Input
               type="number"
+              min={0}
               value={cfg.duracao_min ?? 12}
               onChange={(e) =>
                 update(block.tempId, {
@@ -107,9 +224,10 @@ export function TimedForm({ block }: { block: BuilderBlock }) {
         ) : (
           <>
             <div>
-              <Label>Rounds</Label>
+              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Rounds</Label>
               <Input
                 type="number"
+                min={0}
                 value={cfg.rounds ?? 8}
                 onChange={(e) =>
                   update(block.tempId, {
@@ -119,9 +237,11 @@ export function TimedForm({ block }: { block: BuilderBlock }) {
               />
             </div>
             <div>
-              <Label>Intervalo (min)</Label>
+              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Intervalo (min)</Label>
               <Input
                 type="number"
+                min={0}
+                step="0.5"
                 value={cfg.intervalo_min ?? (block.formato === "e2mom" ? 2 : 1)}
                 onChange={(e) =>
                   update(block.tempId, {
@@ -132,7 +252,14 @@ export function TimedForm({ block }: { block: BuilderBlock }) {
             </div>
           </>
         )}
+        </div>
+        <ModoToggle block={block} />
       </div>
+      {isAmrap && (
+        <p className="text-[11px] text-muted-foreground">
+          Dica: use <span className="font-medium text-foreground">0</span> em séries ou reps para sinalizar "sem limite".
+        </p>
+      )}
       <BlockExercises block={block} />
     </div>
   );

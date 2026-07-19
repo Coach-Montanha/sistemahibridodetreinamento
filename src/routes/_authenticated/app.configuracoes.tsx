@@ -45,7 +45,13 @@ import {
   Loader2,
   Sparkles,
   X,
+  Layers,
+  Eye,
+  EyeOff,
+  Pencil,
+  RotateCcw,
 } from "lucide-react";
+import { useFormatRegistry } from "@/lib/format-registry";
 import {
   getGeneratorPrefs,
   saveGeneratorPrefs,
@@ -97,6 +103,7 @@ function ConfiguracoesPage() {
   const [state, setState] = useState<State>(makeEmpty);
   const [tab, setTab] = useState<Methodology>("hibrido");
   const [saving, setSaving] = useState(false);
+  const [section, setSection] = useState<"geracao" | "formatos">("geracao");
 
   useEffect(() => {
     const s = state[tab];
@@ -173,6 +180,20 @@ function ConfiguracoesPage() {
         </div>
       </header>
 
+      <Tabs value={section} onValueChange={(v) => setSection(v as any)} className="mb-8">
+        <TabsList className="h-auto w-full max-w-md gap-1 bg-muted/40 p-1">
+          <TabsTrigger value="geracao" className="flex-1 gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Sparkles className="h-3.5 w-3.5" /> Geração automática
+          </TabsTrigger>
+          <TabsTrigger value="formatos" className="flex-1 gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Layers className="h-3.5 w-3.5" /> Formatos de bloco
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="formatos" className="mt-6 focus-visible:outline-none">
+          <FormatosPanel />
+        </TabsContent>
+        <TabsContent value="geracao" className="mt-6 focus-visible:outline-none">
+
       <Tabs value={tab} onValueChange={(v) => setTab(v as Methodology)}>
         {/* Mobile: select. Desktop: tabs. */}
         <div className="mb-6 md:hidden">
@@ -212,7 +233,7 @@ function ConfiguracoesPage() {
       </Tabs>
 
       {/* Sticky footer */}
-      {current.dirty && !current.loading && (
+      {section === "geracao" && current.dirty && !current.loading && (
         <div className="sticky bottom-4 z-20 mt-8">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
             <p className="pl-2 text-xs text-muted-foreground md:text-sm">
@@ -233,6 +254,237 @@ function ConfiguracoesPage() {
           </div>
         </div>
       )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+/* ================= Formatos de bloco ================= */
+
+function FormatosPanel() {
+  const {
+    registry,
+    builtins,
+    renameBuiltin,
+    toggleBuiltin,
+    addCustom,
+    updateCustom,
+    removeCustom,
+  } = useFormatRegistry();
+
+  return (
+    <div className="space-y-8">
+      <section>
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+              Formatos padrão
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Renomeie ou oculte o que aparece no menu "Adicionar bloco".
+            </p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {builtins.map((p) => {
+            const hidden = registry.hidden.includes(p.base);
+            return (
+              <div
+                key={p.id}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border border-border/60 bg-card p-3 transition-colors",
+                  hidden && "opacity-60",
+                )}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Layers className="h-4 w-4" />
+                </div>
+                <Input
+                  className="h-9 flex-1"
+                  value={p.label}
+                  onChange={(e) => renameBuiltin(p.base, e.target.value)}
+                  placeholder={BLOCK_FORMAT_LABEL[p.base]}
+                />
+                {registry.labels[p.base] && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => renameBuiltin(p.base, "")}
+                    aria-label="Restaurar nome"
+                    title="Restaurar nome padrão"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => toggleBuiltin(p.base, hidden)}
+                  aria-label={hidden ? "Mostrar" : "Ocultar"}
+                  title={hidden ? "Mostrar no menu" : "Ocultar do menu"}
+                >
+                  {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+              Meus formatos
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Presets rápidos com título e defaults, baseados num formato existente.
+            </p>
+          </div>
+          <NovoFormatoButton onCreate={addCustom} />
+        </div>
+        {registry.custom.length === 0 ? (
+          <Card className="flex flex-col items-center justify-center gap-2 border-dashed py-10 text-center">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <Pencil className="h-4 w-4" />
+            </div>
+            <p className="text-sm font-medium">Nenhum preset ainda</p>
+            <p className="max-w-xs text-xs text-muted-foreground">
+              Crie variações como "AMRAP 15'" ou "Força 5×5" que aparecem no menu do construtor.
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {registry.custom.map((p) => (
+              <CustomFormatoRow
+                key={p.id}
+                preset={p}
+                onChange={(patch) => updateCustom(p.id, patch)}
+                onRemove={() => removeCustom(p.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function NovoFormatoButton({
+  onCreate,
+}: {
+  onCreate: (p: { label: string; base: BlockFormat; defaults?: Record<string, any> }) => void;
+}) {
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="gap-2"
+      onClick={() =>
+        onCreate({
+          label: "Novo formato",
+          base: "amrap",
+          defaults: { duracao_min: 12 },
+        })
+      }
+    >
+      <Plus className="h-4 w-4" /> Novo formato
+    </Button>
+  );
+}
+
+function CustomFormatoRow({
+  preset,
+  onChange,
+  onRemove,
+}: {
+  preset: { id: string; label: string; base: BlockFormat; defaults?: Record<string, any> };
+  onChange: (patch: Partial<{ label: string; base: BlockFormat; defaults: Record<string, any> }>) => void;
+  onRemove: () => void;
+}) {
+  const defaults = preset.defaults ?? {};
+  return (
+    <div className="rounded-lg border border-border/60 bg-card p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          className="h-9 min-w-[160px] flex-1 font-medium"
+          value={preset.label}
+          onChange={(e) => onChange({ label: e.target.value })}
+          placeholder="Nome do preset"
+        />
+        <Select value={preset.base} onValueChange={(v) => onChange({ base: v as BlockFormat })}>
+          <SelectTrigger className="h-9 w-[200px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {ENABLED_FORMATS.map((f) => (
+              <SelectItem key={f} value={f}>{BLOCK_FORMAT_LABEL[f]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          onClick={onRemove}
+          aria-label="Remover preset"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <DefaultField
+          label="Rounds"
+          value={defaults.rounds}
+          onChange={(v) => onChange({ defaults: { ...defaults, rounds: v } })}
+        />
+        <DefaultField
+          label="Duração (min)"
+          value={defaults.duracao_min}
+          onChange={(v) => onChange({ defaults: { ...defaults, duracao_min: v } })}
+        />
+        <DefaultField
+          label="Intervalo (min)"
+          value={defaults.intervalo_min}
+          step="0.5"
+          onChange={(v) => onChange({ defaults: { ...defaults, intervalo_min: v } })}
+        />
+        <DefaultField
+          label="Reps por ex."
+          value={defaults.reps}
+          onChange={(v) => onChange({ defaults: { ...defaults, reps: v } })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function DefaultField({
+  label,
+  value,
+  onChange,
+  step,
+}: {
+  label: string;
+  value: any;
+  onChange: (v: number | null) => void;
+  step?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </Label>
+      <Input
+        type="number"
+        step={step}
+        value={value ?? ""}
+        min={0}
+        className="h-8"
+        onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+        placeholder="—"
+      />
     </div>
   );
 }

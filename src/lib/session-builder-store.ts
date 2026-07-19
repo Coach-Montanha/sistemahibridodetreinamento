@@ -13,6 +13,8 @@ export type BuilderExercise = {
   descanso_seg?: number | null;
   lado?: string | null;
   observacoes?: string | null;
+  /** slot dentro do bloco (usado em preparação de movimento) */
+  slot?: "mobilidade" | "aquecimento" | null;
 };
 
 export type BuilderBlock = {
@@ -32,7 +34,10 @@ type State = {
   data: string | null;
   blocks: BuilderBlock[];
   setMeta: (m: Partial<Pick<State, "titulo" | "numero_dia" | "data">>) => void;
-  addBlock: (formato: BlockFormat) => void;
+  addBlock: (
+    formato: BlockFormat,
+    extras?: { titulo?: string | null; config?: Record<string, any> }
+  ) => void;
   removeBlock: (tempId: string) => void;
   updateBlock: (tempId: string, patch: Partial<BuilderBlock>) => void;
   reorderBlocks: (from: number, to: number) => void;
@@ -55,11 +60,11 @@ type State = {
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const DEFAULT_CONFIG: Record<BlockFormat, Record<string, any>> = {
-  preparacao_movimento: { rounds: 4, round_min: 5 },
-  e2mom: { rounds: 8, intervalo_min: 2, rest_after_min: 3 },
-  amrap: { duracao_min: 12 },
-  emom: { rounds: 10, intervalo_min: 1 },
-  circuito: { rounds: 3 },
+  preparacao_movimento: { rounds: 4, round_min: 5, modo_execucao: "circuito" },
+  e2mom: { rounds: 8, intervalo_min: 2, rest_after_min: 3, modo_execucao: "circuito" },
+  amrap: { duracao_min: 12, modo_execucao: "circuito" },
+  emom: { rounds: 10, intervalo_min: 1, modo_execucao: "circuito" },
+  circuito: { rounds: 3, modo_execucao: "circuito" },
   kb_timed_sets: {
     aquecimento: [{ sets: 2, work_min: 2, rest_min: 2 }],
     tiro: [{ sets: 1, work_min: 2, rest_min: 2 }],
@@ -72,7 +77,7 @@ const DEFAULT_CONFIG: Record<BlockFormat, Record<string, any>> = {
     ],
   },
   metcon: {},
-  bodybuilding_sets: { series: 4, reps: "8-12", descanso_seg: 60 },
+  bodybuilding_sets: { series: 4, reps: "8-12", descanso_seg: 60, modo_execucao: "series_fixas" },
   finalizador: {},
   livre: {},
 };
@@ -83,7 +88,7 @@ export const useBuilder = create<State>((set) => ({
   data: null,
   blocks: [],
   setMeta: (m) => set(m),
-  addBlock: (formato) =>
+  addBlock: (formato, extras) =>
     set((s) => ({
       blocks: [
         ...s.blocks,
@@ -91,7 +96,8 @@ export const useBuilder = create<State>((set) => ({
           tempId: uid(),
           formato,
           ordem: s.blocks.length,
-          config: { ...DEFAULT_CONFIG[formato] },
+          titulo: extras?.titulo ?? null,
+          config: { ...DEFAULT_CONFIG[formato], ...(extras?.config ?? {}) },
           exercises: [],
         },
       ],
@@ -124,7 +130,7 @@ export const useBuilder = create<State>((set) => ({
                 {
                   tempId: uid(),
                   ordem: b.exercises.length,
-                  reps: "10",
+                  reps: b.formato === "amrap" ? "" : "10",
                   ...ex,
                 },
               ],
