@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Dumbbell, Users, Mountain, LogOut, Palette, FolderArchive, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Dumbbell, Users, Mountain, LogOut, Palette, FolderArchive, ClipboardList, Settings } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +25,7 @@ const items = [
   { title: "Alunos", url: "/app/alunos", icon: Users, exact: false },
   { title: "Arquivos", url: "/app/arquivos", icon: FolderArchive, exact: false },
   { title: "Marca", url: "/app/marca", icon: Palette, exact: false },
+  { title: "Configurações", url: "/app/configuracoes", icon: Settings, exact: false },
 ];
 
 export function AppSidebar() {

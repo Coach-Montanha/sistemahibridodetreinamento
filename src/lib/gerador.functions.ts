@@ -134,43 +134,71 @@ async function gerarSessao(
     );
   }
 
-  const { data: templates } = await supabase
-    .from("block_templates")
-    .select("*")
+  // 1) Preferências customizadas do coach para essa metodologia
+  const { data: prefRow } = await supabase
+    .from("generator_preferences")
+    .select("blocos")
+    .eq("coach_id", args.coach_id)
     .eq("metodologia", args.metodologia)
-    .or(`coach_id.eq.${args.coach_id},coach_id.is.null`)
-    .eq("ativo", true);
+    .maybeSingle();
+
+  let blocosPref: any[] | null =
+    prefRow?.blocos && Array.isArray(prefRow.blocos) && prefRow.blocos.length > 0
+      ? (prefRow.blocos as any[])
+      : null;
+
+  // 2) Fallback: block_templates existentes
+  if (!blocosPref) {
+    const { data: templates } = await supabase
+      .from("block_templates")
+      .select("*")
+      .eq("metodologia", args.metodologia)
+      .or(`coach_id.eq.${args.coach_id},coach_id.is.null`)
+      .eq("ativo", true);
+    blocosPref = (templates ?? []).map((t: any) => ({
+      formato: t.formato,
+      titulo: t.nome,
+      duracao_min: t.duracao_min,
+      num_exercicios: t.config?.num_exercicios ?? 3,
+      series: t.config?.series ?? 3,
+      reps_base: t.config?.reps_base ?? 10,
+      reps_pattern: t.config?.reps_pattern ?? [],
+      progressao: t.config?.progressao ?? "nenhuma",
+      passos: t.config?.passos ?? [],
+    }));
+  }
 
   let ordem = 0;
-  for (const template of templates ?? []) {
+  for (const bloco of blocosPref ?? []) {
     const { data: block, error: be } = await supabase
       .from("session_blocks")
       .insert({
         session_id: session.id,
-        block_template_id: template.id,
         ordem: ordem++,
-        formato: template.formato,
-        titulo: template.nome,
-        duracao_min: template.duracao_min,
-        config: template.config,
+        formato: bloco.formato,
+        titulo: bloco.titulo,
+        duracao_min: bloco.duracao_min ?? null,
+        config: bloco,
       })
       .select("id")
       .single();
     if (be || !block) throw new Error(be?.message ?? "Falha ao criar bloco");
 
-    const quantidade = template.config?.num_exercicios ?? 3;
+    const quantidade = bloco.num_exercicios ?? 3;
+    // Seleção do banco de exercícios do coach, filtrada pela metodologia
     const exercicios = await selecionarExercicios(supabase, {
       coach_id: args.coach_id,
       metodologia: args.metodologia,
-      formato: template.formato,
+      formato: bloco.formato,
       quantidade,
     });
 
-    const passos = template.formato === "forca_tecnica_pct"
-      ? (template.config?.passos
-        ? { passos: template.config.passos }
-        : PCT_STEP_PATTERNS[Math.floor(Math.random() * PCT_STEP_PATTERNS.length)])
-      : null;
+    const passosPct =
+      bloco.formato === "forca_tecnica_pct"
+        ? bloco.passos && bloco.passos.length
+          ? bloco.passos
+          : PCT_STEP_PATTERNS[Math.floor(Math.random() * PCT_STEP_PATTERNS.length)].passos
+        : null;
 
     if (exercicios.length) {
       const linhas = exercicios.map((ex: any, i: number) => {
@@ -179,13 +207,14 @@ async function gerarSessao(
           exercise_id: ex.id,
           ordem: i,
         };
-        if (passos) {
-          const p = passos.passos[i % passos.passos.length];
+        if (passosPct) {
+          const p = passosPct[i % passosPct.length];
           base.pct_1rm = p.pct;
           base.series = p.sets;
           base.reps = String(p.reps);
         } else {
-          base.reps = "10";
+          base.series = bloco.series ?? 3;
+          base.reps = String(calcReps(bloco, i));
         }
         return base;
       });
@@ -195,6 +224,24 @@ async function gerarSessao(
   }
 
   return session.id;
+}
+
+function calcReps(bloco: any, i: number): number {
+  const pattern: number[] = Array.isArray(bloco.reps_pattern) ? bloco.reps_pattern : [];
+  if (pattern.length > 0) return pattern[i % pattern.length];
+  const base = bloco.reps_base ?? 10;
+  const series = Math.max(1, bloco.series ?? 3);
+  const step = 2;
+  switch (bloco.progressao) {
+    case "piramide_crescente":
+      return Math.max(1, base - (series - 1) * step + i * step);
+    case "piramide_decrescente":
+      return Math.max(1, base + (series - 1) * step - i * step);
+    case "onda":
+      return Math.max(1, base + (i % 2 === 0 ? step : -step));
+    default:
+      return base;
+  }
 }
 
 async function selecionarExercicios(

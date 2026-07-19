@@ -471,6 +471,41 @@ export type Database = {
           },
         ]
       }
+      generator_preferences: {
+        Row: {
+          blocos: Json
+          coach_id: string
+          created_at: string
+          id: string
+          metodologia: string
+          updated_at: string
+        }
+        Insert: {
+          blocos?: Json
+          coach_id: string
+          created_at?: string
+          id?: string
+          metodologia: string
+          updated_at?: string
+        }
+        Update: {
+          blocos?: Json
+          coach_id?: string
+          created_at?: string
+          id?: string
+          metodologia?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generator_preferences_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       program_weeks: {
         Row: {
           data_inicio: string | null
