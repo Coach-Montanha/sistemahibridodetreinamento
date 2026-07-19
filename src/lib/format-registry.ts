@@ -27,29 +27,46 @@ type Registry = {
 
 const KEY = "shdt.format-registry.v1";
 
-function empty(): Registry {
-  return { labels: {}, hidden: [], custom: [] };
-}
+const EMPTY: Registry = Object.freeze({ labels: {}, hidden: [], custom: [] }) as Registry;
+
+// Cache the last snapshot so useSyncExternalStore doesn't loop on new refs.
+let cache: Registry = EMPTY;
+let cacheRaw: string | null = null;
 
 function read(): Registry {
-  if (typeof window === "undefined") return empty();
+  if (typeof window === "undefined") return EMPTY;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return empty();
+    if (raw === cacheRaw) return cache;
+    cacheRaw = raw;
+    if (!raw) {
+      cache = EMPTY;
+      return cache;
+    }
     const parsed = JSON.parse(raw);
-    return {
+    cache = {
       labels: parsed.labels ?? {},
       hidden: Array.isArray(parsed.hidden) ? parsed.hidden : [],
       custom: Array.isArray(parsed.custom) ? parsed.custom : [],
     };
+    return cache;
   } catch {
-    return empty();
+    cache = EMPTY;
+    cacheRaw = null;
+    return cache;
   }
+}
+
+function getServerSnapshot(): Registry {
+  return EMPTY;
 }
 
 function write(next: Registry) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(KEY, JSON.stringify(next));
+  const raw = JSON.stringify(next);
+  window.localStorage.setItem(KEY, raw);
+  cacheRaw = raw;
+  cache = next;
   window.dispatchEvent(new Event("format-registry:changed"));
 }
 
@@ -65,7 +82,7 @@ function subscribe(fn: () => void) {
 }
 
 export function useFormatRegistry() {
-  const registry = useSyncExternalStore(subscribe, read, empty);
+  const registry = useSyncExternalStore(subscribe, read, getServerSnapshot);
 
   const builtins: FormatPreset[] = ENABLED_FORMATS.map((f) => ({
     id: `builtin:${f}`,

@@ -1,0 +1,18 @@
+{
+  "name": "Coach Montanha — Sistema Híbrido de Treinamento",
+  "short_name": "Coach Montanha",
+  "description": "Prescrição de treinos em 5 modalidades, com construtor de sessão por blocos.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F1115",
+  "theme_color": "#0F1115",
+  "categories": ["fitness", "sports", "productivity"],
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

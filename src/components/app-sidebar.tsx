@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoach } from "@/hooks/use-coach";
 import { useQueryClient } from "@tanstack/react-query";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const items = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard, exact: true },
@@ -83,6 +84,11 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
+        {!collapsed && (
+          <div className="flex justify-center px-2 pb-1">
+            <ThemeToggle />
+          </div>
+        )}
         <Button variant="ghost" size="sm" onClick={signOut} className="justify-start">
           <LogOut className="mr-2 h-4 w-4" />
           {!collapsed && "Sair"}
