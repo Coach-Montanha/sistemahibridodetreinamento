@@ -27,7 +27,8 @@ import { Plus, Save, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useBuilder } from "@/lib/session-builder-store";
-import { BLOCK_FORMAT_LABEL, ENABLED_FORMATS, type BlockFormat } from "@/lib/methodology";
+import { BLOCK_FORMAT_LABEL, type BlockFormat } from "@/lib/methodology";
+import { useFormatRegistry } from "@/lib/format-registry";
 import { BlockCard } from "./BlockCard";
 import { exportarSessaoPDF, exportarSessaoExcel } from "@/lib/session-export";
 
@@ -41,6 +42,7 @@ export function SessionBuilder({
   const navigate = useNavigate();
   const state = useBuilder();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const { presets } = useFormatRegistry();
 
   useEffect(() => {
     if (!sessionId) {
@@ -86,6 +88,7 @@ export function SessionBuilder({
               descanso_seg: e.descanso_seg,
               lado: e.lado,
               observacoes: e.observacoes,
+              slot: (b.config?.slots?.[String(e.ordem)] ?? null) as any,
             })),
         })),
       });
@@ -173,6 +176,14 @@ export function SessionBuilder({
       }
 
       for (const b of state.blocks) {
+        const slots: Record<string, string> = {};
+        b.exercises.forEach((e) => {
+          if (e.slot) slots[String(e.ordem)] = e.slot;
+        });
+        const configToSave = {
+          ...b.config,
+          ...(Object.keys(slots).length ? { slots } : {}),
+        };
         const { data: bIns, error: be } = await supabase
           .from("session_blocks")
           .insert({
@@ -181,7 +192,7 @@ export function SessionBuilder({
             formato: b.formato,
             titulo: b.titulo || null,
             duracao_min: b.duracao_min ?? null,
-            config: b.config,
+            config: configToSave,
           })
           .select("id")
           .single();
@@ -295,10 +306,24 @@ export function SessionBuilder({
               <Plus className="mr-2 h-4 w-4" /> Adicionar bloco
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {ENABLED_FORMATS.map((f) => (
-              <DropdownMenuItem key={f} onClick={() => state.addBlock(f as BlockFormat)}>
-                {BLOCK_FORMAT_LABEL[f]}
+          <DropdownMenuContent align="start" className="min-w-[240px]">
+            {presets.map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() =>
+                  state.addBlock(p.base as BlockFormat, {
+                    titulo: p.builtin ? null : p.label,
+                    config: p.defaults,
+                  })
+                }
+                className="flex items-center justify-between gap-3"
+              >
+                <span className="font-medium">{p.label}</span>
+                {!p.builtin && (
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {BLOCK_FORMAT_LABEL[p.base]}
+                  </span>
+                )}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
