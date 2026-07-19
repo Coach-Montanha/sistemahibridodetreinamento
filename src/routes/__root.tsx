@@ -83,7 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Plataforma de prescrição de treinos para treinadores: híbrido, kettlebell sport, kettlebell fitness, levantamento de peso e musculação." },
       { name: "author", content: "Coach Montanha" },
       { property: "og:title", content: "Coach Montanha — Sistema Híbrido de Treinamento" },
-      { property: "og:description", content: "Prescrição de treinos em 5 metodologias, com construtor de sessão por blocos." },
+      { property: "og:description", content: "Prescrição de treinos em 5 modalidades, com construtor de sessão por blocos." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
