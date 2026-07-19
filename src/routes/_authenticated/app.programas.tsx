@@ -158,7 +158,7 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todos">Todas as metodologias</SelectItem>
+            <SelectItem value="todos">Todas as modalidades</SelectItem>
             {METHODS.map((m) => (
               <SelectItem key={m} value={m}>
                 {METHODOLOGY_LABEL[m]}
