@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthPrimeiroAcessoRouteImport } from './routes/auth.primeiro-acesso'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppExerciciosRouteImport } from './routes/_authenticated/app.exercicios'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -45,18 +46,26 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppExerciciosRoute =
+  AuthenticatedAppExerciciosRouteImport.update({
+    id: '/exercicios',
+    path: '/exercicios',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
+  '/app/exercicios': typeof AuthenticatedAppExerciciosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
+  '/app/exercicios': typeof AuthenticatedAppExerciciosRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesById {
@@ -66,13 +75,20 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/auth/primeiro-acesso': typeof AuthPrimeiroAcessoRoute
+  '/_authenticated/app/exercicios': typeof AuthenticatedAppExerciciosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/app' | '/auth/primeiro-acesso' | '/app/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/app'
+    | '/auth/primeiro-acesso'
+    | '/app/exercicios'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/auth/primeiro-acesso' | '/app'
+  to: '/' | '/auth' | '/auth/primeiro-acesso' | '/app/exercicios' | '/app'
   id:
     | '__root__'
     | '/'
@@ -80,6 +96,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/app'
     | '/auth/primeiro-acesso'
+    | '/_authenticated/app/exercicios'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
 }
@@ -133,14 +150,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/exercicios': {
+      id: '/_authenticated/app/exercicios'
+      path: '/exercicios'
+      fullPath: '/app/exercicios'
+      preLoaderRoute: typeof AuthenticatedAppExerciciosRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppExerciciosRoute: typeof AuthenticatedAppExerciciosRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppExerciciosRoute: AuthenticatedAppExerciciosRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
 
