@@ -641,6 +641,9 @@ function SortableBloco({
               onChange={(n) => onChange({ ...bloco, reps_base: Math.max(1, n) })} />
           </div>
 
+          {/* Direcionamento: modalidades + equipamentos */}
+          <TargetingSection bloco={bloco} onChange={onChange} />
+
           {/* Avançado */}
           <div>
             <button
