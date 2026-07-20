@@ -40,6 +40,7 @@ import {
   Wand2,
   X,
   ChevronDown,
+  Tag,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -78,6 +79,7 @@ function ExerciciosPage() {
   const [q, setQ] = useState("");
   const [metFilter, setMetFilter] = useState<Methodology | "todos">("todos");
   const [equipFilter, setEquipFilter] = useState<Equipamento | "todos">("todos");
+  const [untaggedOnly, setUntaggedOnly] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -87,15 +89,38 @@ function ExerciciosPage() {
   const qc = useQueryClient();
 
   const { data: exercises = [] } = useQuery({
-    queryKey: ["exercises", q, metFilter, equipFilter],
+    queryKey: ["exercises", q, metFilter, equipFilter, untaggedOnly],
     queryFn: async () => {
       let query = supabase.from("exercises").select("*").order("nome_pt");
       if (q) query = query.ilike("nome_pt", `%${q}%`);
       if (metFilter !== "todos") query = query.contains("metodologias", [metFilter]);
       if (equipFilter !== "todos") query = query.contains("equipamento", [equipFilter]);
+      if (untaggedOnly) {
+        query = query
+          .filter("metodologias", "eq", "{}")
+          .filter("equipamento", "eq", "{}");
+      }
       const { data, error } = await query;
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: tagStats } = useQuery({
+    queryKey: ["exercises", "tag-stats"],
+    queryFn: async () => {
+      const total = await supabase
+        .from("exercises")
+        .select("id", { count: "exact", head: true });
+      const untagged = await supabase
+        .from("exercises")
+        .select("id", { count: "exact", head: true })
+        .filter("metodologias", "eq", "{}")
+        .filter("equipamento", "eq", "{}");
+      return {
+        total: total.count ?? 0,
+        untagged: untagged.count ?? 0,
+      };
     },
   });
 
@@ -208,6 +233,15 @@ function ExerciciosPage() {
         </div>
       </div>
 
+      {tagStats && tagStats.total > 0 && (
+        <TagCoverage
+          total={tagStats.total}
+          untagged={tagStats.untagged}
+          active={untaggedOnly}
+          onToggle={() => setUntaggedOnly((v) => !v)}
+        />
+      )}
+
       <div className="mb-3 flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -260,11 +294,11 @@ function ExerciciosPage() {
             <Dumbbell className="h-6 w-6" />
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            {q || metFilter !== "todos" || equipFilter !== "todos"
+            {q || metFilter !== "todos" || equipFilter !== "todos" || untaggedOnly
               ? "Nenhum exercício encontrado com esses filtros."
               : "Nenhum exercício ainda. Clique em \"Novo exercício\" para começar."}
           </p>
-          {(q || metFilter !== "todos" || equipFilter !== "todos") && (
+          {(q || metFilter !== "todos" || equipFilter !== "todos" || untaggedOnly) && (
             <Button
               variant="ghost"
               size="sm"
@@ -273,6 +307,7 @@ function ExerciciosPage() {
                 setQ("");
                 setMetFilter("todos");
                 setEquipFilter("todos");
+                setUntaggedOnly(false);
               }}
             >
               Limpar filtros
@@ -446,6 +481,16 @@ function ExerciciosPage() {
                             unilateral
                           </Badge>
                         )}
+                        {(ex.equipamento ?? []).length === 0 &&
+                          (ex.metodologias ?? []).length === 0 && (
+                            <Badge
+                              variant="outline"
+                              className="gap-1 border-dashed border-warning/40 bg-warning/5 text-[10.5px] font-medium uppercase tracking-wide text-warning-foreground/80"
+                            >
+                              <Tag className="h-3 w-3" />
+                              sem tags
+                            </Badge>
+                          )}
                       </div>
                     </div>
                   </div>
@@ -577,6 +622,72 @@ function EquipChip({
         </span>
       )}
     </button>
+  );
+}
+
+function TagCoverage({
+  total,
+  untagged,
+  active,
+  onToggle,
+}: {
+  total: number;
+  untagged: number;
+  active: boolean;
+  onToggle: () => void;
+}) {
+  const tagged = Math.max(0, total - untagged);
+  const pct = total > 0 ? Math.round((tagged / total) * 100) : 100;
+  const allDone = untagged === 0;
+  return (
+    <div
+      className={
+        "mb-4 flex flex-col gap-3 rounded-xl border px-4 py-3 transition-colors duration-200 sm:flex-row sm:items-center sm:justify-between " +
+        (active
+          ? "border-warning/50 bg-warning/[0.06]"
+          : allDone
+            ? "border-border/60 bg-muted/30"
+            : "border-border bg-card")
+      }
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <div
+          className={
+            "grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors duration-200 " +
+            (allDone
+              ? "bg-primary/10 text-primary"
+              : "bg-warning/15 text-warning-foreground")
+          }
+          aria-hidden="true"
+        >
+          <Tag className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold leading-tight text-foreground">
+            {allDone
+              ? "Todos os exercícios classificados"
+              : `${untagged} de ${total} exercícios sem classificação`}
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+            {allDone
+              ? "Modalidade e equipamento definidos em todo o banco."
+              : `${pct}% já com modalidade ou equipamento. Selecione em lote para atribuir.`}
+          </p>
+        </div>
+      </div>
+      {!allDone && (
+        <Button
+          type="button"
+          size="sm"
+          variant={active ? "secondary" : "outline"}
+          onClick={onToggle}
+          className="shrink-0 gap-2 transition-all duration-200"
+        >
+          <Search className="h-3.5 w-3.5" />
+          {active ? "Mostrar todos" : "Filtrar não classificados"}
+        </Button>
+      )}
+    </div>
   );
 }
 
