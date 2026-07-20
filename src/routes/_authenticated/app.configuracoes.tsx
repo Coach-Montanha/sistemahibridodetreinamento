@@ -57,6 +57,8 @@ import {
   saveGeneratorPrefs,
   listEquipamentos,
   countExercicios,
+  searchExercicios,
+  getExerciciosByIds,
   type BlocoPref,
 } from "@/lib/generator-prefs.functions";
 import {
@@ -67,7 +69,17 @@ import {
   type BlockFormat,
 } from "@/lib/methodology";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Search, ListChecks } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/configuracoes")({
   component: ConfiguracoesPage,
@@ -811,6 +823,9 @@ function SortableBloco({
 
           {/* Direcionamento: modalidades + equipamentos */}
           <TargetingSection bloco={bloco} onChange={onChange} />
+
+          {/* Curadoria manual de exercícios */}
+          <CurationSection bloco={bloco} onChange={onChange} />
 
           {/* Avançado */}
           <div>
