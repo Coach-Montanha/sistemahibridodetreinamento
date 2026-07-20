@@ -114,3 +114,59 @@ export const saveGeneratorPrefs = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Retorna a lista de equipamentos distintos do banco do coach + globais. */
+export const listEquipamentos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const supabase = context.supabase;
+    const { data: coach } = await supabase.from("coaches").select("id").maybeSingle();
+    if (!coach) return [] as string[];
+
+    const { data } = await supabase
+      .from("exercises")
+      .select("equipamento")
+      .or(`coach_id.eq.${coach.id},coach_id.is.null`);
+
+    const set = new Set<string>();
+    for (const row of data ?? []) {
+      const arr = (row as any).equipamento ?? [];
+      if (!Array.isArray(arr)) continue;
+      for (const raw of arr) {
+        if (!raw) continue;
+        const norm = String(raw).toLowerCase().trim();
+        if (norm) set.add(norm);
+      }
+    }
+    return Array.from(set).sort();
+  });
+
+/** Conta exercícios que casam com filtros (modalidades + equipamentos). */
+export const countExercicios = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) =>
+    z
+      .object({
+        modalidades: z.array(METODOLOGIA).min(1),
+        equipamentos: z.array(z.string().min(1)).default([]),
+      })
+      .parse(raw),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase;
+    const { data: coach } = await supabase.from("coaches").select("id").maybeSingle();
+    if (!coach) return 0;
+
+    const { data: rows } = await supabase
+      .from("exercises")
+      .select("id, equipamento")
+      .or(`coach_id.eq.${coach.id},coach_id.is.null`)
+      .overlaps("metodologias", data.modalidades);
+
+    if (data.equipamentos.length === 0) return rows?.length ?? 0;
+    const alvo = data.equipamentos.map((e) => e.toLowerCase().trim());
+    return (rows ?? []).filter((r: any) => {
+      const eq = Array.isArray(r.equipamento) ? r.equipamento : [];
+      return eq.some((v: any) => alvo.includes(String(v).toLowerCase().trim()));
+    }).length;
+  });
