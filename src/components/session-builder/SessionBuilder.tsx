@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   DndContext,
@@ -23,7 +23,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Save, Download } from "lucide-react";
+import { Plus, Save, Download, ImageDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useBuilder } from "@/lib/session-builder-store";
@@ -31,6 +31,7 @@ import { BLOCK_FORMAT_LABEL, type BlockFormat } from "@/lib/methodology";
 import { useFormatRegistry } from "@/lib/format-registry";
 import { BlockCard } from "./BlockCard";
 import { exportarSessaoPDF, exportarSessaoExcel } from "@/lib/session-export";
+import { ExportImageDialog } from "@/components/session/ExportImageDialog";
 
 export function SessionBuilder({
   sessionId,
@@ -43,6 +44,7 @@ export function SessionBuilder({
   const state = useBuilder();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const { presets } = useFormatRegistry();
+  const [imgOpen, setImgOpen] = useState(false);
 
   useEffect(() => {
     if (!sessionId) {
@@ -255,6 +257,9 @@ export function SessionBuilder({
                 >
                   Excel
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setImgOpen(true)}>
+                  <ImageDown className="mr-2 h-4 w-4" /> Imagem (PNG/JPG)
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -264,6 +269,13 @@ export function SessionBuilder({
           <Button onClick={() => save(true)}>Publicar</Button>
         </div>
       </div>
+      {sessionId && (
+        <ExportImageDialog
+          open={imgOpen}
+          onOpenChange={setImgOpen}
+          sessionId={sessionId}
+        />
+      )}
 
       <Card className="mb-6 p-4">
         <div className="grid gap-3 md:grid-cols-3">

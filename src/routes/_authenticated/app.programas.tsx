@@ -38,10 +38,14 @@ import {
   Trash2,
   FolderKanban,
   X,
+  ImageDown,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
+import { prepararSessoesParaImagem } from "@/lib/session-image";
+import { exportarSessoesEmMassa } from "@/lib/image-export";
 
 export const Route = createFileRoute("/_authenticated/app/programas")({
   component: ProgramasPage,
@@ -61,6 +65,8 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
   const [toDelete, setToDelete] = useState<{ id: string; titulo: string } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmBulk, setConfirmBulk] = useState(false);
+  const [bulkImg, setBulkImg] = useState<"png" | "jpg" | null>(null);
+  const [bulkImgLoading, setBulkImgLoading] = useState(false);
 
   const { data: programas = [], isLoading } = useQuery({
     queryKey: ["programas", coach?.id],
@@ -128,6 +134,23 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
       else ids.forEach((id) => next.add(id));
       return next;
     });
+  }
+
+  async function exportarImagens(formato: "png" | "jpg") {
+    if (selected.size === 0) return;
+    setBulkImgLoading(true);
+    setBulkImg(formato);
+    try {
+      const ids = Array.from(selected);
+      const preparadas = await prepararSessoesParaImagem(ids);
+      await exportarSessoesEmMassa(preparadas, formato, `treinos_${formato}.zip`);
+      toast.success(`${preparadas.length} imagem(ns) exportada(s)`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao exportar imagens");
+    } finally {
+      setBulkImgLoading(false);
+      setBulkImg(null);
+    }
   }
 
   return (
@@ -268,7 +291,7 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
 
       {selected.size > 0 && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-6 duration-200 animate-in slide-in-from-bottom-4">
-          <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-border/70 bg-card/95 px-4 py-2 shadow-lg backdrop-blur">
+          <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-full border border-border/70 bg-card/95 px-4 py-2 shadow-lg backdrop-blur">
             <span className="text-sm font-medium">
               {selected.size} sessão(ões) selecionada(s)
             </span>
@@ -276,6 +299,7 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
               size="sm"
               variant="ghost"
               onClick={() => setSelected(new Set())}
+              disabled={bulkImgLoading}
               className="h-8 gap-1.5"
             >
               <X className="h-3.5 w-3.5" />
@@ -283,8 +307,37 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              onClick={() => exportarImagens("png")}
+              disabled={bulkImgLoading}
+              className="h-8 gap-1.5"
+            >
+              {bulkImgLoading && bulkImg === "png" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ImageDown className="h-3.5 w-3.5" />
+              )}
+              PNG
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => exportarImagens("jpg")}
+              disabled={bulkImgLoading}
+              className="h-8 gap-1.5"
+            >
+              {bulkImgLoading && bulkImg === "jpg" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ImageDown className="h-3.5 w-3.5" />
+              )}
+              JPG
+            </Button>
+            <Button
+              size="sm"
               variant="destructive"
               onClick={() => setConfirmBulk(true)}
+              disabled={bulkImgLoading}
               className="h-8 gap-1.5"
             >
               <Trash2 className="h-3.5 w-3.5" />
