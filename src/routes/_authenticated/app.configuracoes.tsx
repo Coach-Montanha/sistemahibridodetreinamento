@@ -94,6 +94,8 @@ function novoBloco(): BlocoPref {
     passos: [],
     tempo_trabalho: null,
     tempo_descanso: null,
+    modalidades_alvo: [],
+    equipamentos_alvo: [],
   };
 }
 
