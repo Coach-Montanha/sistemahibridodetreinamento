@@ -22,6 +22,7 @@ function BlockExercises({
   const lista = slot
     ? block.exercises.filter((e) => (e.slot ?? "aquecimento") === slot)
     : block.exercises;
+  const isMobilidade = slot === "mobilidade";
 
   return (
     <div className="mt-3 space-y-2">
@@ -33,7 +34,7 @@ function BlockExercises({
           <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
             {e.nome_livre ?? "Exercício"}
           </div>
-          {modoAtivo === "series_fixas" && (
+          {!isMobilidade && modoAtivo === "series_fixas" && (
             <Input
               type="number"
               className="h-8 w-16 text-center"
@@ -46,12 +47,30 @@ function BlockExercises({
               }
             />
           )}
-          <Input
-            className="h-8 w-20 text-center"
-            placeholder="reps"
-            value={e.reps ?? ""}
-            onChange={(ev) => updateExercise(block.tempId, e.tempId, { reps: ev.target.value })}
-          />
+          {isMobilidade ? (
+            <div className="relative">
+              <Input
+                inputMode="numeric"
+                className="h-8 w-24 pr-7 text-center tabular-nums transition-colors"
+                placeholder="tempo"
+                aria-label="Tempo de mobilidade em segundos"
+                value={e.reps ?? ""}
+                onChange={(ev) =>
+                  updateExercise(block.tempId, e.tempId, { reps: ev.target.value })
+                }
+              />
+              <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                seg
+              </span>
+            </div>
+          ) : (
+            <Input
+              className="h-8 w-20 text-center tabular-nums"
+              placeholder="reps"
+              value={e.reps ?? ""}
+              onChange={(ev) => updateExercise(block.tempId, e.tempId, { reps: ev.target.value })}
+            />
+          )}
           <Button
             variant="ghost"
             size="icon"
