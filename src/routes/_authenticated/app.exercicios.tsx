@@ -79,6 +79,7 @@ function ExerciciosPage() {
   const [q, setQ] = useState("");
   const [metFilter, setMetFilter] = useState<Methodology | "todos">("todos");
   const [equipFilter, setEquipFilter] = useState<Equipamento | "todos">("todos");
+  const [untaggedOnly, setUntaggedOnly] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -88,15 +89,38 @@ function ExerciciosPage() {
   const qc = useQueryClient();
 
   const { data: exercises = [] } = useQuery({
-    queryKey: ["exercises", q, metFilter, equipFilter],
+    queryKey: ["exercises", q, metFilter, equipFilter, untaggedOnly],
     queryFn: async () => {
       let query = supabase.from("exercises").select("*").order("nome_pt");
       if (q) query = query.ilike("nome_pt", `%${q}%`);
       if (metFilter !== "todos") query = query.contains("metodologias", [metFilter]);
       if (equipFilter !== "todos") query = query.contains("equipamento", [equipFilter]);
+      if (untaggedOnly) {
+        query = query
+          .filter("metodologias", "eq", "{}")
+          .filter("equipamento", "eq", "{}");
+      }
       const { data, error } = await query;
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: tagStats } = useQuery({
+    queryKey: ["exercises-tag-stats"],
+    queryFn: async () => {
+      const total = await supabase
+        .from("exercises")
+        .select("id", { count: "exact", head: true });
+      const untagged = await supabase
+        .from("exercises")
+        .select("id", { count: "exact", head: true })
+        .filter("metodologias", "eq", "{}")
+        .filter("equipamento", "eq", "{}");
+      return {
+        total: total.count ?? 0,
+        untagged: untagged.count ?? 0,
+      };
     },
   });
 
