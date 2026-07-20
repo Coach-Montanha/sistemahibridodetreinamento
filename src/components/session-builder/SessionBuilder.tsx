@@ -32,6 +32,60 @@ import { useFormatRegistry } from "@/lib/format-registry";
 import { BlockCard } from "./BlockCard";
 import { exportarSessaoPDF, exportarSessaoExcel } from "@/lib/session-export";
 import { ExportImageDialog } from "@/components/session/ExportImageDialog";
+import type { BuilderSet } from "@/lib/session-builder-store";
+
+const SETS_ENVELOPE_PREFIX = "__sets__:";
+
+function parseSetsFromObs(obs: string | null | undefined): {
+  sets?: BuilderSet[];
+  rest: string | null;
+} {
+  if (!obs) return { rest: null };
+  if (!obs.startsWith(SETS_ENVELOPE_PREFIX)) return { rest: obs };
+  try {
+    const payload = JSON.parse(obs.slice(SETS_ENVELOPE_PREFIX.length));
+    if (Array.isArray(payload?.sets)) {
+      return { sets: payload.sets as BuilderSet[], rest: payload.obs ?? null };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { rest: obs };
+}
+
+function encodeSetsToObs(
+  sets: BuilderSet[] | undefined,
+  originalObs: string | null | undefined
+): string | null {
+  if (!sets || sets.length === 0) return originalObs ?? null;
+  return SETS_ENVELOPE_PREFIX + JSON.stringify({ sets, obs: originalObs ?? null });
+}
+
+function legacyToSets(e: {
+  series?: number | null;
+  reps?: string | null;
+  carga_kg?: number | null;
+  descanso_seg?: number | null;
+}): BuilderSet[] | undefined {
+  if (!e.reps && !e.series && !e.carga_kg) return undefined;
+  const serie_rep =
+    e.series && e.reps
+      ? `${e.series}x${e.reps}`
+      : e.reps
+        ? String(e.reps)
+        : e.series
+          ? String(e.series)
+          : "";
+  return [
+    {
+      id: Math.random().toString(36).slice(2, 10),
+      tipo: "reps_carga",
+      serie_rep,
+      carga: e.carga_kg != null ? String(e.carga_kg) : "",
+      intervalo_seg: e.descanso_seg != null ? String(e.descanso_seg) : "",
+    },
+  ];
+}
 
 export function SessionBuilder({
   sessionId,
@@ -89,7 +143,15 @@ export function SessionBuilder({
               carga_kg: e.carga_kg,
               descanso_seg: e.descanso_seg,
               lado: e.lado,
-              observacoes: e.observacoes,
+              observacoes: parseSetsFromObs(e.observacoes).rest,
+              sets:
+                parseSetsFromObs(e.observacoes).sets ??
+                legacyToSets({
+                  series: e.series,
+                  reps: e.reps,
+                  carga_kg: e.carga_kg,
+                  descanso_seg: e.descanso_seg,
+                }),
               slot: (b.config?.slots?.[String(e.ordem)] ?? null) as any,
             })),
         })),
@@ -212,7 +274,7 @@ export function SessionBuilder({
             carga_kg: e.carga_kg ?? null,
             descanso_seg: e.descanso_seg ?? null,
             lado: e.lado ?? null,
-            observacoes: e.observacoes ?? null,
+            observacoes: encodeSetsToObs(e.sets, e.observacoes),
           }));
           const { error: xe } = await supabase
             .from("session_block_exercises")

@@ -5,6 +5,7 @@ import { Trash2, Flame, Wind } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ExercisePicker } from "./ExercisePicker";
 import { useBuilder, type BuilderBlock } from "@/lib/session-builder-store";
+import { SetsEditor } from "./SetsEditor";
 
 function BlockExercises({
   block,
@@ -18,7 +19,7 @@ function BlockExercises({
   const addExercise = useBuilder((s) => s.addExercise);
   const removeExercise = useBuilder((s) => s.removeExercise);
   const updateExercise = useBuilder((s) => s.updateExercise);
-  const modoAtivo = modo ?? (block.config?.modo_execucao as any) ?? "circuito";
+  void modo;
   const lista = slot
     ? block.exercises.filter((e) => (e.slot ?? "aquecimento") === slot)
     : block.exercises;
@@ -29,57 +30,40 @@ function BlockExercises({
       {lista.map((e) => (
         <div
           key={e.tempId}
-          className="group flex items-center gap-2 rounded-md border border-border/60 bg-background/60 p-2 transition-colors hover:border-border"
+          className="rounded-lg border border-border/60 bg-background/60 p-3 transition-colors hover:border-border"
         >
-          <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-            {e.nome_livre ?? "Exercício"}
-          </div>
-          {!isMobilidade && modoAtivo === "series_fixas" && (
-            <Input
-              type="number"
-              className="h-8 w-16 text-center"
-              placeholder="séries"
-              value={e.series ?? ""}
-              onChange={(ev) =>
-                updateExercise(block.tempId, e.tempId, {
-                  series: ev.target.value === "" ? null : Number(ev.target.value),
-                })
-              }
-            />
-          )}
-          {isMobilidade ? (
-            <div className="relative">
-              <Input
-                inputMode="numeric"
-                className="h-8 w-24 pr-7 text-center tabular-nums transition-colors"
-                placeholder="tempo"
-                aria-label="Tempo de mobilidade em segundos"
-                value={e.reps ?? ""}
-                onChange={(ev) =>
-                  updateExercise(block.tempId, e.tempId, { reps: ev.target.value })
-                }
-              />
-              <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                seg
-              </span>
+          <div className="group flex items-center gap-2">
+            <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+              {e.nome_livre ?? "Exercício"}
             </div>
-          ) : (
-            <Input
-              className="h-8 w-20 text-center tabular-nums"
-              placeholder="reps"
-              value={e.reps ?? ""}
-              onChange={(ev) => updateExercise(block.tempId, e.tempId, { reps: ev.target.value })}
-            />
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground opacity-60 transition hover:text-destructive group-hover:opacity-100"
-            onClick={() => removeExercise(block.tempId, e.tempId)}
-            aria-label="Remover exercício"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+            {isMobilidade && (
+              <div className="relative">
+                <Input
+                  inputMode="numeric"
+                  className="h-8 w-24 pr-9 text-center tabular-nums transition-colors"
+                  placeholder="tempo"
+                  aria-label="Tempo de mobilidade em segundos"
+                  value={e.reps ?? ""}
+                  onChange={(ev) =>
+                    updateExercise(block.tempId, e.tempId, { reps: ev.target.value })
+                  }
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  seg
+                </span>
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground opacity-60 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+              onClick={() => removeExercise(block.tempId, e.tempId)}
+              aria-label="Remover exercício"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+          {!isMobilidade && <SetsEditor block={block} exercise={e} />}
         </div>
       ))}
       <ExercisePicker
