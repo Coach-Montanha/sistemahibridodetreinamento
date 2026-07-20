@@ -55,6 +55,8 @@ import { useFormatRegistry } from "@/lib/format-registry";
 import {
   getGeneratorPrefs,
   saveGeneratorPrefs,
+  listEquipamentos,
+  countExercicios,
   type BlocoPref,
 } from "@/lib/generator-prefs.functions";
 import {
@@ -65,6 +67,7 @@ import {
   type BlockFormat,
 } from "@/lib/methodology";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/app/configuracoes")({
   component: ConfiguracoesPage,
