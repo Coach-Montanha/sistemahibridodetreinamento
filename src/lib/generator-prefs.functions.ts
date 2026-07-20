@@ -44,6 +44,7 @@ const BLOCO = z.object({
   tempo_descanso: z.number().int().min(0).max(600).nullable().optional(),
   modalidades_alvo: z.array(METODOLOGIA).default([]),
   equipamentos_alvo: z.array(z.string().min(1).max(60)).default([]),
+  exercicios_permitidos: z.array(z.string().uuid()).default([]),
 });
 
 export type BlocoPref = z.infer<typeof BLOCO>;
@@ -90,6 +91,7 @@ export const getGeneratorPrefs = createServerFn({ method: "GET" })
       tempo_descanso: t.config?.tempo_descanso ?? null,
       modalidades_alvo: t.config?.modalidades_alvo ?? [],
       equipamentos_alvo: t.config?.equipamentos_alvo ?? [],
+      exercicios_permitidos: t.config?.exercicios_permitidos ?? [],
     }));
 
     return { blocos, origem: "template" as const };
@@ -169,4 +171,77 @@ export const countExercicios = createServerFn({ method: "POST" })
       const eq = Array.isArray(r.equipamento) ? r.equipamento : [];
       return eq.some((v: any) => alvo.includes(String(v).toLowerCase().trim()));
     }).length;
+  });
+
+/** Lista exercícios do banco do coach para curadoria (com busca + filtros). */
+export const searchExercicios = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) =>
+    z
+      .object({
+        query: z.string().max(120).default(""),
+        modalidades: z.array(METODOLOGIA).default([]),
+        equipamentos: z.array(z.string().min(1)).default([]),
+        somente_meus: z.boolean().default(false),
+        limit: z.number().int().min(1).max(500).default(200),
+      })
+      .parse(raw),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase;
+    const { data: coach } = await supabase.from("coaches").select("id").maybeSingle();
+    if (!coach) return [] as { id: string; nome_pt: string; metodologias: string[]; equipamento: string[] }[];
+
+    let q = supabase
+      .from("exercises")
+      .select("id, nome_pt, metodologias, equipamento, coach_id")
+      .order("nome_pt")
+      .limit(data.limit);
+
+    if (data.somente_meus) {
+      q = q.eq("coach_id", coach.id);
+    } else {
+      q = q.or(`coach_id.eq.${coach.id},coach_id.is.null`);
+    }
+    if (data.query.trim()) {
+      q = q.ilike("nome_pt", `%${data.query.trim()}%`);
+    }
+    if (data.modalidades.length > 0) {
+      q = q.overlaps("metodologias", data.modalidades);
+    }
+
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    let result = (rows ?? []) as any[];
+    if (data.equipamentos.length > 0) {
+      const alvo = data.equipamentos.map((e) => e.toLowerCase().trim());
+      result = result.filter((r) => {
+        const eq = Array.isArray(r.equipamento) ? r.equipamento : [];
+        return eq.some((v: any) => alvo.includes(String(v).toLowerCase().trim()));
+      });
+    }
+    return result.map((r) => ({
+      id: r.id as string,
+      nome_pt: r.nome_pt as string,
+      metodologias: (r.metodologias ?? []) as string[],
+      equipamento: (r.equipamento ?? []) as string[],
+    }));
+  });
+
+/** Busca exercícios por IDs (para hidratar chips de curadoria). */
+export const getExerciciosByIds = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) =>
+    z.object({ ids: z.array(z.string().uuid()).max(500) }).parse(raw),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.ids.length === 0) return [] as { id: string; nome_pt: string }[];
+    const supabase = context.supabase;
+    const { data: rows, error } = await supabase
+      .from("exercises")
+      .select("id, nome_pt")
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as { id: string; nome_pt: string }[];
   });

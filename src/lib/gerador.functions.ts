@@ -212,6 +212,10 @@ async function gerarSessao(
       Array.isArray(bloco.equipamentos_alvo) && bloco.equipamentos_alvo.length > 0
         ? bloco.equipamentos_alvo.map((e: string) => e.toLowerCase().trim())
         : [];
+    const permitidos: string[] =
+      Array.isArray(bloco.exercicios_permitidos)
+        ? bloco.exercicios_permitidos.filter((x: any) => typeof x === "string" && x.length > 0)
+        : [];
 
     // Seleção do banco de exercícios do coach, filtrada por modalidades + equipamentos
     const { exercicios, aviso } = await selecionarExercicios(supabase, {
@@ -220,6 +224,7 @@ async function gerarSessao(
       equipamentos: equipamentosAlvo,
       formato: bloco.formato,
       quantidade,
+      permitidos,
     });
     if (aviso) {
       args.avisos.push(
@@ -286,6 +291,7 @@ async function selecionarExercicios(
     equipamentos: string[];
     formato: string;
     quantidade: number;
+    permitidos: string[];
   },
 ): Promise<{ exercicios: any[]; aviso: string | null }> {
   const { data: recentes } = await supabase
@@ -294,6 +300,30 @@ async function selecionarExercicios(
     .eq("session_blocks.formato", args.formato)
     .limit(args.quantidade * JANELA_ANTI_REPETICAO);
   const idsRecentes = new Set((recentes ?? []).map((r: any) => r.exercise_id).filter(Boolean));
+
+  // Curadoria manual tem precedência total — se o coach escolheu um pool,
+  // ignoramos filtros de modalidade/equipamento e sorteamos só desses.
+  if (args.permitidos.length > 0) {
+    const { data: curated } = await supabase
+      .from("exercises")
+      .select("id, nome_pt")
+      .in("id", args.permitidos)
+      .or(`coach_id.eq.${args.coach_id},coach_id.is.null`);
+    const pool = (curated ?? []) as any[];
+    let aviso: string | null = null;
+    if (pool.length === 0) {
+      return {
+        exercicios: [],
+        aviso: `pool curado vazio ou inacessível — nenhum exercício disponível.`,
+      };
+    }
+    if (pool.length < args.quantidade) {
+      aviso = `pool curado tem só ${pool.length} de ${args.quantidade} exercícios — considere adicionar mais em Configurações.`;
+    }
+    const semRepetidos = pool.filter((e: any) => !idsRecentes.has(e.id));
+    const finalPool = semRepetidos.length >= args.quantidade ? semRepetidos : pool;
+    return { exercicios: embaralhar(finalPool).slice(0, args.quantidade), aviso };
+  }
 
   // Cascata de filtros: modalidade+equipamento → só modalidade → nenhum filtro.
   const { data: base } = await supabase
