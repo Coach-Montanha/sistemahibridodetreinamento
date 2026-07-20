@@ -91,6 +91,7 @@ export const getGeneratorPrefs = createServerFn({ method: "GET" })
       tempo_descanso: t.config?.tempo_descanso ?? null,
       modalidades_alvo: t.config?.modalidades_alvo ?? [],
       equipamentos_alvo: t.config?.equipamentos_alvo ?? [],
+      exercicios_permitidos: t.config?.exercicios_permitidos ?? [],
     }));
 
     return { blocos, origem: "template" as const };
