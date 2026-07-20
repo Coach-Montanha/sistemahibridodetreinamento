@@ -1,6 +1,29 @@
 import { create } from "zustand";
 import type { BlockFormat } from "./methodology";
 
+export type SetType =
+  | "reps_carga"
+  | "reps_carga_tempo"
+  | "reps_tempo"
+  | "tempo_inclinacao"
+  | "corrida"
+  | "cadencia"
+  | "observacoes";
+
+export type BuilderSet = {
+  id: string;
+  tipo: SetType;
+  serie_rep?: string;
+  carga?: string;
+  tempo_seg?: string;
+  intervalo_seg?: string;
+  inclinacao_pct?: string;
+  distancia?: string;
+  ritmo?: string;
+  cadencia?: string;
+  obs?: string;
+};
+
 export type BuilderExercise = {
   tempId: string;
   exercise_id?: string | null;
@@ -15,6 +38,8 @@ export type BuilderExercise = {
   observacoes?: string | null;
   /** slot dentro do bloco (usado em preparação de movimento) */
   slot?: "mobilidade" | "aquecimento" | null;
+  /** séries tipadas (editor avançado); ausente ⇒ usa reps/series legados */
+  sets?: BuilderSet[];
 };
 
 export type BuilderBlock = {
@@ -48,6 +73,16 @@ type State = {
     patch: Partial<BuilderExercise>
   ) => void;
   removeExercise: (blockTempId: string, exTempId: string) => void;
+  addSet: (blockTempId: string, exTempId: string, set?: Partial<BuilderSet>) => void;
+  updateSet: (
+    blockTempId: string,
+    exTempId: string,
+    setId: string,
+    patch: Partial<BuilderSet>
+  ) => void;
+  removeSet: (blockTempId: string, exTempId: string, setId: string) => void;
+  replicateLastSet: (blockTempId: string, exTempId: string) => void;
+  setExerciseSets: (blockTempId: string, exTempId: string, sets: BuilderSet[]) => void;
   hydrate: (data: {
     titulo: string;
     numero_dia: number;
@@ -58,6 +93,26 @@ type State = {
 };
 
 const uid = () => Math.random().toString(36).slice(2, 10);
+
+function mapExerciseSets(
+  s: State,
+  blockTempId: string,
+  exTempId: string,
+  fn: (sets: BuilderSet[]) => BuilderSet[]
+): Partial<State> {
+  return {
+    blocks: s.blocks.map((b) =>
+      b.tempId === blockTempId
+        ? {
+            ...b,
+            exercises: b.exercises.map((e) =>
+              e.tempId === exTempId ? { ...e, sets: fn(e.sets ?? []) } : e
+            ),
+          }
+        : b
+    ),
+  };
+}
 
 const DEFAULT_CONFIG: Record<BlockFormat, Record<string, any>> = {
   preparacao_movimento: { rounds: 4, round_min: 5, modo_execucao: "circuito" },
@@ -164,6 +219,42 @@ export const useBuilder = create<State>((set) => ({
           : b
       ),
     })),
+  addSet: (blockTempId, exTempId, set) =>
+    set((s) =>
+      mapExerciseSets(s, blockTempId, exTempId, (sets) => [
+        ...sets,
+        {
+          id: uid(),
+          tipo: set?.tipo ?? sets.at(-1)?.tipo ?? "reps_carga",
+          serie_rep: set?.serie_rep ?? "",
+          carga: set?.carga ?? "",
+          intervalo_seg: set?.intervalo_seg ?? "",
+          ...set,
+        },
+      ])
+    ),
+  updateSet: (blockTempId, exTempId, setId, patch) =>
+    set((s) =>
+      mapExerciseSets(s, blockTempId, exTempId, (sets) =>
+        sets.map((x) => (x.id === setId ? { ...x, ...patch } : x))
+      )
+    ),
+  removeSet: (blockTempId, exTempId, setId) =>
+    set((s) =>
+      mapExerciseSets(s, blockTempId, exTempId, (sets) =>
+        sets.filter((x) => x.id !== setId)
+      )
+    ),
+  replicateLastSet: (blockTempId, exTempId) =>
+    set((s) =>
+      mapExerciseSets(s, blockTempId, exTempId, (sets) => {
+        const last = sets.at(-1);
+        if (!last) return sets;
+        return [...sets, { ...last, id: uid() }];
+      })
+    ),
+  setExerciseSets: (blockTempId, exTempId, sets) =>
+    set((s) => mapExerciseSets(s, blockTempId, exTempId, () => sets)),
   hydrate: (data) =>
     set({
       titulo: data.titulo,
