@@ -136,38 +136,6 @@ export function PrepMovimentoForm({ block }: { block: BuilderBlock }) {
   const cfg = block.config;
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="grid flex-1 grid-cols-2 gap-3 sm:max-w-sm">
-        <div>
-          <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Rounds</Label>
-          <Input
-            type="number"
-            min={0}
-            value={cfg.rounds ?? 4}
-            onChange={(e) =>
-              update(block.tempId, {
-                config: { ...cfg, rounds: Number(e.target.value) },
-              })
-            }
-          />
-        </div>
-        <div>
-          <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Round (min)</Label>
-          <Input
-            type="number"
-            min={0}
-            value={cfg.round_min ?? 5}
-            onChange={(e) =>
-              update(block.tempId, {
-                config: { ...cfg, round_min: Number(e.target.value) },
-              })
-            }
-          />
-        </div>
-        </div>
-        <ModoToggle block={block} />
-      </div>
-
       <SlotSection
         icon={<Wind className="h-3.5 w-3.5" />}
         label="Mobilidade"
@@ -175,6 +143,38 @@ export function PrepMovimentoForm({ block }: { block: BuilderBlock }) {
       >
         <BlockExercises block={block} slot="mobilidade" />
       </SlotSection>
+
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 p-3">
+        <div className="grid flex-1 grid-cols-2 gap-3 sm:max-w-sm">
+          <div>
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Rounds</Label>
+            <Input
+              type="number"
+              min={0}
+              value={cfg.rounds ?? 4}
+              onChange={(e) =>
+                update(block.tempId, {
+                  config: { ...cfg, rounds: Number(e.target.value) },
+                })
+              }
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Minutos</Label>
+            <Input
+              type="number"
+              min={0}
+              value={cfg.round_min ?? 5}
+              onChange={(e) =>
+                update(block.tempId, {
+                  config: { ...cfg, round_min: Number(e.target.value) },
+                })
+              }
+            />
+          </div>
+        </div>
+        <ModoToggle block={block} />
+      </div>
 
       <SlotSection
         icon={<Flame className="h-3.5 w-3.5" />}
