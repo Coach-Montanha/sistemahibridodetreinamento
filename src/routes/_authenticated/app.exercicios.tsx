@@ -625,6 +625,72 @@ function EquipChip({
   );
 }
 
+function TagCoverage({
+  total,
+  untagged,
+  active,
+  onToggle,
+}: {
+  total: number;
+  untagged: number;
+  active: boolean;
+  onToggle: () => void;
+}) {
+  const tagged = Math.max(0, total - untagged);
+  const pct = total > 0 ? Math.round((tagged / total) * 100) : 100;
+  const allDone = untagged === 0;
+  return (
+    <div
+      className={
+        "mb-4 flex flex-col gap-3 rounded-xl border px-4 py-3 transition-colors duration-200 sm:flex-row sm:items-center sm:justify-between " +
+        (active
+          ? "border-warning/50 bg-warning/[0.06]"
+          : allDone
+            ? "border-border/60 bg-muted/30"
+            : "border-border bg-card")
+      }
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <div
+          className={
+            "grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors duration-200 " +
+            (allDone
+              ? "bg-primary/10 text-primary"
+              : "bg-warning/15 text-warning-foreground")
+          }
+          aria-hidden="true"
+        >
+          <Tag className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold leading-tight text-foreground">
+            {allDone
+              ? "Todos os exercícios classificados"
+              : `${untagged} de ${total} exercícios sem classificação`}
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+            {allDone
+              ? "Modalidade e equipamento definidos em todo o banco."
+              : `${pct}% já com modalidade ou equipamento. Selecione em lote para atribuir.`}
+          </p>
+        </div>
+      </div>
+      {!allDone && (
+        <Button
+          type="button"
+          size="sm"
+          variant={active ? "secondary" : "outline"}
+          onClick={onToggle}
+          className="shrink-0 gap-2 transition-all duration-200"
+        >
+          <Search className="h-3.5 w-3.5" />
+          {active ? "Mostrar todos" : "Filtrar não classificados"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function normalizeName(s: string): string {
   return s
     .normalize("NFD")
