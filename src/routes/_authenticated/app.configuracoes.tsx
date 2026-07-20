@@ -99,6 +99,7 @@ function novoBloco(): BlocoPref {
     tempo_descanso: null,
     modalidades_alvo: [],
     equipamentos_alvo: [],
+    exercicios_permitidos: [],
   };
 }
 
