@@ -572,6 +572,173 @@ function MethodologyPanel({
   );
 }
 
+function TargetingSection({
+  bloco,
+  onChange,
+}: {
+  bloco: BlocoPref;
+  onChange: (b: BlocoPref) => void;
+}) {
+  const equipQuery = useQuery({
+    queryKey: ["equipamentos"],
+    queryFn: () => listEquipamentos(),
+    staleTime: 60_000,
+  });
+
+  const modalidades = bloco.modalidades_alvo ?? [];
+  const equipamentos = bloco.equipamentos_alvo ?? [];
+
+  const countKey = [
+    "count-exercicios",
+    modalidades.slice().sort().join("|"),
+    equipamentos.slice().sort().join("|"),
+  ];
+  const countQuery = useQuery({
+    queryKey: countKey,
+    queryFn: () =>
+      countExercicios({
+        data: {
+          modalidades: modalidades as any,
+          equipamentos,
+        },
+      }),
+    enabled: modalidades.length > 0,
+    staleTime: 30_000,
+  });
+
+  const toggleMod = (m: Methodology) => {
+    const next = modalidades.includes(m)
+      ? modalidades.filter((x) => x !== m)
+      : [...modalidades, m];
+    onChange({ ...bloco, modalidades_alvo: next as any });
+  };
+  const toggleEquip = (e: string) => {
+    const next = equipamentos.includes(e)
+      ? equipamentos.filter((x) => x !== e)
+      : [...equipamentos, e];
+    onChange({ ...bloco, equipamentos_alvo: next });
+  };
+
+  const alvo = modalidades.length === 0;
+  const count = countQuery.data ?? 0;
+  const needed = bloco.num_exercicios ?? 3;
+  const insuficiente = !alvo && !countQuery.isLoading && count < needed;
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border/50 bg-muted/20 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
+            Direcionamento do sorteio
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Restrinja de quais modalidades e equipamentos o motor sorteia neste bloco.
+          </p>
+        </div>
+        {modalidades.length > 0 && (
+          <Badge
+            variant="outline"
+            className={cn(
+              "gap-1.5 border-border/60 font-medium tabular-nums",
+              countQuery.isLoading && "opacity-60",
+              insuficiente && "border-warning/50 bg-warning/10 text-warning-foreground",
+              !insuficiente && count > 0 && "border-primary/40 bg-primary/5 text-primary",
+            )}
+          >
+            <span className="text-sm font-semibold">{count}</span>
+            <span className="text-[10px] uppercase tracking-wider">
+              {count === 1 ? "exercício" : "exercícios"} · precisa {needed}
+            </span>
+          </Badge>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Modalidades
+          </Label>
+          {modalidades.length === 0 && (
+            <span className="text-[10px] text-muted-foreground">
+              Vazio = usa a modalidade da geração
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {(Object.keys(METHODOLOGY_LABEL) as Methodology[]).map((m) => {
+            const active = modalidades.includes(m);
+            return (
+              <button
+                type="button"
+                key={m}
+                onClick={() => toggleMod(m)}
+                className={cn(
+                  "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-medium transition-all duration-200",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  active
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border/60 bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                )}
+              >
+                {METHODOLOGY_LABEL[m]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Equipamentos
+          </Label>
+          {equipamentos.length === 0 && (
+            <span className="text-[10px] text-muted-foreground">Vazio = qualquer equipamento</span>
+          )}
+        </div>
+        {equipQuery.isLoading ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" /> Carregando equipamentos…
+          </div>
+        ) : (equipQuery.data ?? []).length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Nenhum equipamento cadastrado no seu banco.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {(equipQuery.data ?? []).map((eq) => {
+              const active = equipamentos.includes(eq);
+              return (
+                <button
+                  type="button"
+                  key={eq}
+                  onClick={() => toggleEquip(eq)}
+                  className={cn(
+                    "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs capitalize transition-all duration-200",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    active
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                      : "border-border/60 bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                  )}
+                >
+                  {eq}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {insuficiente && (
+        <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+          Só {count} exercício{count === 1 ? "" : "s"} casam com esses filtros. O motor vai
+          repetir ou usar fallback para completar os {needed} pedidos.
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SortableBloco({
   id, index, bloco, onChange, onRemove,
 }: {
