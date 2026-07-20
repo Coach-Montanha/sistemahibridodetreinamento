@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Wand2, Settings2, AlertTriangle } from "lucide-react";
+import { Wand2, Settings2, AlertTriangle, ListChecks } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getGeneratorPrefs } from "@/lib/generator-prefs.functions";
@@ -94,17 +94,31 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       <Card className="p-6">
         <div className="mb-4 flex items-start gap-2 rounded-lg border border-border/60 bg-muted/30 p-3 text-xs">
           <Settings2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          <p className="leading-relaxed text-muted-foreground">
-            {prefs.data?.origem === "custom"
-              ? <>Usando suas preferências de <strong className="text-foreground">{METHODOLOGY_LABEL[metodologia]}</strong>. </>
-              : <>Usando templates padrão de <strong className="text-foreground">{METHODOLOGY_LABEL[metodologia]}</strong>. </>}
+          <div className="flex flex-1 flex-wrap items-center gap-x-2 gap-y-1 leading-relaxed text-muted-foreground">
+            <span>
+              {prefs.data?.origem === "custom"
+                ? <>Usando suas preferências de <strong className="text-foreground">{METHODOLOGY_LABEL[metodologia]}</strong>.</>
+                : <>Usando templates padrão de <strong className="text-foreground">{METHODOLOGY_LABEL[metodologia]}</strong>.</>}
+            </span>
+            {(() => {
+              const curados = (prefs.data?.blocos ?? []).filter(
+                (b: any) => Array.isArray(b.exercicios_permitidos) && b.exercicios_permitidos.length > 0,
+              ).length;
+              if (curados === 0) return null;
+              return (
+                <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  <ListChecks className="h-3 w-3" />
+                  {curados} bloco{curados === 1 ? "" : "s"} com pool curado
+                </span>
+              );
+            })()}
             <Link
               to="/app/configuracoes"
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
               {prefs.data?.origem === "custom" ? "Ajustar" : "Personalizar"}
             </Link>
-          </p>
+          </div>
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
