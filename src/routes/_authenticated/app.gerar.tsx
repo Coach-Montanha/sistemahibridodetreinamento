@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Wand2, Settings2 } from "lucide-react";
+import { Wand2, Settings2, AlertTriangle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getGeneratorPrefs } from "@/lib/generator-prefs.functions";
@@ -37,6 +37,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const [titulo, setTitulo] = useState("Programa gerado");
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10));
   const [dias, setDias] = useState(3);
+  const [avisos, setAvisos] = useState<string[]>([]);
 
   const prefs = useQuery({
     queryKey: ["generator-prefs", metodologia],
@@ -46,6 +47,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setAvisos([]);
     try {
       const res = await gerar({
         data: {
@@ -59,6 +61,10 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       toast.success(
         `Gerado: ${res.resultado.reduce((s, r) => s + r.sessoes, 0)} sessão(ões)`,
       );
+      const list = (res as any).avisos as string[] | undefined;
+      if (list && list.length > 0) {
+        setAvisos(list);
+      }
       if (res.primeira_sessao_id) {
         navigate({ to: "/app/sessoes/$id", params: { id: res.primeira_sessao_id } });
       }
@@ -154,6 +160,23 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             {loading ? "Gerando..." : "Gerar treino"}
           </Button>
         </form>
+
+        {avisos.length > 0 && (
+          <div className="mt-4 space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-warning-foreground">
+              <AlertTriangle className="h-4 w-4" />
+              Avisos da geração
+            </div>
+            <ul className="space-y-1 text-xs leading-relaxed text-warning-foreground/90">
+              {avisos.map((a, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-warning-foreground/60" />
+                  <span>{a}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </Card>
     </div>
   );
