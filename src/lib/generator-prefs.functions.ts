@@ -42,6 +42,8 @@ const BLOCO = z.object({
   passos: z.array(PASSO_PCT).default([]),
   tempo_trabalho: z.number().int().min(1).max(600).nullable().optional(),
   tempo_descanso: z.number().int().min(0).max(600).nullable().optional(),
+  modalidades_alvo: z.array(METODOLOGIA).default([]),
+  equipamentos_alvo: z.array(z.string().min(1).max(60)).default([]),
 });
 
 export type BlocoPref = z.infer<typeof BLOCO>;
@@ -86,6 +88,8 @@ export const getGeneratorPrefs = createServerFn({ method: "GET" })
       passos: t.config?.passos ?? [],
       tempo_trabalho: t.config?.tempo_trabalho ?? null,
       tempo_descanso: t.config?.tempo_descanso ?? null,
+      modalidades_alvo: t.config?.modalidades_alvo ?? [],
+      equipamentos_alvo: t.config?.equipamentos_alvo ?? [],
     }));
 
     return { blocos, origem: "template" as const };
