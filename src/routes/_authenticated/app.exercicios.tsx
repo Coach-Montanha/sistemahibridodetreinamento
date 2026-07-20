@@ -41,7 +41,6 @@ import {
   X,
   ChevronDown,
   Tag,
-  TagsIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
