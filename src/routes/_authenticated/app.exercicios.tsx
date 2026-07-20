@@ -107,7 +107,7 @@ function ExerciciosPage() {
   });
 
   const { data: tagStats } = useQuery({
-    queryKey: ["exercises-tag-stats"],
+    queryKey: ["exercises", "tag-stats"],
     queryFn: async () => {
       const total = await supabase
         .from("exercises")
