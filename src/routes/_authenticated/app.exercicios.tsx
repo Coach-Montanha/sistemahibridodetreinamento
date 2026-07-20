@@ -481,6 +481,16 @@ function ExerciciosPage() {
                             unilateral
                           </Badge>
                         )}
+                        {(ex.equipamento ?? []).length === 0 &&
+                          (ex.metodologias ?? []).length === 0 && (
+                            <Badge
+                              variant="outline"
+                              className="gap-1 border-dashed border-warning/40 bg-warning/5 text-[10.5px] font-medium uppercase tracking-wide text-warning-foreground/80"
+                            >
+                              <Tag className="h-3 w-3" />
+                              sem tags
+                            </Badge>
+                          )}
                       </div>
                     </div>
                   </div>
