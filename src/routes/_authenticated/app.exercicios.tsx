@@ -294,11 +294,11 @@ function ExerciciosPage() {
             <Dumbbell className="h-6 w-6" />
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            {q || metFilter !== "todos" || equipFilter !== "todos"
+            {q || metFilter !== "todos" || equipFilter !== "todos" || untaggedOnly
               ? "Nenhum exercício encontrado com esses filtros."
               : "Nenhum exercício ainda. Clique em \"Novo exercício\" para começar."}
           </p>
-          {(q || metFilter !== "todos" || equipFilter !== "todos") && (
+          {(q || metFilter !== "todos" || equipFilter !== "todos" || untaggedOnly) && (
             <Button
               variant="ghost"
               size="sm"
@@ -307,6 +307,7 @@ function ExerciciosPage() {
                 setQ("");
                 setMetFilter("todos");
                 setEquipFilter("todos");
+                setUntaggedOnly(false);
               }}
             >
               Limpar filtros
