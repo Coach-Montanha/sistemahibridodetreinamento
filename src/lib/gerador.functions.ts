@@ -69,6 +69,7 @@ export const gerarTreino = createServerFn({ method: "POST" })
     const feriados = new Set<string>();
     const resultado: { semana: number; sessoes: number; primeira_sessao_id?: string }[] = [];
     let primeiraSessao: string | undefined;
+    const avisos: string[] = [];
 
     for (let numSemana = 1; numSemana <= totalSemanas; numSemana++) {
       const dataInicioSemana = somarSemanas(data.data_inicio, numSemana - 1);
@@ -100,6 +101,8 @@ export const gerarTreino = createServerFn({ method: "POST" })
           data: dia,
           coach_id: coachId,
           metodologia: program.metodologia,
+          avisos,
+          contextoSemana: numSemana,
         });
         if (!primeiraSessao) primeiraSessao = sessId;
         count++;
@@ -109,12 +112,28 @@ export const gerarTreino = createServerFn({ method: "POST" })
       if (data.escopo === "sessao") break;
     }
 
-    return { ok: true, program_id: program.id, primeira_sessao_id: primeiraSessao, resultado };
+    // Dedup avisos preservando ordem
+    const avisosUnicos = Array.from(new Set(avisos));
+    return {
+      ok: true,
+      program_id: program.id,
+      primeira_sessao_id: primeiraSessao,
+      resultado,
+      avisos: avisosUnicos,
+    };
   });
 
 async function gerarSessao(
   supabase: any,
-  args: { program_week_id: string; numero_dia: number; data: string; coach_id: string; metodologia: string },
+  args: {
+    program_week_id: string;
+    numero_dia: number;
+    data: string;
+    coach_id: string;
+    metodologia: string;
+    avisos: string[];
+    contextoSemana: number;
+  },
 ): Promise<string> {
   const { data: session, error: se } = await supabase
     .from("sessions")
@@ -185,13 +204,28 @@ async function gerarSessao(
     if (be || !block) throw new Error(be?.message ?? "Falha ao criar bloco");
 
     const quantidade = bloco.num_exercicios ?? 3;
-    // Seleção do banco de exercícios do coach, filtrada pela metodologia
-    const exercicios = await selecionarExercicios(supabase, {
+    const modalidadesAlvo: string[] =
+      Array.isArray(bloco.modalidades_alvo) && bloco.modalidades_alvo.length > 0
+        ? bloco.modalidades_alvo
+        : [args.metodologia];
+    const equipamentosAlvo: string[] =
+      Array.isArray(bloco.equipamentos_alvo) && bloco.equipamentos_alvo.length > 0
+        ? bloco.equipamentos_alvo.map((e: string) => e.toLowerCase().trim())
+        : [];
+
+    // Seleção do banco de exercícios do coach, filtrada por modalidades + equipamentos
+    const { exercicios, aviso } = await selecionarExercicios(supabase, {
       coach_id: args.coach_id,
-      metodologia: args.metodologia,
+      modalidades: modalidadesAlvo,
+      equipamentos: equipamentosAlvo,
       formato: bloco.formato,
       quantidade,
     });
+    if (aviso) {
+      args.avisos.push(
+        `Semana ${args.contextoSemana} · Bloco "${bloco.titulo ?? bloco.formato}": ${aviso}`,
+      );
+    }
 
     const passosPct =
       bloco.formato === "forca_tecnica_pct"
@@ -246,8 +280,14 @@ function calcReps(bloco: any, i: number): number {
 
 async function selecionarExercicios(
   supabase: any,
-  args: { coach_id: string; metodologia: string; formato: string; quantidade: number },
-) {
+  args: {
+    coach_id: string;
+    modalidades: string[];
+    equipamentos: string[];
+    formato: string;
+    quantidade: number;
+  },
+): Promise<{ exercicios: any[]; aviso: string | null }> {
   const { data: recentes } = await supabase
     .from("session_block_exercises")
     .select("exercise_id, session_blocks!inner(formato)")
@@ -255,15 +295,60 @@ async function selecionarExercicios(
     .limit(args.quantidade * JANELA_ANTI_REPETICAO);
   const idsRecentes = new Set((recentes ?? []).map((r: any) => r.exercise_id).filter(Boolean));
 
-  const { data: pool } = await supabase
+  // Cascata de filtros: modalidade+equipamento → só modalidade → nenhum filtro.
+  const { data: base } = await supabase
     .from("exercises")
-    .select("id, nome_pt")
+    .select("id, nome_pt, metodologias, equipamento")
     .or(`coach_id.eq.${args.coach_id},coach_id.is.null`)
-    .contains("metodologias", [args.metodologia]);
+    .overlaps("metodologias", args.modalidades);
 
-  const disponiveis = (pool ?? []).filter((e: any) => !idsRecentes.has(e.id));
-  const candidatos = disponiveis.length >= args.quantidade ? disponiveis : (pool ?? []);
-  return embaralhar(candidatos).slice(0, args.quantidade);
+  const normEquip = (arr: any): string[] =>
+    Array.isArray(arr) ? arr.filter(Boolean).map((s: string) => String(s).toLowerCase().trim()) : [];
+
+  const modLabel = args.modalidades.join(" · ");
+  const equipLabel = args.equipamentos.join(" · ");
+
+  let candidatos: any[] = base ?? [];
+  let aviso: string | null = null;
+
+  // Filtro por equipamento (case-insensitive), se solicitado.
+  if (args.equipamentos.length > 0) {
+    const filtrado = candidatos.filter((e: any) => {
+      const eq = normEquip(e.equipamento);
+      return eq.some((v) => args.equipamentos.includes(v));
+    });
+    if (filtrado.length >= args.quantidade) {
+      candidatos = filtrado;
+    } else if (filtrado.length > 0) {
+      candidatos = filtrado;
+      aviso = `só ${filtrado.length} de ${args.quantidade} exercícios encontrados para ${modLabel} + ${equipLabel} — usei o que tinha.`;
+    } else {
+      aviso = `nenhum exercício de ${equipLabel} para ${modLabel} — usei a modalidade sem filtro de equipamento.`;
+    }
+  }
+
+  // Se ainda vazio, cai pra qualquer exercício da conta.
+  if (candidatos.length === 0) {
+    const { data: fallback } = await supabase
+      .from("exercises")
+      .select("id, nome_pt")
+      .or(`coach_id.eq.${args.coach_id},coach_id.is.null`)
+      .limit(50);
+    candidatos = fallback ?? [];
+    if (candidatos.length === 0) {
+      return { exercicios: [], aviso: `banco vazio — nenhum exercício disponível para ${modLabel}.` };
+    }
+    aviso = `nenhum exercício marcado como ${modLabel}${equipLabel ? " + " + equipLabel : ""} — usei o banco geral como fallback.`;
+  }
+
+  // Aplica anti-repetição só se restar pool suficiente.
+  const semRepetidos = candidatos.filter((e: any) => !idsRecentes.has(e.id));
+  const finalPool = semRepetidos.length >= args.quantidade ? semRepetidos : candidatos;
+
+  return {
+    exercicios: embaralhar(finalPool).slice(0, args.quantidade),
+    aviso,
+  };
 }
 
 function escopoParaSemanas(escopo: string, fallback: number): number {
