@@ -44,6 +44,7 @@ const BLOCO = z.object({
   tempo_descanso: z.number().int().min(0).max(600).nullable().optional(),
   modalidades_alvo: z.array(METODOLOGIA).default([]),
   equipamentos_alvo: z.array(z.string().min(1).max(60)).default([]),
+  exercicios_permitidos: z.array(z.string().uuid()).default([]),
 });
 
 export type BlocoPref = z.infer<typeof BLOCO>;
