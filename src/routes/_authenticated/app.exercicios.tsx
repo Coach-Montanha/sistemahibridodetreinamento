@@ -233,6 +233,15 @@ function ExerciciosPage() {
         </div>
       </div>
 
+      {tagStats && tagStats.total > 0 && (
+        <TagCoverage
+          total={tagStats.total}
+          untagged={tagStats.untagged}
+          active={untaggedOnly}
+          onToggle={() => setUntaggedOnly((v) => !v)}
+        />
+      )}
+
       <div className="mb-3 flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
