@@ -9,7 +9,7 @@ export type SetPreset = {
 };
 
 const KEY = "shdt.exercise-set-presets.v1";
-const EMPTY: SetPreset[] = Object.freeze([]) as SetPreset[];
+const EMPTY: SetPreset[] = Object.freeze([]) as unknown as SetPreset[];
 
 let cache: SetPreset[] = EMPTY;
 let cacheRaw: string | null = null;

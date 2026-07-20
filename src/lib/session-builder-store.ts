@@ -219,17 +219,17 @@ export const useBuilder = create<State>((set) => ({
           : b
       ),
     })),
-  addSet: (blockTempId, exTempId, set) =>
+  addSet: (blockTempId, exTempId, input) =>
     set((s) =>
       mapExerciseSets(s, blockTempId, exTempId, (sets) => [
         ...sets,
         {
           id: uid(),
-          tipo: set?.tipo ?? sets.at(-1)?.tipo ?? "reps_carga",
-          serie_rep: set?.serie_rep ?? "",
-          carga: set?.carga ?? "",
-          intervalo_seg: set?.intervalo_seg ?? "",
-          ...set,
+          tipo: input?.tipo ?? sets.at(-1)?.tipo ?? "reps_carga",
+          serie_rep: input?.serie_rep ?? "",
+          carga: input?.carga ?? "",
+          intervalo_seg: input?.intervalo_seg ?? "",
+          ...input,
         },
       ])
     ),
