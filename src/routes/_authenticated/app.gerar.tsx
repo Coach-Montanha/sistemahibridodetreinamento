@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Wand2, Settings2, AlertTriangle, ListChecks } from "lucide-react";
+import { Wand2, Settings2, AlertTriangle, ListChecks, Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getGeneratorPrefs } from "@/lib/generator-prefs.functions";
@@ -92,6 +92,17 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       )}
 
       <Card className="p-6">
+        {metodologia === "kettlebell_fitness" ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <p className="flex-1 leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">Motor dedicado.</strong> Kettlebell
+              Fitness gera um bloco único de estações (5–6, 30 min), com sorteio por
+              categoria calibrado pela distribuição real. Suas preferências de blocos
+              não se aplicam aqui.
+            </p>
+          </div>
+        ) : (
         <div className="mb-4 flex items-start gap-2 rounded-lg border border-border/60 bg-muted/30 p-3 text-xs">
           <Settings2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           <div className="flex flex-1 flex-wrap items-center gap-x-2 gap-y-1 leading-relaxed text-muted-foreground">
@@ -120,6 +131,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             </Link>
           </div>
         </div>
+        )}
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <Label>Título do programa</Label>
