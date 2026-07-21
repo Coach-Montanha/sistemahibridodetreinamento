@@ -166,6 +166,29 @@ async function gerarSessao(
       .maybeSingle();
     const kbBloco = Array.isArray(kbPref?.blocos) && kbPref.blocos.length > 0 ? (kbPref.blocos[0] as any) : null;
 
+    // Preparação de Movimento opcional antes do bloco automático.
+    let ordemBase = 0;
+    if (kbBloco?.kb_prep_enabled) {
+      const nMob = Math.max(0, Number(kbBloco.kb_prep_mobilidade ?? 3));
+      const nAq = Math.max(0, Number(kbBloco.kb_prep_aquecimento ?? 2));
+      const dur = Number(kbBloco.kb_prep_duracao_min ?? 8);
+      const tempoSeg = Number(kbBloco.kb_prep_tempo_seg ?? 30);
+      if (nMob + nAq > 0) {
+        await inserirPrepMovimento(supabase, {
+          sessionId: session.id,
+          coachId: args.coach_id,
+          ordem: 0,
+          duracaoMin: dur,
+          numMobilidade: nMob,
+          numAquecimento: nAq,
+          tempoSeg,
+          avisos: args.avisos,
+          contextoSemana: args.contextoSemana,
+        });
+        ordemBase = 1;
+      }
+    }
+
     const { buildKbFitnessSession } = await import("@/lib/kbfitness-selector");
     await buildKbFitnessSession({
       supabase,
@@ -173,6 +196,7 @@ async function gerarSessao(
       sessionId: session.id,
       sessaoIdx: (args.contextoSemana - 1) * 7 + (args.numero_dia - 1),
       avisos: args.avisos,
+      ordemBase,
       config: kbBloco
         ? {
             categoriasAtivas: kbBloco.kb_categorias_ativas ?? undefined,
@@ -464,4 +488,96 @@ function embaralhar<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+/** Insere um bloco de Preparação de Movimento antes do motor automático. */
+async function inserirPrepMovimento(
+  supabase: any,
+  args: {
+    sessionId: string;
+    coachId: string;
+    ordem: number;
+    duracaoMin: number;
+    numMobilidade: number;
+    numAquecimento: number;
+    tempoSeg: number;
+    avisos: string[];
+    contextoSemana: number;
+  },
+): Promise<void> {
+  const { data: pool } = await supabase
+    .from("exercises")
+    .select("id, nome_pt, metodologias, equipamento")
+    .or(`coach_id.eq.${args.coachId},coach_id.is.null`);
+  const rows = (pool ?? []) as any[];
+
+  const isMob = (e: any) => {
+    const mets = Array.isArray(e?.metodologias) ? e.metodologias.map((v: any) => String(v).toLowerCase()) : [];
+    const eq = Array.isArray(e?.equipamento) ? e.equipamento.map((v: any) => String(v).toLowerCase()) : [];
+    return mets.includes("mobilidade") || eq.includes("mobilidade");
+  };
+  const mobPool = rows.filter(isMob);
+  const aqPool = rows.filter((e) => !isMob(e));
+
+  const mob = embaralhar(mobPool).slice(0, args.numMobilidade);
+  const aq = embaralhar(aqPool).slice(0, args.numAquecimento);
+
+  if (mob.length < args.numMobilidade) {
+    args.avisos.push(
+      `Semana ${args.contextoSemana} · Preparação de Movimento: só ${mob.length} de ${args.numMobilidade} exercícios de mobilidade disponíveis.`,
+    );
+  }
+  if (aq.length < args.numAquecimento) {
+    args.avisos.push(
+      `Semana ${args.contextoSemana} · Preparação de Movimento: só ${aq.length} de ${args.numAquecimento} exercícios de aquecimento disponíveis.`,
+    );
+  }
+  if (mob.length + aq.length === 0) return;
+
+  const slots: Record<string, "mobilidade" | "aquecimento"> = {};
+  const linhas: any[] = [];
+  let idx = 0;
+  for (const ex of mob) {
+    slots[String(idx)] = "mobilidade";
+    linhas.push({
+      exercise_id: ex.id,
+      ordem: idx,
+      series: 1,
+      reps: String(args.tempoSeg),
+    });
+    idx++;
+  }
+  for (const ex of aq) {
+    slots[String(idx)] = "aquecimento";
+    linhas.push({
+      exercise_id: ex.id,
+      ordem: idx,
+      series: 2,
+      reps: "10",
+    });
+    idx++;
+  }
+
+  const { data: block, error: be } = await supabase
+    .from("session_blocks")
+    .insert({
+      session_id: args.sessionId,
+      ordem: args.ordem,
+      formato: "preparacao_movimento",
+      titulo: `Preparação de Movimento (${args.duracaoMin}')`,
+      duracao_min: args.duracaoMin,
+      config: {
+        formato: "preparacao_movimento",
+        duracao_min: args.duracaoMin,
+        slots,
+      },
+    })
+    .select("id")
+    .single();
+  if (be || !block) throw new Error(be?.message ?? "Falha ao criar Preparação de Movimento");
+
+  const { error: xe } = await supabase
+    .from("session_block_exercises")
+    .insert(linhas.map((l) => ({ ...l, session_block_id: block.id })));
+  if (xe) throw new Error(xe.message);
 }

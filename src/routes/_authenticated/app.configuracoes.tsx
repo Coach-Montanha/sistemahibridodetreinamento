@@ -94,6 +94,7 @@ import { Search, ListChecks } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Dumbbell, Activity, Wrench, Wind } from "lucide-react";
+import { Flame } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/configuracoes")({
   component: ConfiguracoesPage,
@@ -513,6 +514,8 @@ function KbFitnessPanel({
         )}
       </Card>
 
+      <PrepMovimentoCard bloco={bloco} patch={patch} />
+
       <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
         <span className="min-w-0">
           A seleção final de exercícios continua vindo do seu banco marcado como
@@ -598,6 +601,206 @@ function OverrideRow({
         </label>
       </div>
     </div>
+  );
+}
+
+function PrepMovimentoCard({
+  bloco,
+  patch,
+}: {
+  bloco: BlocoPref;
+  patch: (u: Partial<BlocoPref>) => void;
+}) {
+  const enabled = !!bloco.kb_prep_enabled;
+  const mob = bloco.kb_prep_mobilidade ?? 3;
+  const aq = bloco.kb_prep_aquecimento ?? 2;
+  const dur = bloco.kb_prep_duracao_min ?? 8;
+  const tempo = bloco.kb_prep_tempo_seg ?? 30;
+  const total = mob + aq;
+
+  return (
+    <Card className="overflow-hidden border-border/60">
+      <div className="flex items-start justify-between gap-3 border-b border-border/60 px-5 py-3.5">
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors",
+              enabled ? "bg-primary/10 text-primary ring-1 ring-primary/20" : "bg-muted/60 text-muted-foreground",
+            )}
+          >
+            <Wind className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold tracking-tight text-foreground">
+              Preparação de Movimento
+            </h4>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Anexa um bloco de mobilidade e aquecimento antes do motor automático.
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={enabled}
+          onCheckedChange={(v) => patch({ kb_prep_enabled: v })}
+          aria-label="Ativar Preparação de Movimento"
+        />
+      </div>
+
+      {enabled && (
+        <div className="space-y-4 px-5 py-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <SlotCounter
+              icon={Wind}
+              label="Mobilidade"
+              hint="tempo por movimento"
+              value={mob}
+              onChange={(v) => patch({ kb_prep_mobilidade: v })}
+              min={0}
+              max={10}
+            />
+            <SlotCounter
+              icon={Flame}
+              label="Aquecimento"
+              hint="movimentos leves"
+              value={aq}
+              onChange={(v) => patch({ kb_prep_aquecimento: v })}
+              min={0}
+              max={10}
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <NumberRow
+              label="Duração"
+              unit="min"
+              value={dur}
+              min={1}
+              max={30}
+              onChange={(v) => patch({ kb_prep_duracao_min: v })}
+            />
+            <NumberRow
+              label="Tempo por mobilidade"
+              unit="seg"
+              value={tempo}
+              min={10}
+              max={180}
+              step={5}
+              onChange={(v) => patch({ kb_prep_tempo_seg: v })}
+            />
+          </div>
+
+          {total === 0 && (
+            <div className="rounded-md border border-warning/30 bg-warning/[0.06] px-3 py-2 text-xs text-warning-foreground">
+              Com 0 mobilidades e 0 aquecimentos, nenhum bloco será criado.
+            </div>
+          )}
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Mobilidades são sorteadas dentre exercícios marcados como
+            <span className="mx-1 font-medium text-foreground">Mobilidade</span>
+            no seu banco. Aquecimento usa exercícios leves do banco geral.
+          </p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function SlotCounter({
+  icon: Icon,
+  label,
+  hint,
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  icon: typeof Wind;
+  label: string;
+  hint: string;
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/60 px-3 py-2.5 transition-colors hover:border-border">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium leading-none text-foreground">{label}</p>
+        <p className="mt-1 text-[11px] leading-none text-muted-foreground">{hint}</p>
+      </div>
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 rounded-md"
+          disabled={value <= min}
+          onClick={() => onChange(Math.max(min, value - 1))}
+          aria-label={`Diminuir ${label.toLowerCase()}`}
+        >
+          <span className="text-base leading-none">−</span>
+        </Button>
+        <span className="min-w-[2ch] text-center text-sm font-semibold tabular-nums text-foreground">
+          {value}
+        </span>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 rounded-md"
+          disabled={value >= max}
+          onClick={() => onChange(Math.min(max, value + 1))}
+          aria-label={`Aumentar ${label.toLowerCase()}`}
+        >
+          <span className="text-base leading-none">+</span>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function NumberRow({
+  label,
+  unit,
+  value,
+  min,
+  max,
+  step = 1,
+  onChange,
+}: {
+  label: string;
+  unit: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/60 px-3 py-2.5">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <span className="flex items-center gap-1.5">
+        <Input
+          type="number"
+          inputMode="numeric"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => {
+            const n = Number(e.target.value);
+            if (Number.isFinite(n)) onChange(Math.min(max, Math.max(min, n)));
+          }}
+          className="h-8 w-20 text-right tabular-nums"
+        />
+        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          {unit}
+        </span>
+      </span>
+    </label>
   );
 }
 
