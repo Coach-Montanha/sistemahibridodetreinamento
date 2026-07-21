@@ -325,6 +325,16 @@ async function selecionarExercicios(
     permitidos: string[];
   },
 ): Promise<{ exercicios: any[]; aviso: string | null }> {
+  // Regra global: exercícios de mobilidade só podem aparecer no bloco de
+  // Preparação de Movimento. Nos demais formatos, removemos qualquer item
+  // marcado como Mobilidade (por metodologia OU equipamento).
+  const permiteMobilidade = args.formato === "preparacao_movimento";
+  const isMobilidade = (e: any): boolean => {
+    const mets = Array.isArray(e?.metodologias) ? e.metodologias.map((v: any) => String(v).toLowerCase()) : [];
+    const eq = Array.isArray(e?.equipamento) ? e.equipamento.map((v: any) => String(v).toLowerCase()) : [];
+    return mets.includes("mobilidade") || eq.includes("mobilidade");
+  };
+
   const { data: recentes } = await supabase
     .from("session_block_exercises")
     .select("exercise_id, session_blocks!inner(formato)")
@@ -337,10 +347,11 @@ async function selecionarExercicios(
   if (args.permitidos.length > 0) {
     const { data: curated } = await supabase
       .from("exercises")
-      .select("id, nome_pt")
+      .select("id, nome_pt, metodologias, equipamento")
       .in("id", args.permitidos)
       .or(`coach_id.eq.${args.coach_id},coach_id.is.null`);
-    const pool = (curated ?? []) as any[];
+    let pool = (curated ?? []) as any[];
+    if (!permiteMobilidade) pool = pool.filter((e) => !isMobilidade(e));
     let aviso: string | null = null;
     if (pool.length === 0) {
       return {
@@ -370,6 +381,7 @@ async function selecionarExercicios(
   const equipLabel = args.equipamentos.join(" · ");
 
   let candidatos: any[] = base ?? [];
+  if (!permiteMobilidade) candidatos = candidatos.filter((e) => !isMobilidade(e));
   let aviso: string | null = null;
 
   // Filtro por equipamento (case-insensitive), se solicitado.
@@ -392,10 +404,11 @@ async function selecionarExercicios(
   if (candidatos.length === 0) {
     const { data: fallback } = await supabase
       .from("exercises")
-      .select("id, nome_pt")
+      .select("id, nome_pt, metodologias, equipamento")
       .or(`coach_id.eq.${args.coach_id},coach_id.is.null`)
       .limit(50);
     candidatos = fallback ?? [];
+    if (!permiteMobilidade) candidatos = candidatos.filter((e) => !isMobilidade(e));
     if (candidatos.length === 0) {
       return { exercicios: [], aviso: `banco vazio — nenhum exercício disponível para ${modLabel}.` };
     }
