@@ -94,6 +94,7 @@ import { Search, ListChecks } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Dumbbell, Activity, Wrench, Wind } from "lucide-react";
+import { Flame } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/configuracoes")({
   component: ConfiguracoesPage,
