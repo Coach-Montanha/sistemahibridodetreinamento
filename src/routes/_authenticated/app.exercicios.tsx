@@ -1563,6 +1563,23 @@ function BulkEditDialog({
         </div>
 
         <div className="max-h-[52vh] space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
+          {globalCount > 0 && (
+            <div
+              role="note"
+              className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2.5 transition-colors duration-200"
+            >
+              <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {globalCount} exercício{globalCount === 1 ? "" : "s"}
+                </span>{" "}
+                da seleção {globalCount === 1 ? "é" : "são"} do{" "}
+                <span className="font-medium text-foreground">catálogo compartilhado</span>.{" "}
+                <span className="font-medium text-foreground">Cópias personalizadas</span> serão
+                criadas no seu catálogo com as alterações — os originais não são alterados.
+              </p>
+            </div>
+          )}
           <section className="space-y-3">
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="text-sm font-semibold text-foreground">
