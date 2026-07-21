@@ -153,6 +153,21 @@ async function gerarSessao(
     );
   }
 
+  // Kettlebell Fitness usa motor próprio: 1 bloco único de estações,
+  // sorteio por categoria (81/15/2/1/0.5), rounds = nº de estações.
+  // Não toca em nenhuma outra modalidade.
+  if (args.metodologia === "kettlebell_fitness") {
+    const { buildKbFitnessSession } = await import("@/lib/kbfitness-selector");
+    await buildKbFitnessSession({
+      supabase,
+      coachId: args.coach_id,
+      sessionId: session.id,
+      sessaoIdx: (args.contextoSemana - 1) * 7 + (args.numero_dia - 1),
+      avisos: args.avisos,
+    });
+    return session.id;
+  }
+
   // 1) Preferências customizadas do coach para essa metodologia
   const { data: prefRow } = await supabase
     .from("generator_preferences")
