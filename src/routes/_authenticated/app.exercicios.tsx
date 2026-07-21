@@ -579,6 +579,7 @@ function ExerciciosPage() {
         onOpenChange={setBulkOpen}
         selectedIds={Array.from(selected)}
         exercises={exercises as any[]}
+        coachId={coach?.id}
         onApplied={() => {
           setBulkOpen(false);
           clearSelection();
