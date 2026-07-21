@@ -15,19 +15,28 @@ export type FormatPreset = {
   id: string;
   label: string;
   base: BlockFormat;
+  description?: string;
   defaults?: Record<string, any>;
   builtin?: boolean;
 };
 
 type Registry = {
   labels: Partial<Record<BlockFormat, string>>;
+  descriptions: Partial<Record<BlockFormat, string>>;
+  builtinDefaults: Partial<Record<BlockFormat, Record<string, any>>>;
   hidden: BlockFormat[];
   custom: FormatPreset[];
 };
 
 const KEY = "shdt.format-registry.v1";
 
-const EMPTY: Registry = Object.freeze({ labels: {}, hidden: [], custom: [] }) as Registry;
+const EMPTY: Registry = Object.freeze({
+  labels: {},
+  descriptions: {},
+  builtinDefaults: {},
+  hidden: [],
+  custom: [],
+}) as Registry;
 
 // Cache the last snapshot so useSyncExternalStore doesn't loop on new refs.
 let cache: Registry = EMPTY;
@@ -46,6 +55,8 @@ function read(): Registry {
     const parsed = JSON.parse(raw);
     cache = {
       labels: parsed.labels ?? {},
+      descriptions: parsed.descriptions ?? {},
+      builtinDefaults: parsed.builtinDefaults ?? {},
       hidden: Array.isArray(parsed.hidden) ? parsed.hidden : [],
       custom: Array.isArray(parsed.custom) ? parsed.custom : [],
     };
@@ -88,6 +99,8 @@ export function useFormatRegistry() {
     id: `builtin:${f}`,
     label: registry.labels[f] ?? BLOCK_FORMAT_LABEL[f],
     base: f,
+    description: registry.descriptions[f],
+    defaults: registry.builtinDefaults[f],
     builtin: true,
   }));
 
@@ -103,6 +116,27 @@ export function useFormatRegistry() {
       if (!label || label === BLOCK_FORMAT_LABEL[base]) delete next.labels[base];
       write(next);
     },
+    describeBuiltin(base: BlockFormat, description: string) {
+      const next = { ...registry, descriptions: { ...registry.descriptions, [base]: description } };
+      if (!description) delete next.descriptions[base];
+      write(next);
+    },
+    setBuiltinDefaults(base: BlockFormat, defaults: Record<string, any>) {
+      const cleaned: Record<string, any> = {};
+      for (const [k, v] of Object.entries(defaults)) {
+        if (v !== null && v !== undefined && v !== "") cleaned[k] = v;
+      }
+      const nextDefaults = { ...registry.builtinDefaults };
+      if (Object.keys(cleaned).length === 0) delete nextDefaults[base];
+      else nextDefaults[base] = cleaned;
+      write({ ...registry, builtinDefaults: nextDefaults });
+    },
+    resetBuiltin(base: BlockFormat) {
+      const labels = { ...registry.labels }; delete labels[base];
+      const descriptions = { ...registry.descriptions }; delete descriptions[base];
+      const builtinDefaults = { ...registry.builtinDefaults }; delete builtinDefaults[base];
+      write({ ...registry, labels, descriptions, builtinDefaults, hidden: registry.hidden.filter((h) => h !== base) });
+    },
     toggleBuiltin(base: BlockFormat, visible: boolean) {
       const set = new Set(registry.hidden);
       if (visible) set.delete(base);
@@ -112,12 +146,25 @@ export function useFormatRegistry() {
     addCustom(preset: Omit<FormatPreset, "id" | "builtin">) {
       const id = `custom:${Date.now().toString(36)}`;
       write({ ...registry, custom: [...registry.custom, { ...preset, id }] });
+      return id;
     },
     updateCustom(id: string, patch: Partial<FormatPreset>) {
       write({
         ...registry,
         custom: registry.custom.map((p) => (p.id === id ? { ...p, ...patch } : p)),
       });
+    },
+    duplicatePreset(source: FormatPreset) {
+      const id = `custom:${Date.now().toString(36)}`;
+      const clone: FormatPreset = {
+        id,
+        label: `${source.label} (cópia)`,
+        base: source.base,
+        description: source.description,
+        defaults: source.defaults ? { ...source.defaults } : undefined,
+      };
+      write({ ...registry, custom: [...registry.custom, clone] });
+      return id;
     },
     removeCustom(id: string) {
       write({ ...registry, custom: registry.custom.filter((p) => p.id !== id) });

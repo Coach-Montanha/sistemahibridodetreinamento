@@ -40,11 +40,17 @@ export const BLOCK_FORMAT_LABEL: Record<BlockFormat, string> = {
   livre: "Bloco livre",
 };
 
-/** Formatos que a 1ª entrega expõe no menu de "novo bloco". */
+/** Todos os formatos disponíveis para uso em blocos de treino. */
 export const ENABLED_FORMATS: BlockFormat[] = [
   "preparacao_movimento",
+  "forca_tecnica_pct",
+  "emom",
   "e2mom",
   "amrap",
-  "forca_tecnica_pct",
+  "circuito",
   "kb_timed_sets",
+  "metcon",
+  "bodybuilding_sets",
+  "finalizador",
+  "livre",
 ];
