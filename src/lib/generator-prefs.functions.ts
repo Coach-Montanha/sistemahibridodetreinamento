@@ -45,6 +45,12 @@ const BLOCO = z.object({
   modalidades_alvo: z.array(METODOLOGIA).default([]),
   equipamentos_alvo: z.array(z.string().min(1).max(60)).default([]),
   exercicios_permitidos: z.array(z.string().uuid()).default([]),
+  // Config exclusiva do motor Kettlebell Fitness (opcional; ignorada nas outras modalidades).
+  kb_categorias_ativas: z
+    .record(z.string(), z.boolean())
+    .optional(),
+  kb_num_estacoes_override: z.number().int().min(3).max(10).nullable().optional(),
+  kb_duracao_min_override: z.number().int().min(10).max(60).nullable().optional(),
 });
 
 export type BlocoPref = z.infer<typeof BLOCO>;

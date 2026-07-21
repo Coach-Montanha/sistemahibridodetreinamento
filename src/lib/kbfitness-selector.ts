@@ -60,19 +60,30 @@ export interface SessaoKettlebellFitness {
 export function montarSessaoKettlebellFitness(
   pool: ExercicioPool[],
   sessaoIdxAtual: number,
+  opts?: {
+    categoriasAtivas?: Partial<Record<Categoria, boolean>>;
+    numEstacoesOverride?: number | null;
+    duracaoMinOverride?: number | null;
+  },
 ): SessaoKettlebellFitness {
-  const duracao_min = sortearPonderado(
-    DISTRIBUICAO_DURACAO.map((d) => ({ item: d.min, peso: d.peso })),
-  );
-  const num_estacoes = sortearPonderado(
-    DISTRIBUICAO_NUM_ESTACOES.map((d) => ({ item: d.n, peso: d.peso })),
-  );
+  const duracao_min =
+    opts?.duracaoMinOverride ??
+    sortearPonderado(DISTRIBUICAO_DURACAO.map((d) => ({ item: d.min, peso: d.peso })));
+  const num_estacoes =
+    opts?.numEstacoesOverride ??
+    sortearPonderado(DISTRIBUICAO_NUM_ESTACOES.map((d) => ({ item: d.n, peso: d.peso })));
+
+  // Regra global: Mobilidade só entra em Preparação de Movimento, nunca no motor KB.
+  const ativas: Partial<Record<Categoria, boolean>> = {
+    ...(opts?.categoriasAtivas ?? {}),
+    Mobilidade: false,
+  };
 
   const usadosHoje = new Set<string>();
   const estacoes: ExercicioPool[] = [];
 
   for (let i = 0; i < num_estacoes; i++) {
-    const categoria = sortearCategoria();
+    const categoria = sortearCategoria(ativas);
     const permiteRepetir = Math.random() < PROBABILIDADE_ACEITAR_REPETICAO_NO_DIA;
     const escolhido = escolherExercicio(
       pool,
@@ -114,12 +125,12 @@ function escolherExercicio(
   return sortearPonderado(pontuados.map((p) => ({ item: p.ex, peso: p.score })));
 }
 
-function sortearCategoria(): Categoria {
-  return sortearPonderado(
-    (Object.entries(PESO_CATEGORIA_KB_FITNESS) as [Categoria, number][])
-      .filter(([, peso]) => peso > 0)
-      .map(([cat, peso]) => ({ item: cat, peso })),
-  );
+function sortearCategoria(ativas?: Partial<Record<Categoria, boolean>>): Categoria {
+  const opcoes = (Object.entries(PESO_CATEGORIA_KB_FITNESS) as [Categoria, number][])
+    .filter(([cat, peso]) => peso > 0 && (ativas?.[cat] ?? true))
+    .map(([cat, peso]) => ({ item: cat, peso }));
+  if (opcoes.length === 0) return "Kettlebell";
+  return sortearPonderado(opcoes);
 }
 
 function sortearPonderado<T>(opcoes: { item: T; peso: number }[]): T {
@@ -154,8 +165,13 @@ export async function buildKbFitnessSession(args: {
   sessionId: string;
   sessaoIdx: number;
   avisos: string[];
+  config?: {
+    categoriasAtivas?: Partial<Record<Categoria, boolean>>;
+    numEstacoesOverride?: number | null;
+    duracaoMinOverride?: number | null;
+  };
 }): Promise<void> {
-  const { supabase, coachId, sessionId, sessaoIdx, avisos } = args;
+  const { supabase, coachId, sessionId, sessaoIdx, avisos, config } = args;
 
   // 1) Pool KB Fitness do coach (+ globais)
   const { data: raw, error: exErr } = await supabase
@@ -209,18 +225,26 @@ export async function buildKbFitnessSession(args: {
   // convertemos ultimaData -> índice relativo simples (dias atrás / 2 ~ sessões).
   // Como sessaoIdx aqui é derivado de (semana-1)*7+dia-1, usamos a data mais
   // recente do coach como ancoragem: sem histórico, fica null.
-  const pool: ExercicioPool[] = exercicios.map((e) => {
-    const s = stats.get(e.id);
-    return {
-      id: e.id,
-      nome_pt: e.nome_pt,
-      categoria: mapEquipamentoToCategoria(e.equipamento),
-      total_usos: s?.total ?? 0,
-      ultima_sessao_idx: s ? Math.max(0, sessaoIdx - s.total) : null,
-    };
-  });
+  const pool: ExercicioPool[] = exercicios
+    .map((e) => {
+      const s = stats.get(e.id);
+      return {
+        id: e.id,
+        nome_pt: e.nome_pt,
+        categoria: mapEquipamentoToCategoria(e.equipamento),
+        total_usos: s?.total ?? 0,
+        ultima_sessao_idx: s ? Math.max(0, sessaoIdx - s.total) : null,
+      };
+    })
+    // Regra global: exercícios de mobilidade nunca entram em blocos que não sejam
+    // Preparação de Movimento — o motor KB monta estações, então filtramos.
+    .filter((e) => e.categoria !== "Mobilidade");
 
-  const sessao = montarSessaoKettlebellFitness(pool, sessaoIdx);
+  const sessao = montarSessaoKettlebellFitness(pool, sessaoIdx, {
+    categoriasAtivas: config?.categoriasAtivas,
+    numEstacoesOverride: config?.numEstacoesOverride ?? null,
+    duracaoMinOverride: config?.duracaoMinOverride ?? null,
+  });
 
   if (sessao.estacoes.length === 0) {
     avisos.push(`Kettlebell Fitness: pool vazio após filtros — nenhuma estação sorteada.`);
