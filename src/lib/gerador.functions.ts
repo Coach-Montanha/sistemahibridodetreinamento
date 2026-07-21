@@ -157,6 +157,15 @@ async function gerarSessao(
   // sorteio por categoria (81/15/2/1/0.5), rounds = nº de estações.
   // Não toca em nenhuma outra modalidade.
   if (args.metodologia === "kettlebell_fitness") {
+    // Carrega config opcional do coach para o motor KB (categorias, override de estações/duração)
+    const { data: kbPref } = await supabase
+      .from("generator_preferences")
+      .select("blocos")
+      .eq("coach_id", args.coach_id)
+      .eq("metodologia", "kettlebell_fitness")
+      .maybeSingle();
+    const kbBloco = Array.isArray(kbPref?.blocos) && kbPref.blocos.length > 0 ? (kbPref.blocos[0] as any) : null;
+
     const { buildKbFitnessSession } = await import("@/lib/kbfitness-selector");
     await buildKbFitnessSession({
       supabase,
@@ -164,6 +173,13 @@ async function gerarSessao(
       sessionId: session.id,
       sessaoIdx: (args.contextoSemana - 1) * 7 + (args.numero_dia - 1),
       avisos: args.avisos,
+      config: kbBloco
+        ? {
+            categoriasAtivas: kbBloco.kb_categorias_ativas ?? undefined,
+            numEstacoesOverride: kbBloco.kb_num_estacoes_override ?? null,
+            duracaoMinOverride: kbBloco.kb_duracao_min_override ?? null,
+          }
+        : undefined,
     });
     return session.id;
   }
