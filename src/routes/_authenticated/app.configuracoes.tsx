@@ -514,6 +514,8 @@ function KbFitnessPanel({
         )}
       </Card>
 
+      <PrepMovimentoCard bloco={bloco} patch={patch} />
+
       <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
         <span className="min-w-0">
           A seleção final de exercícios continua vindo do seu banco marcado como
