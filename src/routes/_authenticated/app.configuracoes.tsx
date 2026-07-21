@@ -51,6 +51,17 @@ import {
   Pencil,
   RotateCcw,
 } from "lucide-react";
+import { Copy, Wand2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import type { FormatPreset } from "@/lib/format-registry";
 import { useFormatRegistry } from "@/lib/format-registry";
 import {
   getGeneratorPrefs,
