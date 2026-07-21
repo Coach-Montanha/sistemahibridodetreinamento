@@ -729,6 +729,7 @@ function ExerciseDialog({
   const [duplicates, setDuplicates] = useState<any[] | null>(null);
 
   const isEdit = !!editing;
+  const isEditingGlobal = isEdit && !editing?.coach_id;
 
   // Populate form whenever the dialog opens (or the target exercise changes).
   useEffect(() => {
@@ -762,7 +763,8 @@ function ExerciseDialog({
     setSaving(true);
     try {
       let exerciseId = editing?.id;
-      if (isEdit) {
+      let clonedFromGlobal = false;
+      if (isEdit && !isEditingGlobal) {
         const { error } = await supabase
           .from("exercises")
           .update({
@@ -792,6 +794,7 @@ function ExerciseDialog({
           .single();
         if (error) throw error;
         exerciseId = data.id;
+        clonedFromGlobal = isEditingGlobal;
       }
 
       if (file && exerciseId) {
@@ -812,7 +815,13 @@ function ExerciseDialog({
         });
       }
 
-      toast.success(isEdit ? "Exercício atualizado" : "Exercício criado");
+      toast.success(
+        clonedFromGlobal
+          ? "Cópia personalizada criada no seu catálogo"
+          : isEdit
+            ? "Exercício atualizado"
+            : "Exercício criado"
+      );
       qc.invalidateQueries({ queryKey: ["exercises"] });
       onOpenChange(false);
       return null;
