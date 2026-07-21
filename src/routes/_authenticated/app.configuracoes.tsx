@@ -286,6 +286,54 @@ function ConfiguracoesPage() {
 
 /* ================= Formatos de bloco ================= */
 
+function KbFitnessAutoPanel() {
+  return (
+    <Card className="overflow-hidden border-border/60 bg-gradient-to-br from-primary/[0.04] via-card to-card">
+      <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-start sm:gap-8 sm:p-8">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
+          <Sparkles className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1 space-y-4">
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-semibold tracking-tight text-foreground">
+              Motor automático dedicado
+            </h3>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Kettlebell Fitness usa um gerador próprio, calibrado com a distribuição
+              real das suas sessões. Não precisa configurar blocos aqui — o motor
+              sorteia estrutura, categoria e exercícios a cada geração.
+            </p>
+          </div>
+          <dl className="grid gap-3 text-sm sm:grid-cols-3">
+            <StatChip label="Duração típica" value="30 min" hint="96% das sessões" />
+            <StatChip label="Estações" value="5–6" hint="91% das sessões" />
+            <StatChip label="Composição" value="~81% KB" hint="+ 15% ginásticos" />
+          </dl>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Para incluir exercícios no pool desta modalidade, marque
+            <span className="mx-1 font-medium text-foreground">Kettlebell Fitness</span>
+            na aba de modalidades de cada exercício na tela de Exercícios.
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function StatChip({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2.5 transition-colors hover:border-border">
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="mt-0.5 flex items-baseline gap-1.5">
+        <span className="text-base font-semibold tabular-nums text-foreground">{value}</span>
+        {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
+      </dd>
+    </div>
+  );
+}
+
 function FormatosPanel() {
   const {
     registry,
