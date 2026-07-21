@@ -1377,12 +1377,14 @@ function BulkEditDialog({
   onOpenChange,
   selectedIds,
   exercises,
+  coachId,
   onApplied,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   selectedIds: string[];
   exercises: any[];
+  coachId: string | undefined;
   onApplied: () => void;
 }) {
   const [metMode, setMetMode] = useState<BulkMode>("manter");
@@ -1414,12 +1416,22 @@ function BulkEditDialog({
     return m;
   }, [exercises]);
 
+  const globalCount = useMemo(
+    () => selectedIds.reduce((n, id) => n + (byId.get(id) && !byId.get(id).coach_id ? 1 : 0), 0),
+    [selectedIds, byId]
+  );
+
   async function apply() {
     if (!willChange || selectedIds.length === 0) return;
+    if (globalCount > 0 && !coachId) {
+      toast.error("Perfil de treinador não encontrado");
+      return;
+    }
     setApplying(true);
     setProgress(0);
     const batchSize = 20;
-    let done = 0;
+    let updated = 0;
+    let cloned = 0;
     let failed = 0;
     let firstError: string | null = null;
     try {
@@ -1428,33 +1440,44 @@ function BulkEditDialog({
         const results = await Promise.all(
           batch.map(async (id) => {
             const ex = byId.get(id);
-            if (!ex) return { ok: false };
+            if (!ex) return { kind: "fail" as const };
+            const nextMet =
+              metMode !== "manter"
+                ? applyMode(ex.metodologias ?? [], metMode, metValues)
+                : ex.metodologias ?? [];
+            const nextEquip =
+              equipMode !== "manter"
+                ? applyMode(ex.equipamento ?? [], equipMode, equipValues)
+                : ex.equipamento ?? [];
+            const isGlobal = !ex.coach_id;
+            if (isGlobal) {
+              // Clone-on-write: catálogo compartilhado nunca é sobrescrito.
+              const { error } = await supabase.from("exercises").insert({
+                coach_id: coachId,
+                nome_pt: ex.nome_pt,
+                padrao_movimento: ex.padrao_movimento ?? null,
+                metodologias: nextMet,
+                equipamento: nextEquip,
+                unilateral: ex.unilateral ?? false,
+                instrucoes: ex.instrucoes ?? null,
+              });
+              return { kind: error ? ("fail" as const) : ("cloned" as const), message: error?.message };
+            }
             const patch: Record<string, any> = {
               atualizado_em: new Date().toISOString(),
             };
-            if (metMode !== "manter") {
-              patch.metodologias = applyMode(
-                ex.metodologias ?? [],
-                metMode,
-                metValues
-              );
-            }
-            if (equipMode !== "manter") {
-              patch.equipamento = applyMode(
-                ex.equipamento ?? [],
-                equipMode,
-                equipValues
-              );
-            }
+            if (metMode !== "manter") patch.metodologias = nextMet;
+            if (equipMode !== "manter") patch.equipamento = nextEquip;
             const { error } = await supabase
               .from("exercises")
               .update(patch as any)
               .eq("id", id);
-            return { ok: !error, message: error?.message };
+            return { kind: error ? ("fail" as const) : ("updated" as const), message: error?.message };
           })
         );
         for (const r of results) {
-          if (r.ok) done += 1;
+          if (r.kind === "updated") updated += 1;
+          else if (r.kind === "cloned") cloned += 1;
           else {
             failed += 1;
             if (!firstError && r.message) firstError = r.message;
@@ -1462,11 +1485,14 @@ function BulkEditDialog({
         }
         setProgress(Math.round(((i + batch.length) / selectedIds.length) * 100));
       }
+      const okParts: string[] = [];
+      if (updated > 0) okParts.push(`${updated} atualizado${updated === 1 ? "" : "s"}`);
+      if (cloned > 0)
+        okParts.push(`${cloned} clonado${cloned === 1 ? "" : "s"} no seu catálogo`);
+      const okMsg = okParts.join(" · ") || "Nenhum exercício alterado";
       if (failed === 0) {
-        toast.success(
-          `${done} exercício${done === 1 ? "" : "s"} atualizado${done === 1 ? "" : "s"}`
-        );
-      } else if (done === 0) {
+        toast.success(okMsg);
+      } else if (updated + cloned === 0) {
         toast.error(
           firstError
             ? `Nenhum exercício atualizado — ${firstError}`
@@ -1474,7 +1500,7 @@ function BulkEditDialog({
         );
       } else {
         toast.warning(
-          `${done} atualizado${done === 1 ? "" : "s"} · ${failed} falharam${firstError ? ` — ${firstError}` : ""}`
+          `${okMsg} · ${failed} falharam${firstError ? ` — ${firstError}` : ""}`
         );
       }
       onApplied();
