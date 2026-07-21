@@ -276,6 +276,7 @@ function ConfiguracoesPage() {
             </div>
           </div>
         </div>
+        )
       )}
         </TabsContent>
       </Tabs>
