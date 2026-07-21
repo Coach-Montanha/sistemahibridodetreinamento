@@ -240,7 +240,7 @@ function ConfiguracoesPage() {
           <TabsContent key={m} value={m} className="mt-0 focus-visible:outline-none">
             {m === tab && (
               m === "kettlebell_fitness" ? (
-                <KbFitnessAutoPanel />
+                <KbFitnessPanel state={current} onUpdate={update} />
               ) : (
                 <MethodologyPanel
                   state={current}
@@ -256,7 +256,6 @@ function ConfiguracoesPage() {
 
       {/* Sticky footer */}
       {section === "geracao" && current.dirty && !current.loading && (
-        tab !== "kettlebell_fitness" && (
         <div className="sticky bottom-4 z-20 mt-8">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
             <p className="pl-2 text-xs text-muted-foreground md:text-sm">
@@ -276,7 +275,6 @@ function ConfiguracoesPage() {
             </div>
           </div>
         </div>
-        )
       )}
         </TabsContent>
       </Tabs>
