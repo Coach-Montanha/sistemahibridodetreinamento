@@ -165,6 +165,7 @@ export async function buildKbFitnessSession(args: {
   sessionId: string;
   sessaoIdx: number;
   avisos: string[];
+  ordemBase?: number;
   config?: {
     categoriasAtivas?: Partial<Record<Categoria, boolean>>;
     numEstacoesOverride?: number | null;
@@ -172,6 +173,7 @@ export async function buildKbFitnessSession(args: {
   };
 }): Promise<void> {
   const { supabase, coachId, sessionId, sessaoIdx, avisos, config } = args;
+  const ordemBase = args.ordemBase ?? 0;
 
   // 1) Pool KB Fitness do coach (+ globais)
   const { data: raw, error: exErr } = await supabase
@@ -256,7 +258,7 @@ export async function buildKbFitnessSession(args: {
     .from("session_blocks")
     .insert({
       session_id: sessionId,
-      ordem: 0,
+      ordem: ordemBase,
       formato: "kb_timed_sets",
       titulo: `Kettlebell Fitness (${sessao.duracao_min}')`,
       duracao_min: sessao.duracao_min,
