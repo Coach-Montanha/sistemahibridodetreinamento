@@ -41,6 +41,8 @@ import {
   X,
   ChevronDown,
   Tag,
+  Info,
+  Copy,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -577,6 +579,7 @@ function ExerciciosPage() {
         onOpenChange={setBulkOpen}
         selectedIds={Array.from(selected)}
         exercises={exercises as any[]}
+        coachId={coach?.id}
         onApplied={() => {
           setBulkOpen(false);
           clearSelection();
@@ -727,6 +730,7 @@ function ExerciseDialog({
   const [duplicates, setDuplicates] = useState<any[] | null>(null);
 
   const isEdit = !!editing;
+  const isEditingGlobal = isEdit && !editing?.coach_id;
 
   // Populate form whenever the dialog opens (or the target exercise changes).
   useEffect(() => {
@@ -760,7 +764,8 @@ function ExerciseDialog({
     setSaving(true);
     try {
       let exerciseId = editing?.id;
-      if (isEdit) {
+      let clonedFromGlobal = false;
+      if (isEdit && !isEditingGlobal) {
         const { error } = await supabase
           .from("exercises")
           .update({
@@ -790,6 +795,7 @@ function ExerciseDialog({
           .single();
         if (error) throw error;
         exerciseId = data.id;
+        clonedFromGlobal = isEditingGlobal;
       }
 
       if (file && exerciseId) {
@@ -810,7 +816,13 @@ function ExerciseDialog({
         });
       }
 
-      toast.success(isEdit ? "Exercício atualizado" : "Exercício criado");
+      toast.success(
+        clonedFromGlobal
+          ? "Cópia personalizada criada no seu catálogo"
+          : isEdit
+            ? "Exercício atualizado"
+            : "Exercício criado"
+      );
       qc.invalidateQueries({ queryKey: ["exercises"] });
       onOpenChange(false);
       return null;
@@ -847,6 +859,21 @@ function ExerciseDialog({
           <DialogTitle>{isEdit ? "Editar exercício" : "Novo exercício"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          {isEditingGlobal && (
+            <div
+              role="note"
+              className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/40 px-3 py-2.5 transition-colors duration-200"
+            >
+              <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Este é um exercício do{" "}
+                <span className="font-medium text-foreground">catálogo compartilhado</span>.
+                Ao salvar, uma{" "}
+                <span className="font-medium text-foreground">cópia personalizada</span>{" "}
+                será criada no seu catálogo — o original não é alterado.
+              </p>
+            </div>
+          )}
           <div>
             <Label>Nome (PT)</Label>
             <Input value={nome} onChange={(e) => setNome(e.target.value)} />
@@ -1350,12 +1377,14 @@ function BulkEditDialog({
   onOpenChange,
   selectedIds,
   exercises,
+  coachId,
   onApplied,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   selectedIds: string[];
   exercises: any[];
+  coachId: string | undefined;
   onApplied: () => void;
 }) {
   const [metMode, setMetMode] = useState<BulkMode>("manter");
@@ -1387,12 +1416,22 @@ function BulkEditDialog({
     return m;
   }, [exercises]);
 
+  const globalCount = useMemo(
+    () => selectedIds.reduce((n, id) => n + (byId.get(id) && !byId.get(id).coach_id ? 1 : 0), 0),
+    [selectedIds, byId]
+  );
+
   async function apply() {
     if (!willChange || selectedIds.length === 0) return;
+    if (globalCount > 0 && !coachId) {
+      toast.error("Perfil de treinador não encontrado");
+      return;
+    }
     setApplying(true);
     setProgress(0);
     const batchSize = 20;
-    let done = 0;
+    let updated = 0;
+    let cloned = 0;
     let failed = 0;
     let firstError: string | null = null;
     try {
@@ -1401,33 +1440,44 @@ function BulkEditDialog({
         const results = await Promise.all(
           batch.map(async (id) => {
             const ex = byId.get(id);
-            if (!ex) return { ok: false };
+            if (!ex) return { kind: "fail" as const };
+            const nextMet =
+              metMode !== "manter"
+                ? applyMode(ex.metodologias ?? [], metMode, metValues)
+                : ex.metodologias ?? [];
+            const nextEquip =
+              equipMode !== "manter"
+                ? applyMode(ex.equipamento ?? [], equipMode, equipValues)
+                : ex.equipamento ?? [];
+            const isGlobal = !ex.coach_id;
+            if (isGlobal) {
+              // Clone-on-write: catálogo compartilhado nunca é sobrescrito.
+              const { error } = await supabase.from("exercises").insert({
+                coach_id: coachId,
+                nome_pt: ex.nome_pt,
+                padrao_movimento: ex.padrao_movimento ?? null,
+                metodologias: nextMet,
+                equipamento: nextEquip,
+                unilateral: ex.unilateral ?? false,
+                instrucoes: ex.instrucoes ?? null,
+              });
+              return { kind: error ? ("fail" as const) : ("cloned" as const), message: error?.message };
+            }
             const patch: Record<string, any> = {
               atualizado_em: new Date().toISOString(),
             };
-            if (metMode !== "manter") {
-              patch.metodologias = applyMode(
-                ex.metodologias ?? [],
-                metMode,
-                metValues
-              );
-            }
-            if (equipMode !== "manter") {
-              patch.equipamento = applyMode(
-                ex.equipamento ?? [],
-                equipMode,
-                equipValues
-              );
-            }
+            if (metMode !== "manter") patch.metodologias = nextMet;
+            if (equipMode !== "manter") patch.equipamento = nextEquip;
             const { error } = await supabase
               .from("exercises")
               .update(patch as any)
               .eq("id", id);
-            return { ok: !error, message: error?.message };
+            return { kind: error ? ("fail" as const) : ("updated" as const), message: error?.message };
           })
         );
         for (const r of results) {
-          if (r.ok) done += 1;
+          if (r.kind === "updated") updated += 1;
+          else if (r.kind === "cloned") cloned += 1;
           else {
             failed += 1;
             if (!firstError && r.message) firstError = r.message;
@@ -1435,11 +1485,14 @@ function BulkEditDialog({
         }
         setProgress(Math.round(((i + batch.length) / selectedIds.length) * 100));
       }
+      const okParts: string[] = [];
+      if (updated > 0) okParts.push(`${updated} atualizado${updated === 1 ? "" : "s"}`);
+      if (cloned > 0)
+        okParts.push(`${cloned} clonado${cloned === 1 ? "" : "s"} no seu catálogo`);
+      const okMsg = okParts.join(" · ") || "Nenhum exercício alterado";
       if (failed === 0) {
-        toast.success(
-          `${done} exercício${done === 1 ? "" : "s"} atualizado${done === 1 ? "" : "s"}`
-        );
-      } else if (done === 0) {
+        toast.success(okMsg);
+      } else if (updated + cloned === 0) {
         toast.error(
           firstError
             ? `Nenhum exercício atualizado — ${firstError}`
@@ -1447,7 +1500,7 @@ function BulkEditDialog({
         );
       } else {
         toast.warning(
-          `${done} atualizado${done === 1 ? "" : "s"} · ${failed} falharam${firstError ? ` — ${firstError}` : ""}`
+          `${okMsg} · ${failed} falharam${firstError ? ` — ${firstError}` : ""}`
         );
       }
       onApplied();
@@ -1510,6 +1563,23 @@ function BulkEditDialog({
         </div>
 
         <div className="max-h-[52vh] space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
+          {globalCount > 0 && (
+            <div
+              role="note"
+              className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2.5 transition-colors duration-200"
+            >
+              <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {globalCount} exercício{globalCount === 1 ? "" : "s"}
+                </span>{" "}
+                da seleção {globalCount === 1 ? "é" : "são"} do{" "}
+                <span className="font-medium text-foreground">catálogo compartilhado</span>.{" "}
+                <span className="font-medium text-foreground">Cópias personalizadas</span> serão
+                criadas no seu catálogo com as alterações — os originais não são alterados.
+              </p>
+            </div>
+          )}
           <section className="space-y-3">
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="text-sm font-semibold text-foreground">
