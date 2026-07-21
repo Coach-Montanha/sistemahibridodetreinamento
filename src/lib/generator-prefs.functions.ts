@@ -51,6 +51,12 @@ const BLOCO = z.object({
     .optional(),
   kb_num_estacoes_override: z.number().int().min(3).max(10).nullable().optional(),
   kb_duracao_min_override: z.number().int().min(10).max(60).nullable().optional(),
+  // Preparação de Movimento opcional que antecede o bloco automático do KB Fitness.
+  kb_prep_enabled: z.boolean().optional(),
+  kb_prep_duracao_min: z.number().int().min(1).max(30).nullable().optional(),
+  kb_prep_mobilidade: z.number().int().min(0).max(10).nullable().optional(),
+  kb_prep_aquecimento: z.number().int().min(0).max(10).nullable().optional(),
+  kb_prep_tempo_seg: z.number().int().min(10).max(180).nullable().optional(),
 });
 
 export type BlocoPref = z.infer<typeof BLOCO>;
