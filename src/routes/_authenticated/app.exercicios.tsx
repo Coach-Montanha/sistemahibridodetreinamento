@@ -41,6 +41,8 @@ import {
   X,
   ChevronDown,
   Tag,
+  Info,
+  Copy,
 } from "lucide-react";
 import {
   DropdownMenu,
