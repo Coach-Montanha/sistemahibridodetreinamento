@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { fetchCoachBranding } from "./session-export";
 import { METHODOLOGY_LABEL, type Methodology } from "./methodology";
-import type { SessaoImagemInput, ColunaImagem, LinhaBloco } from "./image-export";
+import type { SessaoImagemInput, BlocoImagem, LinhaBloco } from "./image-export";
 
 const METODOLOGIA_SIGLA: Record<string, string> = {
   hibrido: "TH",
@@ -50,6 +50,11 @@ function subtituloFormato(b: any): string | null {
   return null;
 }
 
+function ehAquecimento(b: any): boolean {
+  const t = (b.titulo ?? "").toString().toLowerCase();
+  return t.includes("aquecimento");
+}
+
 function nomeArquivoSessao(session: any, metodologia: string): string {
   const sigla = METODOLOGIA_SIGLA[metodologia] ?? metodologia.slice(0, 2).toUpperCase();
   const num = session.numero_dia ?? 1;
@@ -66,39 +71,37 @@ async function montarInputDeBlocos(
   metodologia: string,
   coachNome: string,
 ): Promise<SessaoImagemInput> {
-  const preparacao = blocks.filter((b) => b.formato === "preparacao_movimento");
-  const trabalho = blocks.filter((b) => b.formato !== "preparacao_movimento");
-
-  function linhasDeBloco(b: any): LinhaBloco[] {
-    const linhas: LinhaBloco[] = [{ texto: tituloBloco(b) }];
-    const sub = subtituloFormato(b);
-    if (sub) linhas.push({ texto: sub });
+  function linhasExerciciosDe(b: any): LinhaBloco[] {
     const exs = (b.session_block_exercises ?? []).sort(
       (a: any, z: any) => (a.ordem ?? 0) - (z.ordem ?? 0),
     );
-    for (const e of exs) linhas.push({ texto: formatarLinhaExercicio(e) });
-    return linhas;
+    return exs.map((e: any) => ({ texto: formatarLinhaExercicio(e) }));
   }
 
-  const colunas: ColunaImagem[] = [];
-
-  // Coluna 1: Preparação de Movimento (junta todos os blocos de preparação num só)
-  const linhasPrep: LinhaBloco[] = [{ texto: "PREPARAÇÃO DE MOVIMENTO" }];
-  for (const b of preparacao) {
-    if (linhasPrep.length > 1) linhasPrep.push({ texto: "+" });
-    const bloco = linhasDeBloco(b);
-    // bloco[0] já é o título — em Preparação simplificamos removendo (o cabeçalho é fixo)
-    linhasPrep.push(...bloco.slice(1));
+  function blocoParaImagem(b: any, tituloForcado?: string): BlocoImagem {
+    return {
+      titulo: (tituloForcado ?? tituloBloco(b)).toUpperCase(),
+      subtitulo: subtituloFormato(b),
+      linhas: linhasExerciciosDe(b),
+    };
   }
-  colunas.push({ linhas: linhasPrep });
 
-  // Colunas seguintes: uma por bloco de trabalho
-  for (const b of trabalho) {
-    colunas.push({ linhas: linhasDeBloco(b) });
+  const esquerda: BlocoImagem[] = [];
+  const principal: BlocoImagem[] = [];
+
+  for (const b of blocks) {
+    if (b.formato === "preparacao_movimento") {
+      esquerda.push(blocoParaImagem(b, "PREPARAÇÃO DE MOVIMENTO"));
+    } else if (ehAquecimento(b)) {
+      esquerda.push(blocoParaImagem(b, "AQUECIMENTO"));
+    } else {
+      principal.push(blocoParaImagem(b));
+    }
   }
 
   return {
-    colunas,
+    esquerda,
+    principal,
     metodologiaLabel: (METHODOLOGY_LABEL[metodologia as Methodology] ?? metodologia).toUpperCase(),
     coachLabel: `by ${coachNome}`,
   };
