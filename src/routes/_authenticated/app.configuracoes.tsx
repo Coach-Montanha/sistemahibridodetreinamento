@@ -61,6 +61,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { FormatPreset } from "@/lib/format-registry";
 import { useFormatRegistry } from "@/lib/format-registry";
 import {
@@ -822,6 +832,7 @@ function FormatosPanel() {
   const {
     registry,
     builtins,
+    presets,
     renameBuiltin,
     describeBuiltin,
     setBuiltinDefaults,
@@ -831,16 +842,32 @@ function FormatosPanel() {
     updateCustom,
     removeCustom,
     duplicatePreset,
+    reorderPresets,
   } = useFormatRegistry();
 
   const [editing, setEditing] = useState<FormatPreset | null>(null);
   const [showHidden, setShowHidden] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<FormatPreset | null>(null);
 
-  const visibleBuiltins = builtins.filter((p) => !registry.hidden.includes(p.base));
   const hiddenBuiltins = builtins.filter((p) => registry.hidden.includes(p.base));
-  const customs = registry.custom.map<FormatPreset>((p) => ({ ...p, builtin: false }));
+  const activeCount = presets.length;
 
-  const activeCount = visibleBuiltins.length + customs.length;
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
+
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    reorderPresets(String(active.id), String(over.id));
+  }
+
+  function confirmedDelete() {
+    if (!confirmDelete) return;
+    if (confirmDelete.builtin) toggleBuiltin(confirmDelete.base, false);
+    else removeCustom(confirmDelete.id);
+    setConfirmDelete(null);
+  }
 
   function openNew() {
     setEditing({
@@ -904,39 +931,32 @@ function FormatosPanel() {
       </div>
 
       <section className="space-y-3">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {visibleBuiltins.map((p) => (
-            <FormatoCard
-              key={p.id}
-              preset={p}
-              customized={
-                !!registry.labels[p.base] ||
-                !!registry.descriptions[p.base] ||
-                !!registry.builtinDefaults[p.base]
-              }
-              onEdit={() => setEditing(p)}
-              onDuplicate={() => {
-                const id = duplicatePreset(p);
-                const created = { ...p, id, label: `${p.label} (cópia)`, builtin: false };
-                setEditing(created);
-              }}
-              onHide={() => toggleBuiltin(p.base, false)}
-              onReset={() => resetBuiltin(p.base)}
-            />
-          ))}
-          {customs.map((p) => (
-            <FormatoCard
-              key={p.id}
-              preset={p}
-              onEdit={() => setEditing(p)}
-              onDuplicate={() => {
-                const id = duplicatePreset(p);
-                setEditing({ ...p, id, label: `${p.label} (cópia)` });
-              }}
-              onDelete={() => removeCustom(p.id)}
-            />
-          ))}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={presets.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {presets.map((p) => (
+                <FormatoCard
+                  key={p.id}
+                  preset={p}
+                  customized={
+                    p.builtin
+                      ? !!registry.labels[p.base] ||
+                        !!registry.descriptions[p.base] ||
+                        !!registry.builtinDefaults[p.base]
+                      : false
+                  }
+                  onEdit={() => setEditing(p)}
+                  onDuplicate={() => {
+                    const id = duplicatePreset(p);
+                    setEditing({ ...p, id, label: `${p.label} (cópia)`, builtin: false });
+                  }}
+                  onReset={p.builtin ? () => resetBuiltin(p.base) : undefined}
+                  onDelete={() => setConfirmDelete(p)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
 
         {activeCount === 0 && (
           <Card className="flex flex-col items-center justify-center gap-2 border-dashed py-12 text-center">
@@ -959,7 +979,7 @@ function FormatosPanel() {
             className="group flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
           >
             {showHidden ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            Ocultos ({hiddenBuiltins.length})
+            Blocos ocultos ({hiddenBuiltins.length})
           </button>
           {showHidden && (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -989,6 +1009,12 @@ function FormatosPanel() {
         onOpenChange={(v) => !v && setEditing(null)}
         onSave={handleSave}
       />
+
+      <DeleteFormatDialog
+        preset={confirmDelete}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={confirmedDelete}
+      />
     </div>
   );
 }
@@ -1001,7 +1027,6 @@ function FormatoCard({
   customized,
   onEdit,
   onDuplicate,
-  onHide,
   onShow,
   onReset,
   onDelete,
@@ -1011,7 +1036,6 @@ function FormatoCard({
   customized?: boolean;
   onEdit: () => void;
   onDuplicate?: () => void;
-  onHide?: () => void;
   onShow?: () => void;
   onReset?: () => void;
   onDelete?: () => void;
@@ -1024,14 +1048,44 @@ function FormatoCard({
   if (defaults.reps) chips.push({ label: "Reps", value: String(defaults.reps) });
   if (defaults.tempo_seg) chips.push({ label: "Tempo", value: `${defaults.tempo_seg}s` });
 
+  const sortable = useSortable({ id: preset.id, disabled: hidden });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = sortable;
+  const style = hidden
+    ? undefined
+    : {
+        transform: CSS.Transform.toString(transform),
+        transition,
+      };
+
   return (
     <Card
+      ref={hidden ? undefined : setNodeRef}
+      style={style}
       className={cn(
         "group relative flex flex-col gap-4 rounded-2xl border-border/60 bg-card/60 p-5 backdrop-blur transition-all duration-200",
         "hover:border-primary/40 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.12),0_8px_24px_-12px_hsl(var(--primary)/0.25)]",
         hidden && "opacity-70",
+        isDragging && "z-10 scale-[1.02] shadow-lg ring-1 ring-primary/40",
       )}
     >
+      {!hidden && (
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-md text-muted-foreground opacity-0 transition-all duration-150 hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 md:opacity-0 touch-none cursor-grab active:cursor-grabbing"
+          aria-label={`Arrastar para reordenar ${preset.label}`}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      )}
       <div className="flex items-start gap-3">
         <div
           className={cn(
@@ -1116,45 +1170,88 @@ function FormatoCard({
               <RotateCcw className="h-3.5 w-3.5" />
             </Button>
           )}
-          {onHide && (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 text-muted-foreground transition-colors hover:text-foreground"
-              onClick={onHide}
-              aria-label="Ocultar"
-              title="Ocultar do menu"
-            >
-              <EyeOff className="h-3.5 w-3.5" />
-            </Button>
-          )}
           {onShow && (
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8 text-muted-foreground transition-colors hover:text-foreground"
+              className="h-8 gap-1.5 px-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
               onClick={onShow}
-              aria-label="Mostrar"
-              title="Mostrar no menu"
+              aria-label="Restaurar"
+              title="Restaurar no grid"
             >
-              <Eye className="h-3.5 w-3.5" />
+              <Eye className="h-3.5 w-3.5" /> Restaurar
             </Button>
           )}
           {onDelete && (
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              className={cn(
+                "h-8 w-8 transition-colors",
+                preset.builtin
+                  ? "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
+              )}
               onClick={onDelete}
-              aria-label="Excluir"
-              title="Excluir preset"
+              aria-label={preset.builtin ? "Ocultar" : "Excluir"}
+              title={preset.builtin ? "Ocultar do menu" : "Excluir preset"}
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              {preset.builtin ? <EyeOff className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
             </Button>
           )}
         </div>
       </div>
     </Card>
+  );
+}
+
+function DeleteFormatDialog({
+  preset,
+  onCancel,
+  onConfirm,
+}: {
+  preset: FormatPreset | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const open = !!preset;
+  const isBuiltin = !!preset?.builtin;
+  return (
+    <AlertDialog open={open} onOpenChange={(v) => !v && onCancel()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {isBuiltin ? "Ocultar bloco padrão?" : "Excluir bloco personalizado?"}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="leading-relaxed">
+            {isBuiltin ? (
+              <>
+                <span className="font-medium text-foreground">{preset?.label}</span> vai
+                sair do grid e do menu do construtor. Você pode restaurá-lo depois em
+                "Blocos ocultos".
+              </>
+            ) : (
+              <>
+                <span className="font-medium text-foreground">{preset?.label}</span> será
+                removido permanentemente. Essa ação não pode ser desfeita.
+              </>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            className={cn(
+              !isBuiltin &&
+                "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+            )}
+          >
+            {isBuiltin ? "Ocultar" : "Excluir"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
