@@ -26,6 +26,7 @@ type Registry = {
   builtinDefaults: Partial<Record<BlockFormat, Record<string, any>>>;
   hidden: BlockFormat[];
   custom: FormatPreset[];
+  order: string[];
 };
 
 const KEY = "shdt.format-registry.v1";
@@ -36,6 +37,7 @@ const EMPTY: Registry = Object.freeze({
   builtinDefaults: {},
   hidden: [],
   custom: [],
+  order: [],
 }) as Registry;
 
 // Cache the last snapshot so useSyncExternalStore doesn't loop on new refs.
@@ -59,6 +61,7 @@ function read(): Registry {
       builtinDefaults: parsed.builtinDefaults ?? {},
       hidden: Array.isArray(parsed.hidden) ? parsed.hidden : [],
       custom: Array.isArray(parsed.custom) ? parsed.custom : [],
+      order: Array.isArray(parsed.order) ? parsed.order : [],
     };
     return cache;
   } catch {
