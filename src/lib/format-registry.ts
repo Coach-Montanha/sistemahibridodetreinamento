@@ -108,7 +108,13 @@ export function useFormatRegistry() {
   }));
 
   const visibleBuiltins = builtins.filter((p) => !registry.hidden.includes(p.base));
-  const presets: FormatPreset[] = [...visibleBuiltins, ...registry.custom];
+  const rawVisible: FormatPreset[] = [...visibleBuiltins, ...registry.custom];
+  const orderMap = new Map(registry.order.map((id, i) => [id, i]));
+  const presets: FormatPreset[] = [...rawVisible].sort((a, b) => {
+    const ai = orderMap.has(a.id) ? (orderMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
+    const bi = orderMap.has(b.id) ? (orderMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
+    return ai - bi;
+  });
 
   return {
     registry,
@@ -171,6 +177,16 @@ export function useFormatRegistry() {
     },
     removeCustom(id: string) {
       write({ ...registry, custom: registry.custom.filter((p) => p.id !== id) });
+    },
+    reorderPresets(activeId: string, overId: string) {
+      const ids = presets.map((p) => p.id);
+      const from = ids.indexOf(activeId);
+      const to = ids.indexOf(overId);
+      if (from === -1 || to === -1 || from === to) return;
+      const next = [...ids];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      write({ ...registry, order: next });
     },
   };
 }
