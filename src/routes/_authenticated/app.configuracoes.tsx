@@ -822,6 +822,7 @@ function FormatosPanel() {
   const {
     registry,
     builtins,
+    presets,
     renameBuiltin,
     describeBuiltin,
     setBuiltinDefaults,
@@ -831,16 +832,32 @@ function FormatosPanel() {
     updateCustom,
     removeCustom,
     duplicatePreset,
+    reorderPresets,
   } = useFormatRegistry();
 
   const [editing, setEditing] = useState<FormatPreset | null>(null);
   const [showHidden, setShowHidden] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<FormatPreset | null>(null);
 
-  const visibleBuiltins = builtins.filter((p) => !registry.hidden.includes(p.base));
   const hiddenBuiltins = builtins.filter((p) => registry.hidden.includes(p.base));
-  const customs = registry.custom.map<FormatPreset>((p) => ({ ...p, builtin: false }));
+  const activeCount = presets.length;
 
-  const activeCount = visibleBuiltins.length + customs.length;
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
+
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    reorderPresets(String(active.id), String(over.id));
+  }
+
+  function confirmedDelete() {
+    if (!confirmDelete) return;
+    if (confirmDelete.builtin) toggleBuiltin(confirmDelete.base, false);
+    else removeCustom(confirmDelete.id);
+    setConfirmDelete(null);
+  }
 
   function openNew() {
     setEditing({
@@ -904,39 +921,32 @@ function FormatosPanel() {
       </div>
 
       <section className="space-y-3">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {visibleBuiltins.map((p) => (
-            <FormatoCard
-              key={p.id}
-              preset={p}
-              customized={
-                !!registry.labels[p.base] ||
-                !!registry.descriptions[p.base] ||
-                !!registry.builtinDefaults[p.base]
-              }
-              onEdit={() => setEditing(p)}
-              onDuplicate={() => {
-                const id = duplicatePreset(p);
-                const created = { ...p, id, label: `${p.label} (cópia)`, builtin: false };
-                setEditing(created);
-              }}
-              onHide={() => toggleBuiltin(p.base, false)}
-              onReset={() => resetBuiltin(p.base)}
-            />
-          ))}
-          {customs.map((p) => (
-            <FormatoCard
-              key={p.id}
-              preset={p}
-              onEdit={() => setEditing(p)}
-              onDuplicate={() => {
-                const id = duplicatePreset(p);
-                setEditing({ ...p, id, label: `${p.label} (cópia)` });
-              }}
-              onDelete={() => removeCustom(p.id)}
-            />
-          ))}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={presets.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {presets.map((p) => (
+                <FormatoCard
+                  key={p.id}
+                  preset={p}
+                  customized={
+                    p.builtin
+                      ? !!registry.labels[p.base] ||
+                        !!registry.descriptions[p.base] ||
+                        !!registry.builtinDefaults[p.base]
+                      : false
+                  }
+                  onEdit={() => setEditing(p)}
+                  onDuplicate={() => {
+                    const id = duplicatePreset(p);
+                    setEditing({ ...p, id, label: `${p.label} (cópia)`, builtin: false });
+                  }}
+                  onReset={p.builtin ? () => resetBuiltin(p.base) : undefined}
+                  onDelete={() => setConfirmDelete(p)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
 
         {activeCount === 0 && (
           <Card className="flex flex-col items-center justify-center gap-2 border-dashed py-12 text-center">
@@ -959,7 +969,7 @@ function FormatosPanel() {
             className="group flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
           >
             {showHidden ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            Ocultos ({hiddenBuiltins.length})
+            Blocos ocultos ({hiddenBuiltins.length})
           </button>
           {showHidden && (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -988,6 +998,12 @@ function FormatosPanel() {
         preset={editing}
         onOpenChange={(v) => !v && setEditing(null)}
         onSave={handleSave}
+      />
+
+      <DeleteFormatDialog
+        preset={confirmDelete}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={confirmedDelete}
       />
     </div>
   );
