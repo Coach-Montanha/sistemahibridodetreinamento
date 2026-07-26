@@ -52,11 +52,14 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Copy, Wand2 } from "lucide-react";
-import { GitMerge, Palette, FolderArchive, KeyRound } from "lucide-react";
+import { Palette, FolderArchive, KeyRound } from "lucide-react";
 import { ApiPanel } from "@/components/settings/api-panel";
-import { FusaoPanel } from "@/components/settings/fusao-panel";
 import { MarcaPanel } from "@/components/settings/marca-panel";
 import { ArquivosPanel } from "@/components/settings/arquivos-panel";
+import { SettingsHeader, Fold } from "@/components/settings/settings-shell";
+import { KpiRow, type Kpi } from "@/components/settings/kpi-row";
+import { useCoachFiles, formatBytes } from "@/components/settings/use-coach-files";
+import { useCoach } from "@/hooks/use-coach";
 import {
   Dialog,
   DialogContent,
