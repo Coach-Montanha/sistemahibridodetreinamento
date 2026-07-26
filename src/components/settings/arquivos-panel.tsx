@@ -1,9 +1,8 @@
 import { useCallback, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
@@ -28,9 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCoach } from "@/hooks/use-coach";
-import { PanelHeader } from "./panel-shell";
-
-const BUCKET = "coach-files";
+import { COACH_FILES_BUCKET as BUCKET, useCoachFiles, formatBytes } from "./use-coach-files";
 
 export function ArquivosPanel() {
   const { data: coach } = useCoach();
@@ -40,17 +37,7 @@ export function ArquivosPanel() {
   const [uploading, setUploading] = useState<{ name: string; progress: number }[]>([]);
   const [toDelete, setToDelete] = useState<{ name: string; path: string } | null>(null);
 
-  const { data: files = [], isLoading } = useQuery({
-    queryKey: ["coach-files", coach?.id],
-    enabled: !!coach,
-    queryFn: async () => {
-      const { data, error } = await supabase.storage
-        .from(BUCKET)
-        .list(coach!.id, { limit: 200, sortBy: { column: "created_at", order: "desc" } });
-      if (error) throw error;
-      return (data ?? []).filter((f) => f.name !== ".emptyFolderPlaceholder");
-    },
-  });
+  const { data: files = [], isLoading } = useCoachFiles();
 
   const upload = useCallback(
     async (fileList: FileList | File[]) => {
@@ -104,23 +91,8 @@ export function ArquivosPanel() {
     a.remove();
   }
 
-  const totalBytes = files.reduce((acc, f) => acc + (f.metadata?.size ?? 0), 0);
-
   return (
     <section>
-      <PanelHeader
-        icon={FolderArchive}
-        title="Arquivos"
-        description="Envie e baixe planilhas, PDFs, mídias e outros materiais do seu trabalho."
-        aside={
-          files.length > 0 ? (
-            <Badge variant="secondary" className="font-normal tabular-nums">
-              {files.length} · {formatBytes(totalBytes)}
-            </Badge>
-          ) : undefined
-        }
-      />
-
       <label
         onDragOver={(e) => {
           e.preventDefault();
