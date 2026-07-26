@@ -52,11 +52,14 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Copy, Wand2 } from "lucide-react";
-import { GitMerge, Palette, FolderArchive, KeyRound } from "lucide-react";
+import { Palette, FolderArchive, KeyRound } from "lucide-react";
 import { ApiPanel } from "@/components/settings/api-panel";
-import { FusaoPanel } from "@/components/settings/fusao-panel";
 import { MarcaPanel } from "@/components/settings/marca-panel";
 import { ArquivosPanel } from "@/components/settings/arquivos-panel";
+import { SettingsHeader, Fold } from "@/components/settings/settings-shell";
+import { KpiRow, type Kpi } from "@/components/settings/kpi-row";
+import { useCoachFiles, formatBytes } from "@/components/settings/use-coach-files";
+import { useCoach } from "@/hooks/use-coach";
 import {
   Dialog,
   DialogContent,
@@ -121,28 +124,22 @@ export const Route = createFileRoute("/_authenticated/app/configuracoes")({
 const SECTIONS = [
   {
     key: "geracao",
-    label: "Geração automática",
-    hint: "Blocos, séries e progressões por modalidade",
+    label: "Geração & Blocos",
+    hint: "Motor automático, formatos e API",
     icon: Sparkles,
   },
-  {
-    key: "formatos",
-    label: "Formatos de bloco",
-    hint: "Nomes, padrões e ordem dos blocos",
-    icon: Layers,
-  },
-  {
-    key: "fusao",
-    label: "Fusão de exercícios",
-    hint: "Detecte e una duplicados do banco",
-    icon: GitMerge,
-  },
-  { key: "marca", label: "Marca", hint: "Logo, cores e rodapé das exportações", icon: Palette },
+  { key: "marca", label: "Marca", hint: "Logo, cores e rodapé", icon: Palette },
   { key: "arquivos", label: "Arquivos", hint: "Planilhas, PDFs e mídias", icon: FolderArchive },
-  { key: "api", label: "API", hint: "Chaves de acesso aos endpoints públicos", icon: KeyRound },
 ] as const;
 
 type SectionKey = (typeof SECTIONS)[number]["key"];
+
+/** Links antigos (?section=formatos|fusao|api) continuam funcionando. */
+const LEGACY_SECTION: Record<string, SectionKey> = {
+  formatos: "geracao",
+  fusao: "geracao",
+  api: "geracao",
+};
 
 const METS = Object.keys(METHODOLOGY_LABEL) as Methodology[];
 
@@ -184,7 +181,11 @@ function ConfiguracoesPage() {
   const [saving, setSaving] = useState(false);
   const section: SectionKey = SECTIONS.some((s) => s.key === searchSection)
     ? (searchSection as SectionKey)
-    : "geracao";
+    : (LEGACY_SECTION[searchSection ?? ""] ?? "geracao");
+
+  const { presets } = useFormatRegistry();
+  const { data: coach } = useCoach();
+  const { data: files = [], isLoading: filesLoading } = useCoachFiles();
 
   function setSection(next: SectionKey) {
     navigate({ search: { section: next }, replace: true });
@@ -248,71 +249,127 @@ function ConfiguracoesPage() {
     });
   }
 
+  const totalBytes = files.reduce((acc, f) => acc + (f.metadata?.size ?? 0), 0);
+  const lastUpload = files[0]?.created_at
+    ? new Date(files[0].created_at as string).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "short",
+      })
+    : "—";
+
+  const kpis: Kpi[] =
+    section === "marca"
+      ? [
+          {
+            label: "Logo",
+            value: coach?.logo_url ? "Enviada" : "Pendente",
+            hint: "Cabeçalho das exportações",
+            icon: Palette,
+          },
+          {
+            label: "Cor primária",
+            value: (coach?.cor_primaria ?? "#F26B1F").toUpperCase(),
+            swatch: coach?.cor_primaria ?? "#F26B1F",
+          },
+          {
+            label: "Cor secundária",
+            value: (coach?.cor_secundaria ?? "#0F1115").toUpperCase(),
+            swatch: coach?.cor_secundaria ?? "#0F1115",
+          },
+          {
+            label: "Rodapé",
+            value: coach?.rodape_export ? "Definido" : "Vazio",
+            hint: coach?.rodape_export ?? "Pé de página das exportações",
+          },
+        ]
+      : section === "arquivos"
+        ? [
+            { label: "Arquivos", value: String(files.length), icon: FolderArchive },
+            { label: "Espaço usado", value: formatBytes(totalBytes) },
+            { label: "Último envio", value: lastUpload, hint: "Data do upload mais recente" },
+          ]
+        : [
+            {
+              label: "Modalidade",
+              value: METHODOLOGY_LABEL[tab],
+              icon: Sparkles,
+            },
+            { label: "Blocos", value: String(current.blocos.length), hint: "Na modalidade ativa" },
+            {
+              label: "Preferências",
+              value: current.origem === "custom" ? "Personalizadas" : "Padrão",
+            },
+            { label: "Formatos ativos", value: String(presets.length), icon: Layers },
+          ];
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
-      <header className="mb-8 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Settings className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Configurações</h1>
-            <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Motor de geração, formatos de bloco, fusão de exercícios, marca e arquivos — tudo em um
-              só lugar.
-            </p>
-          </div>
-        </div>
-      </header>
+      <SettingsHeader
+        icon={Settings}
+        eyebrow="Conta"
+        title="Configurações"
+        description="Preferências do motor de geração, identidade visual e materiais do seu trabalho."
+      />
 
-      <div className="grid gap-6 md:grid-cols-[248px_minmax(0,1fr)] md:gap-8">
-        {/* Mobile: trilha horizontal. Desktop: nav vertical. */}
-        <nav
-          aria-label="Seções de configurações"
-          className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-col md:gap-1 md:overflow-visible md:px-0 md:pb-0"
-        >
-          {SECTIONS.map((s) => {
-            const active = section === s.key;
-            const Icon = s.icon;
-            return (
-              <button
-                key={s.key}
-                type="button"
-                aria-current={active ? "page" : undefined}
-                onClick={() => setSection(s.key)}
-                className={`group flex shrink-0 snap-start items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.99] md:w-full md:shrink ${
-                  active
-                    ? "border-primary/40 bg-primary/10 text-foreground shadow-sm"
-                    : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-accent/40 hover:text-foreground"
-                }`}
-              >
-                <Icon
-                  className={`h-4 w-4 shrink-0 transition-colors duration-200 ${
-                    active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                  }`}
-                />
-                <span className="min-w-0">
-                  <span className="block whitespace-nowrap text-sm font-medium leading-tight md:whitespace-normal">
-                    {s.label}
-                  </span>
-                  <span className="mt-0.5 hidden text-xs leading-snug text-muted-foreground md:block">
-                    {s.hint}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+      <nav
+        role="tablist"
+        aria-label="Seções de configurações"
+        className="-mx-4 mb-8 flex snap-x gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:inline-flex md:snap-none md:gap-1 md:rounded-xl md:border md:border-border/60 md:bg-muted/40 md:p-1 md:px-1"
+      >
+        {SECTIONS.map((s) => {
+          const active = section === s.key;
+          const Icon = s.icon;
+          return (
+            <button
+              key={s.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setSection(s.key)}
+              className={cn(
+                "group flex shrink-0 snap-start items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]",
+                active
+                  ? "border-primary/40 bg-background text-foreground shadow-sm"
+                  : "border-transparent text-muted-foreground hover:bg-accent/40 hover:text-foreground",
+              )}
+            >
+              <Icon
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-colors duration-200",
+                  active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+                )}
+              />
+              <span className="whitespace-nowrap">{s.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
-        <div className="min-w-0">
-        {section === "formatos" && <FormatosPanel />}
-        {section === "fusao" && <FusaoPanel />}
-        {section === "marca" && <MarcaPanel />}
-        {section === "arquivos" && <ArquivosPanel />}
-        {section === "api" && <ApiPanel />}
+      <KpiRow items={kpis} loading={section === "arquivos" ? filesLoading : false} />
+
+      <div className="min-w-0 space-y-6">
+        {section === "marca" && (
+          <Fold
+            title="Marca do treinador"
+            description="Logo, cores e rodapé aplicados no cabeçalho das exportações em PDF, Excel e imagem."
+          >
+            <MarcaPanel />
+          </Fold>
+        )}
+        {section === "arquivos" && (
+          <Fold
+            title="Seus arquivos"
+            description="Envie e baixe planilhas, PDFs, mídias e outros materiais do seu trabalho."
+          >
+            <ArquivosPanel />
+          </Fold>
+        )}
         {section === "geracao" && (
           <>
-
+            <Fold
+              title="Geração automática"
+              description="Blocos, séries e progressões usados pelo motor em cada modalidade."
+            >
       <Tabs value={tab} onValueChange={(v) => setTab(v as Methodology)}>
         {/* Mobile: select. Desktop: tabs. */}
         <div className="mb-6 md:hidden">
@@ -355,31 +412,39 @@ function ConfiguracoesPage() {
         ))}
       </Tabs>
 
-      {/* Sticky footer */}
-      {current.dirty && !current.loading && (
-        <div className="sticky bottom-4 z-20 mt-8">
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
-            <p className="pl-2 text-xs text-muted-foreground md:text-sm">
-              Alterações se aplicam nas próximas gerações.
-            </p>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={onDiscard} disabled={saving}>
-                Descartar
-              </Button>
-              <Button size="sm" onClick={onSave} disabled={saving} className="min-w-[140px]">
-                {saving ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando…</>
-                ) : (
-                  "Salvar alterações"
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+              {/* Sticky footer */}
+              {current.dirty && !current.loading && (
+                <div className="sticky bottom-4 z-20 mt-8">
+                  <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
+                    <p className="pl-2 text-xs text-muted-foreground md:text-sm">
+                      Alterações se aplicam nas próximas gerações.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={onDiscard} disabled={saving}>
+                        Descartar
+                      </Button>
+                      <Button size="sm" onClick={onSave} disabled={saving} className="min-w-[140px]">
+                        {saving ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando…</>
+                        ) : (
+                          "Salvar alterações"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Fold>
+
+            <Fold>
+              <FormatosPanel />
+            </Fold>
+
+            <Fold>
+              <ApiPanel />
+            </Fold>
           </>
         )}
-        </div>
       </div>
     </div>
   );
