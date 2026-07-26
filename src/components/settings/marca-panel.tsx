@@ -86,7 +86,7 @@ export function MarcaPanel() {
           <Skeleton className="h-40 w-full rounded-xl" />
         </div>
       ) : (
-        <Card className="max-w-2xl space-y-8 p-5 md:p-6">
+        <Card className="max-w-2xl space-y-8 border-0 bg-transparent p-0 shadow-none">
           <div className="space-y-3">
             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Logo
