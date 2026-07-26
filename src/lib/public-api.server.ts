@@ -27,24 +27,39 @@ export class ApiError extends Error {
 }
 
 /**
- * Valida o header `x-api-key` contra o secret PUBLIC_API_KEY e devolve o
- * coach a que a chave dá acesso. Lança ApiError(401) quando inválida.
+ * Valida o header `x-api-key` contra as chaves geradas no app (tabela api_keys)
+ * e, como fallback, contra o secret PUBLIC_API_KEY. Devolve o coach a que a
+ * chave dá acesso. Lança ApiError(401) quando inválida.
  */
-export function requireApiKey(request: Request): { coachId: string } {
-  const expected = process.env.PUBLIC_API_KEY;
-  const coachId = process.env.PUBLIC_API_COACH_ID;
-
-  if (!expected || !coachId) {
-    console.error("[public-api] PUBLIC_API_KEY/PUBLIC_API_COACH_ID não configurados");
-    throw new ApiError(500, "Internal error");
-  }
-
+export async function requireApiKey(request: Request): Promise<{ coachId: string }> {
   const provided = request.headers.get("x-api-key");
-  if (!provided || provided !== expected) {
-    throw new ApiError(401, "Unauthorized");
+  if (!provided) throw new ApiError(401, "Unauthorized");
+
+  const { sha256Hex } = await import("./api-keys.server");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("api_keys")
+    .select("id, coach_id")
+    .eq("key_hash", await sha256Hex(provided))
+    .is("revoked_at", null)
+    .maybeSingle();
+
+  if (data) {
+    await supabaseAdmin
+      .from("api_keys")
+      .update({ last_used_at: new Date().toISOString() })
+      .eq("id", data.id);
+    return { coachId: data.coach_id as string };
   }
 
-  return { coachId };
+  // Fallback: chave legada guardada em variável de ambiente.
+  const expected = process.env.PUBLIC_API_KEY;
+  const envCoachId = process.env.PUBLIC_API_COACH_ID;
+  if (expected && envCoachId && provided === expected) {
+    return { coachId: envCoachId };
+  }
+
+  throw new ApiError(401, "Unauthorized");
 }
 
 export function errorResponse(error: unknown): Response {
