@@ -52,7 +52,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Copy, Wand2 } from "lucide-react";
-import { GitMerge, Palette, FolderArchive } from "lucide-react";
+import { GitMerge, Palette, FolderArchive, KeyRound } from "lucide-react";
+import { ApiPanel } from "@/components/settings/api-panel";
 import { FusaoPanel } from "@/components/settings/fusao-panel";
 import { MarcaPanel } from "@/components/settings/marca-panel";
 import { ArquivosPanel } from "@/components/settings/arquivos-panel";
@@ -138,6 +139,7 @@ const SECTIONS = [
   },
   { key: "marca", label: "Marca", hint: "Logo, cores e rodapé das exportações", icon: Palette },
   { key: "arquivos", label: "Arquivos", hint: "Planilhas, PDFs e mídias", icon: FolderArchive },
+  { key: "api", label: "API", hint: "Chaves de acesso aos endpoints públicos", icon: KeyRound },
 ] as const;
 
 type SectionKey = (typeof SECTIONS)[number]["key"];
@@ -307,6 +309,7 @@ function ConfiguracoesPage() {
         {section === "fusao" && <FusaoPanel />}
         {section === "marca" && <MarcaPanel />}
         {section === "arquivos" && <ArquivosPanel />}
+        {section === "api" && <ApiPanel />}
         {section === "geracao" && (
           <>
 

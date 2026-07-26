@@ -38,7 +38,7 @@ export const Route = createFileRoute("/api/public/programs/$id")({
           "@/lib/public-api.server"
         );
         try {
-          const { coachId } = requireApiKey(request);
+          const { coachId } = await requireApiKey(request);
           const id = params.id;
           if (!UUID_RE.test(id)) throw new ApiError(400, "Invalid program id");
 

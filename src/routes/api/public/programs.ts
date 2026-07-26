@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/public/programs")({
           "@/lib/public-api.server"
         );
         try {
-          const { coachId } = requireApiKey(request);
+          const { coachId } = await requireApiKey(request);
 
           const rawLimit = new URL(request.url).searchParams.get("limit");
           let limit = 50;
