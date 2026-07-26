@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Dumbbell, Users, Mountain, LogOut, Palette, FolderArchive, ClipboardList, Settings } from "lucide-react";
+import { LayoutDashboard, Dumbbell, Users, Mountain, LogOut, ClipboardList, Settings } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
