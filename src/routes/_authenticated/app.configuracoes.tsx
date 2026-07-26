@@ -181,7 +181,11 @@ function ConfiguracoesPage() {
   const [saving, setSaving] = useState(false);
   const section: SectionKey = SECTIONS.some((s) => s.key === searchSection)
     ? (searchSection as SectionKey)
-    : "geracao";
+    : (LEGACY_SECTION[searchSection ?? ""] ?? "geracao");
+
+  const { presets } = useFormatRegistry();
+  const { data: coach } = useCoach();
+  const { data: files = [], isLoading: filesLoading } = useCoachFiles();
 
   function setSection(next: SectionKey) {
     navigate({ search: { section: next }, replace: true });
