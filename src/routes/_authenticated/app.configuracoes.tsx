@@ -52,6 +52,10 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Copy, Wand2 } from "lucide-react";
+import { GitMerge, Palette, FolderArchive } from "lucide-react";
+import { FusaoPanel } from "@/components/settings/fusao-panel";
+import { MarcaPanel } from "@/components/settings/marca-panel";
+import { ArquivosPanel } from "@/components/settings/arquivos-panel";
 import {
   Dialog,
   DialogContent,
