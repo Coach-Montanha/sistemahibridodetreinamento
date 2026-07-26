@@ -24,8 +24,6 @@ const items = [
   { title: "Exercícios", url: "/app/exercicios", icon: Dumbbell, exact: false },
   { title: "Treinos", url: "/app/treinos", icon: ClipboardList, exact: false },
   { title: "Alunos", url: "/app/alunos", icon: Users, exact: false },
-  { title: "Arquivos", url: "/app/arquivos", icon: FolderArchive, exact: false },
-  { title: "Marca", url: "/app/marca", icon: Palette, exact: false },
   { title: "Configurações", url: "/app/configuracoes", icon: Settings, exact: false },
 ];
 
