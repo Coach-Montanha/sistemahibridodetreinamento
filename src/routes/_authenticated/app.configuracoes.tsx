@@ -107,8 +107,36 @@ import { Dumbbell, Activity, Wrench, Wind } from "lucide-react";
 import { Flame } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/configuracoes")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    section: typeof search.section === "string" ? search.section : undefined,
+  }),
   component: ConfiguracoesPage,
 });
+
+const SECTIONS = [
+  {
+    key: "geracao",
+    label: "Geração automática",
+    hint: "Blocos, séries e progressões por modalidade",
+    icon: Sparkles,
+  },
+  {
+    key: "formatos",
+    label: "Formatos de bloco",
+    hint: "Nomes, padrões e ordem dos blocos",
+    icon: Layers,
+  },
+  {
+    key: "fusao",
+    label: "Fusão de exercícios",
+    hint: "Detecte e una duplicados do banco",
+    icon: GitMerge,
+  },
+  { key: "marca", label: "Marca", hint: "Logo, cores e rodapé das exportações", icon: Palette },
+  { key: "arquivos", label: "Arquivos", hint: "Planilhas, PDFs e mídias", icon: FolderArchive },
+] as const;
+
+type SectionKey = (typeof SECTIONS)[number]["key"];
 
 const METS = Object.keys(METHODOLOGY_LABEL) as Methodology[];
 
