@@ -255,10 +255,5 @@ function iconFor(name: string) {
   return FileIcon;
 }
 
-function formatBytes(n: number) {
-  if (!n) return "0 B";
-  const units = ["B", "KB", "MB", "GB"];
-  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
-  const v = n / Math.pow(1024, i);
-  return `${v.toFixed(v < 10 && i > 0 ? 1 : 0)} ${units[i]}`;
+ ${units[i]}`;
 }
