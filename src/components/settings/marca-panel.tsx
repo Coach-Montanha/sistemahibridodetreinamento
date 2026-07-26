@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Palette, Upload } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { PanelHeader } from "./panel-shell";
 
 export function MarcaPanel() {
   const [loading, setLoading] = useState(true);
@@ -81,12 +80,6 @@ export function MarcaPanel() {
 
   return (
     <section>
-      <PanelHeader
-        icon={Palette}
-        title="Marca do treinador"
-        description="Logo, cores e rodapé aplicados no cabeçalho das exportações em PDF, Excel e imagem."
-      />
-
       {loading ? (
         <div className="space-y-4">
           <Skeleton className="h-24 w-full rounded-xl" />
