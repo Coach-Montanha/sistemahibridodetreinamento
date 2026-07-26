@@ -412,31 +412,39 @@ function ConfiguracoesPage() {
         ))}
       </Tabs>
 
-      {/* Sticky footer */}
-      {current.dirty && !current.loading && (
-        <div className="sticky bottom-4 z-20 mt-8">
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
-            <p className="pl-2 text-xs text-muted-foreground md:text-sm">
-              Alterações se aplicam nas próximas gerações.
-            </p>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={onDiscard} disabled={saving}>
-                Descartar
-              </Button>
-              <Button size="sm" onClick={onSave} disabled={saving} className="min-w-[140px]">
-                {saving ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando…</>
-                ) : (
-                  "Salvar alterações"
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+              {/* Sticky footer */}
+              {current.dirty && !current.loading && (
+                <div className="sticky bottom-4 z-20 mt-8">
+                  <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
+                    <p className="pl-2 text-xs text-muted-foreground md:text-sm">
+                      Alterações se aplicam nas próximas gerações.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={onDiscard} disabled={saving}>
+                        Descartar
+                      </Button>
+                      <Button size="sm" onClick={onSave} disabled={saving} className="min-w-[140px]">
+                        {saving ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando…</>
+                        ) : (
+                          "Salvar alterações"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Fold>
+
+            <Fold>
+              <FormatosPanel />
+            </Fold>
+
+            <Fold>
+              <ApiPanel />
+            </Fold>
           </>
         )}
-        </div>
       </div>
     </div>
   );
