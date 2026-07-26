@@ -124,28 +124,22 @@ export const Route = createFileRoute("/_authenticated/app/configuracoes")({
 const SECTIONS = [
   {
     key: "geracao",
-    label: "Geração automática",
-    hint: "Blocos, séries e progressões por modalidade",
+    label: "Geração & Blocos",
+    hint: "Motor automático, formatos e API",
     icon: Sparkles,
   },
-  {
-    key: "formatos",
-    label: "Formatos de bloco",
-    hint: "Nomes, padrões e ordem dos blocos",
-    icon: Layers,
-  },
-  {
-    key: "fusao",
-    label: "Fusão de exercícios",
-    hint: "Detecte e una duplicados do banco",
-    icon: GitMerge,
-  },
-  { key: "marca", label: "Marca", hint: "Logo, cores e rodapé das exportações", icon: Palette },
+  { key: "marca", label: "Marca", hint: "Logo, cores e rodapé", icon: Palette },
   { key: "arquivos", label: "Arquivos", hint: "Planilhas, PDFs e mídias", icon: FolderArchive },
-  { key: "api", label: "API", hint: "Chaves de acesso aos endpoints públicos", icon: KeyRound },
 ] as const;
 
 type SectionKey = (typeof SECTIONS)[number]["key"];
+
+/** Links antigos (?section=formatos|fusao|api) continuam funcionando. */
+const LEGACY_SECTION: Record<string, SectionKey> = {
+  formatos: "geracao",
+  fusao: "geracao",
+  api: "geracao",
+};
 
 const METS = Object.keys(METHODOLOGY_LABEL) as Methodology[];
 
