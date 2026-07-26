@@ -173,12 +173,20 @@ function novoBloco(): BlocoPref {
 }
 
 function ConfiguracoesPage() {
+  const searchSection = Route.useSearch().section;
+  const navigate = useNavigate({ from: Route.fullPath });
   const load = useServerFn(getGeneratorPrefs);
   const save = useServerFn(saveGeneratorPrefs);
   const [state, setState] = useState<State>(makeEmpty);
   const [tab, setTab] = useState<Methodology>("hibrido");
   const [saving, setSaving] = useState(false);
-  const [section, setSection] = useState<"geracao" | "formatos">("geracao");
+  const section: SectionKey = SECTIONS.some((s) => s.key === searchSection)
+    ? (searchSection as SectionKey)
+    : "geracao";
+
+  function setSection(next: SectionKey) {
+    navigate({ search: { section: next }, replace: true });
+  }
 
   useEffect(() => {
     const s = state[tab];
