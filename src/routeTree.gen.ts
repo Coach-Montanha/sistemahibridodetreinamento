@@ -16,6 +16,7 @@ import { Route as AuthPrimeiroAcessoRouteImport } from './routes/auth.primeiro-a
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAlunoRouteImport } from './routes/_authenticated/aluno'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as ApiPublicProgramsRouteImport } from './routes/api/public/programs'
 import { Route as AuthenticatedAppTreinosRouteImport } from './routes/_authenticated/app.treinos'
 import { Route as AuthenticatedAppProgramasRouteImport } from './routes/_authenticated/app.programas'
 import { Route as AuthenticatedAppMarcaRouteImport } from './routes/_authenticated/app.marca'
@@ -62,6 +63,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const ApiPublicProgramsRoute = ApiPublicProgramsRouteImport.update({
+  id: '/api/public/programs',
+  path: '/api/public/programs',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppTreinosRoute = AuthenticatedAppTreinosRouteImport.update({
   id: '/treinos',
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/app/marca': typeof AuthenticatedAppMarcaRoute
   '/app/programas': typeof AuthenticatedAppProgramasRoute
   '/app/treinos': typeof AuthenticatedAppTreinosRoute
+  '/api/public/programs': typeof ApiPublicProgramsRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/aluno/sessao/$id': typeof AuthenticatedAlunoSessaoIdRoute
   '/app/exercicios/duplicados': typeof AuthenticatedAppExerciciosDuplicadosRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/app/marca': typeof AuthenticatedAppMarcaRoute
   '/app/programas': typeof AuthenticatedAppProgramasRoute
   '/app/treinos': typeof AuthenticatedAppTreinosRoute
+  '/api/public/programs': typeof ApiPublicProgramsRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/aluno/sessao/$id': typeof AuthenticatedAlunoSessaoIdRoute
   '/app/exercicios/duplicados': typeof AuthenticatedAppExerciciosDuplicadosRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/_authenticated/app/marca': typeof AuthenticatedAppMarcaRoute
   '/_authenticated/app/programas': typeof AuthenticatedAppProgramasRoute
   '/_authenticated/app/treinos': typeof AuthenticatedAppTreinosRoute
+  '/api/public/programs': typeof ApiPublicProgramsRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/aluno/sessao/$id': typeof AuthenticatedAlunoSessaoIdRoute
   '/_authenticated/app/exercicios/duplicados': typeof AuthenticatedAppExerciciosDuplicadosRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/app/marca'
     | '/app/programas'
     | '/app/treinos'
+    | '/api/public/programs'
     | '/app/'
     | '/aluno/sessao/$id'
     | '/app/exercicios/duplicados'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/app/marca'
     | '/app/programas'
     | '/app/treinos'
+    | '/api/public/programs'
     | '/app'
     | '/aluno/sessao/$id'
     | '/app/exercicios/duplicados'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/marca'
     | '/_authenticated/app/programas'
     | '/_authenticated/app/treinos'
+    | '/api/public/programs'
     | '/_authenticated/app/'
     | '/_authenticated/aluno/sessao/$id'
     | '/_authenticated/app/exercicios/duplicados'
@@ -260,6 +272,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  ApiPublicProgramsRoute: typeof ApiPublicProgramsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -312,6 +325,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/api/public/programs': {
+      id: '/api/public/programs'
+      path: '/api/public/programs'
+      fullPath: '/api/public/programs'
+      preLoaderRoute: typeof ApiPublicProgramsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/treinos': {
       id: '/_authenticated/app/treinos'
@@ -484,6 +504,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  ApiPublicProgramsRoute: ApiPublicProgramsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
