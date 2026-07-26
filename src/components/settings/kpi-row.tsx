@@ -32,8 +32,10 @@ export function KpiRow({ items, loading }: { items: Kpi[]; loading?: boolean }) 
             </span>
           </div>
           <div
+            title={k.value}
             className={cn(
-              "mt-2 truncate text-xl font-semibold leading-tight tabular-nums md:text-2xl",
+              "mt-2 truncate font-semibold leading-tight tabular-nums",
+              k.value.length > 13 ? "text-base md:text-lg" : "text-xl md:text-2xl",
               loading && "animate-pulse text-muted-foreground/60",
             )}
           >
