@@ -353,7 +353,7 @@ function ConfiguracoesPage() {
       </Tabs>
 
       {/* Sticky footer */}
-      {section === "geracao" && current.dirty && !current.loading && (
+      {current.dirty && !current.loading && (
         <div className="sticky bottom-4 z-20 mt-8">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
             <p className="pl-2 text-xs text-muted-foreground md:text-sm">
@@ -374,8 +374,10 @@ function ConfiguracoesPage() {
           </div>
         </div>
       )}
-        </TabsContent>
-      </Tabs>
+          </>
+        )}
+        </div>
+      </div>
     </div>
   );
 }
