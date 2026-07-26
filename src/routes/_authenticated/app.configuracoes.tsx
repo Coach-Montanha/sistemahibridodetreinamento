@@ -247,35 +247,68 @@ function ConfiguracoesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 md:px-6 md:py-10">
+    <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
       <header className="mb-8 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Settings className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Configurações de geração</h1>
+            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Configurações</h1>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Defina, por modalidade, quais blocos, séries, repetições e progressões o motor usa ao gerar
-              treinos. A seleção de exercícios continua vindo do seu banco.
+              Motor de geração, formatos de bloco, fusão de exercícios, marca e arquivos — tudo em um
+              só lugar.
             </p>
           </div>
         </div>
       </header>
 
-      <Tabs value={section} onValueChange={(v) => setSection(v as any)} className="mb-8">
-        <TabsList className="h-auto w-full max-w-md gap-1 bg-muted/40 p-1">
-          <TabsTrigger value="geracao" className="flex-1 gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <Sparkles className="h-3.5 w-3.5" /> Geração automática
-          </TabsTrigger>
-          <TabsTrigger value="formatos" className="flex-1 gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <Layers className="h-3.5 w-3.5" /> Formatos de bloco
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="formatos" className="mt-6 focus-visible:outline-none">
-          <FormatosPanel />
-        </TabsContent>
-        <TabsContent value="geracao" className="mt-6 focus-visible:outline-none">
+      <div className="grid gap-6 md:grid-cols-[248px_minmax(0,1fr)] md:gap-8">
+        {/* Mobile: trilha horizontal. Desktop: nav vertical. */}
+        <nav
+          aria-label="Seções de configurações"
+          className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-col md:gap-1 md:overflow-visible md:px-0 md:pb-0"
+        >
+          {SECTIONS.map((s) => {
+            const active = section === s.key;
+            const Icon = s.icon;
+            return (
+              <button
+                key={s.key}
+                type="button"
+                aria-current={active ? "page" : undefined}
+                onClick={() => setSection(s.key)}
+                className={`group flex shrink-0 snap-start items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.99] md:w-full md:shrink ${
+                  active
+                    ? "border-primary/40 bg-primary/10 text-foreground shadow-sm"
+                    : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-accent/40 hover:text-foreground"
+                }`}
+              >
+                <Icon
+                  className={`h-4 w-4 shrink-0 transition-colors duration-200 ${
+                    active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                  }`}
+                />
+                <span className="min-w-0">
+                  <span className="block whitespace-nowrap text-sm font-medium leading-tight md:whitespace-normal">
+                    {s.label}
+                  </span>
+                  <span className="mt-0.5 hidden text-xs leading-snug text-muted-foreground md:block">
+                    {s.hint}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="min-w-0">
+        {section === "formatos" && <FormatosPanel />}
+        {section === "fusao" && <FusaoPanel />}
+        {section === "marca" && <MarcaPanel />}
+        {section === "arquivos" && <ArquivosPanel />}
+        {section === "geracao" && (
+          <>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as Methodology)}>
         {/* Mobile: select. Desktop: tabs. */}
