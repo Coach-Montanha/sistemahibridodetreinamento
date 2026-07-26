@@ -254,6 +254,3 @@ function iconFor(name: string) {
   if (["mp4", "mov", "webm", "avi", "mkv"].includes(ext)) return FileVideo;
   return FileIcon;
 }
-
- ${units[i]}`;
-}
