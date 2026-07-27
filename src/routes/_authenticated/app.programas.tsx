@@ -651,18 +651,20 @@ function ProgramaCard({
               </SortableList>
             )}
             <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <Button
-                size="sm"
-                className="gap-2 transition-all duration-200"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenIa();
-                }}
-              >
-                <Sparkles className="h-4 w-4" />
-                Prescrever com IA
-              </Button>
+              {programa.metodologia === "musculacao" && (
+                <Button
+                  size="sm"
+                  className="gap-2 transition-all duration-200"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onOpenIa();
+                  }}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Prescrever com IA
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
