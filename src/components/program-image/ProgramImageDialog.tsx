@@ -10,6 +10,7 @@ import {
   GripVertical,
   SlidersHorizontal,
   Download,
+  Sparkles,
 } from "lucide-react";
 import {
   Dialog,
