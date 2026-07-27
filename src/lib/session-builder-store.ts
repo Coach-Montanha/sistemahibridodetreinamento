@@ -73,6 +73,7 @@ type State = {
     patch: Partial<BuilderExercise>
   ) => void;
   removeExercise: (blockTempId: string, exTempId: string) => void;
+  reorderExercises: (blockTempId: string, activeTempId: string, overTempId: string) => void;
   addSet: (blockTempId: string, exTempId: string, set?: Partial<BuilderSet>) => void;
   updateSet: (
     blockTempId: string,
@@ -218,6 +219,19 @@ export const useBuilder = create<State>((set) => ({
             }
           : b
       ),
+    })),
+  reorderExercises: (blockTempId, activeTempId, overTempId) =>
+    set((s) => ({
+      blocks: s.blocks.map((b) => {
+        if (b.tempId !== blockTempId) return b;
+        const list = [...b.exercises];
+        const from = list.findIndex((e) => e.tempId === activeTempId);
+        const to = list.findIndex((e) => e.tempId === overTempId);
+        if (from < 0 || to < 0 || from === to) return b;
+        const [moved] = list.splice(from, 1);
+        list.splice(to, 0, moved);
+        return { ...b, exercises: list.map((e, i) => ({ ...e, ordem: i })) };
+      }),
     })),
   addSet: (blockTempId, exTempId, input) =>
     set((s) =>
