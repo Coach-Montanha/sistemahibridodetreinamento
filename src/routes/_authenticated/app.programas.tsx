@@ -644,7 +644,7 @@ function ProgramaCard({
               >
                 <ImageDown className="h-4 w-4" />
                 Layout de imagem
-                {novidadesPendentes() && (
+                {temNovidades && (
                   <span
                     aria-hidden
                     className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary"
