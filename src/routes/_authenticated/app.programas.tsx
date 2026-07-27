@@ -49,7 +49,7 @@ import { exportarSessoesEmMassa } from "@/lib/image-export";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import {
   ProgramImageDialog,
-  novidadesPendentes,
+  useNovidadesPendentes,
 } from "@/components/program-image/ProgramImageDialog";
 
 export const Route = createFileRoute("/_authenticated/app/programas")({
