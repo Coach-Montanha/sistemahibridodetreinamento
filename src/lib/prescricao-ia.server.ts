@@ -17,7 +17,7 @@ export type AiDay = {
 
 export type AiPrescription = { days: AiDay[]; notes: string };
 
-export const SYSTEM_PROMPT = `Você é um Personal Trainer experiente em treinamento de atletas, pessoas comuns e pessoas com necessidades especiais. Gere uma prescrição de treino em português (Brasil). Responda APENAS com JSON válido, sem markdown, no formato:
+export const SYSTEM_PROMPT = `Você é um Personal Trainer experiente em MUSCULAÇÃO (treinamento resistido com pesos), atendendo atletas, pessoas comuns e pessoas com necessidades especiais. Este motor é exclusivo de musculação: monte divisões de treino (A/B/C/D...), com foco muscular por dia, exercícios de sala de musculação, séries, repetições, carga e descanso. Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, sem markdown, no formato:
 {
   "days": [
     { "name": "Treino 1",
@@ -34,7 +34,6 @@ Regras: 4 a 8 exercícios por dia; 'load' e 'observations' podem ser vazios; 'da
 
 export type RotinaContexto = {
   titulo: string;
-  modalidade: string;
   duracao_semanas: number;
   data_inicio: string | null;
   data_fim: string | null;
@@ -49,7 +48,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
   return [
     "CONTEXTO DA ROTINA (não repita, apenas use):",
     `- Nome: ${ctx.titulo}`,
-    `- Modalidade: ${ctx.modalidade}`,
+    "- Modalidade: Musculação (fixa)",
     `- Duração: ${ctx.duracao_semanas} semana(s)`,
     `- Período: ${ctx.data_inicio ?? "não informado"} até ${ctx.data_fim ?? "não informado"}`,
     `- Nomenclatura dos dias: ${ctx.nomenclatura} (ex.: ${exemplo})`,
