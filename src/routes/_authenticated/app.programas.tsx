@@ -46,6 +46,8 @@ import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
 import { prepararSessoesParaImagem } from "@/lib/session-image";
 import { exportarSessoesEmMassa } from "@/lib/image-export";
+import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
+import { ProgramImageDialog } from "@/components/program-image/ProgramImageDialog";
 
 export const Route = createFileRoute("/_authenticated/app/programas")({
   component: ProgramasPage,
@@ -67,9 +69,12 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [bulkImg, setBulkImg] = useState<"png" | "jpg" | null>(null);
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
+  const [layoutPrograma, setLayoutPrograma] = useState<any | null>(null);
+
+  const programasKey = ["programas", coach?.id] as const;
 
   const { data: programas = [], isLoading } = useQuery({
-    queryKey: ["programas", coach?.id],
+    queryKey: programasKey,
     enabled: !!coach,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -103,6 +108,80 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  /** Reordena sessões dentro de uma semana gravando `numero_dia`. */
+  async function reorderSessoes(programId: string, weekId: string, orderedIds: string[]) {
+    const snapshot = qc.getQueryData(programasKey);
+    qc.setQueryData(programasKey, (old: any) =>
+      (old ?? []).map((p: any) =>
+        p.id !== programId
+          ? p
+          : {
+              ...p,
+              program_weeks: (p.program_weeks ?? []).map((w: any) =>
+                w.id !== weekId
+                  ? w
+                  : {
+                      ...w,
+                      sessions: orderedIds.map((id, i) => ({
+                        ...(w.sessions ?? []).find((s: any) => s.id === id),
+                        numero_dia: i + 1,
+                      })),
+                    },
+              ),
+            },
+      ),
+    );
+    try {
+      for (let i = 0; i < orderedIds.length; i++) {
+        const { error } = await supabase
+          .from("sessions")
+          .update({ numero_dia: i + 1 })
+          .eq("id", orderedIds[i]);
+        if (error) throw error;
+      }
+    } catch (e: any) {
+      qc.setQueryData(programasKey, snapshot);
+      toast.error(e?.message ?? "Não foi possível salvar a nova ordem dos dias");
+    }
+  }
+
+  /** Reordena semanas gravando `numero_semana` (duas passadas por causa do unique). */
+  async function reorderSemanas(programId: string, orderedIds: string[]) {
+    const snapshot = qc.getQueryData(programasKey);
+    qc.setQueryData(programasKey, (old: any) =>
+      (old ?? []).map((p: any) =>
+        p.id !== programId
+          ? p
+          : {
+              ...p,
+              program_weeks: orderedIds.map((id, i) => ({
+                ...(p.program_weeks ?? []).find((w: any) => w.id === id),
+                numero_semana: i + 1,
+              })),
+            },
+      ),
+    );
+    try {
+      for (let i = 0; i < orderedIds.length; i++) {
+        const { error } = await supabase
+          .from("program_weeks")
+          .update({ numero_semana: -(i + 1) })
+          .eq("id", orderedIds[i]);
+        if (error) throw error;
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        const { error } = await supabase
+          .from("program_weeks")
+          .update({ numero_semana: i + 1 })
+          .eq("id", orderedIds[i]);
+        if (error) throw error;
+      }
+    } catch (e: any) {
+      qc.setQueryData(programasKey, snapshot);
+      toast.error(e?.message ?? "Não foi possível salvar a nova ordem das semanas");
+    }
+  }
 
   const bulkDel = useMutation({
     mutationFn: async (ids: string[]) => {
@@ -231,6 +310,9 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
                 selected={selected}
                 onToggleSession={toggle}
                 onToggleWeek={toggleWeek}
+                onReorderSessoes={(weekId, ids) => reorderSessoes(p.id, weekId, ids)}
+                onReorderSemanas={(ids) => reorderSemanas(p.id, ids)}
+                onOpenLayout={() => setLayoutPrograma(p)}
                 onDelete={() =>
                   setToDelete({ id: p.id, titulo: p.titulo ?? "programa" })
                 }
@@ -239,6 +321,11 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
           })}
         </div>
       )}
+
+      <ProgramImageDialog
+        programa={layoutPrograma}
+        onOpenChange={(o) => !o && setLayoutPrograma(null)}
+      />
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
@@ -357,6 +444,9 @@ function ProgramaCard({
   selected,
   onToggleSession,
   onToggleWeek,
+  onReorderSessoes,
+  onReorderSemanas,
+  onOpenLayout,
   onDelete,
 }: {
   programa: any;
@@ -365,6 +455,9 @@ function ProgramaCard({
   selected: Set<string>;
   onToggleSession: (id: string) => void;
   onToggleWeek: (ids: string[], allSelected: boolean) => void;
+  onReorderSessoes: (weekId: string, orderedIds: string[]) => void;
+  onReorderSemanas: (orderedIds: string[]) => void;
+  onOpenLayout: () => void;
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -422,6 +515,19 @@ function ProgramaCard({
                 Sem semanas neste programa.
               </p>
             ) : (
+              <SortableList
+                ids={semanas.map((w: any) => String(w.id))}
+                label="Semana"
+                onReorder={(activeId, overId) => {
+                  const ids = semanas.map((w: any) => String(w.id));
+                  const from = ids.indexOf(activeId);
+                  const to = ids.indexOf(overId);
+                  if (from < 0 || to < 0) return;
+                  const next = [...ids];
+                  next.splice(to, 0, next.splice(from, 1)[0]);
+                  onReorderSemanas(next);
+                }}
+              >
               <div className="grid gap-4">
                 {semanas.map((w: any) => {
                   const sessoes = (w.sessions ?? []).sort(
@@ -432,9 +538,15 @@ function ProgramaCard({
                     sessionIds.length > 0 &&
                     sessionIds.every((id: string) => selected.has(id));
                   return (
-                    <div key={w.id}>
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <SortableRow
+                      key={w.id}
+                      id={String(w.id)}
+                      handleLabel={`Reordenar semana ${w.numero_semana}`}
+                      className="flex-col items-stretch bg-card/60 p-3 pl-2"
+                      contentClassName="flex-col items-stretch gap-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                           Semana {w.numero_semana}
                           {w.rotulo ? ` · ${w.rotulo}` : ""}
                         </div>
@@ -442,7 +554,7 @@ function ProgramaCard({
                           <button
                             type="button"
                             onClick={() => onToggleWeek(sessionIds, allSelected)}
-                            className="text-[11px] font-medium text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                            className="shrink-0 text-[11px] font-medium text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                           >
                             {allSelected ? "desmarcar semana" : "selecionar semana"}
                           </button>
@@ -453,16 +565,29 @@ function ProgramaCard({
                           Sem sessões.
                         </p>
                       ) : (
-                        <div className="grid gap-2 sm:grid-cols-2">
+                        <SortableList
+                          ids={sessionIds.map(String)}
+                          label="Dia"
+                          onReorder={(activeId, overId) => {
+                            const ids = sessionIds.map(String);
+                            const from = ids.indexOf(activeId);
+                            const to = ids.indexOf(overId);
+                            if (from < 0 || to < 0) return;
+                            const next = [...ids];
+                            next.splice(to, 0, next.splice(from, 1)[0]);
+                            onReorderSessoes(String(w.id), next);
+                          }}
+                        >
+                        <div className="grid gap-2">
                           {sessoes.map((s: any) => {
                             const isSel = selected.has(s.id);
                             return (
-                              <div
+                              <SortableRow
                                 key={s.id}
-                                className={`group flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm transition-colors duration-150 ${
-                                  isSel
-                                    ? "border-primary/60 bg-primary/5"
-                                    : "border-border/60 hover:border-primary/50 hover:bg-accent/40"
+                                id={String(s.id)}
+                                handleLabel={`Reordenar dia ${s.numero_dia}`}
+                                className={`group px-1.5 py-1.5 text-sm ${
+                                  isSel ? "border-primary/60 bg-primary/5" : ""
                                 }`}
                               >
                                 <Checkbox
@@ -490,17 +615,32 @@ function ProgramaCard({
                                     {s.status}
                                   </Badge>
                                 </Link>
-                              </div>
+                              </SortableRow>
                             );
                           })}
                         </div>
+                        </SortableList>
                       )}
-                    </div>
+                    </SortableRow>
                   );
                 })}
               </div>
+              </SortableList>
             )}
-            <div className="mt-5 flex justify-end">
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenLayout();
+                }}
+              >
+                <ImageDown className="h-4 w-4" />
+                Layout de imagem
+              </Button>
               <Button
                 size="sm"
                 variant="ghost"
