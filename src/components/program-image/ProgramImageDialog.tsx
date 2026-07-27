@@ -237,18 +237,36 @@ export function ProgramImageDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] max-w-5xl overflow-hidden p-0">
-        <DialogHeader className="border-b border-border/60 px-6 py-4">
-          <DialogTitle className="flex flex-wrap items-center gap-2 text-base">
-            Layout de imagem
-            {programa?.titulo && (
-              <Badge variant="secondary" className="max-w-[16rem] truncate font-normal">
-                {programa.titulo}
-              </Badge>
+        <DialogHeader className="space-y-2 border-b border-border/60 px-4 py-4 sm:px-6">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+            <div className="min-w-0 space-y-1.5">
+              <DialogTitle className="flex flex-wrap items-center gap-2 text-base leading-tight">
+                Layout de imagem
+                {programa?.titulo && (
+                  <Badge variant="secondary" className="max-w-[16rem] truncate font-normal">
+                    {programa.titulo}
+                  </Badge>
+                )}
+              </DialogTitle>
+              <DialogDescription className="leading-snug">
+                Ajuste a grade de 12 colunas e exporte todas as sessões em PNG, JPG ou PDF.
+              </DialogDescription>
+            </div>
+            <GuiaDeUso />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant={origem === "programa" ? "default" : "outline"}
+              className="font-medium"
+            >
+              {ORIGEM_TEXTO[origem]}
+            </Badge>
+            {modalidadeLabel && (
+              <span className="text-[11px] leading-snug text-muted-foreground">
+                Modalidade: {modalidadeLabel}
+              </span>
             )}
-          </DialogTitle>
-          <DialogDescription>
-            Ajuste a grade de 12 colunas e exporte todas as sessões em PNG, JPG ou PDF.
-          </DialogDescription>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="max-h-[62vh]">
@@ -288,7 +306,33 @@ export function ProgramImageDialog({
           </div>
         </ScrollArea>
 
-        <div className="flex flex-wrap justify-end gap-2 border-t border-border/60 px-6 py-4">
+        <div className="flex flex-col gap-3 border-t border-border/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 transition-colors duration-200"
+              disabled={!layout || !modalidade}
+              onClick={definirComoPadraoDaModalidade}
+            >
+              <BookmarkCheck className="h-4 w-4" />
+              <span className="truncate">
+                Salvar como padrão{modalidadeLabel ? ` de ${modalidadeLabel}` : ""}
+              </span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-muted-foreground transition-colors duration-200 hover:text-foreground"
+              disabled={origem !== "programa"}
+              onClick={restaurarPadraoDaModalidade}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Restaurar padrão
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
@@ -330,6 +374,7 @@ export function ProgramImageDialog({
             )}
             Exportar PNG
           </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
