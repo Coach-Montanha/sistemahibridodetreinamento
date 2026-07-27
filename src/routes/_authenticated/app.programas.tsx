@@ -40,6 +40,7 @@ import {
   X,
   ImageDown,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
