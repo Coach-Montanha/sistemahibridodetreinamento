@@ -47,7 +47,10 @@ import { useCoach } from "@/hooks/use-coach";
 import { prepararSessoesParaImagem } from "@/lib/session-image";
 import { exportarSessoesEmMassa } from "@/lib/image-export";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
-import { ProgramImageDialog } from "@/components/program-image/ProgramImageDialog";
+import {
+  ProgramImageDialog,
+  useNovidadesPendentes,
+} from "@/components/program-image/ProgramImageDialog";
 
 export const Route = createFileRoute("/_authenticated/app/programas")({
   component: ProgramasPage,
@@ -461,6 +464,7 @@ function ProgramaCard({
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const temNovidades = useNovidadesPendentes();
   const data = programa.data_inicio
     ? new Date(programa.data_inicio).toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -631,7 +635,7 @@ function ProgramaCard({
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-2"
+                className="relative gap-2"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -640,6 +644,12 @@ function ProgramaCard({
               >
                 <ImageDown className="h-4 w-4" />
                 Layout de imagem
+                {temNovidades && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary"
+                  />
+                )}
               </Button>
               <Button
                 size="sm"

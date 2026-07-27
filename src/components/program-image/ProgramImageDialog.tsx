@@ -10,6 +10,7 @@ import {
   GripVertical,
   SlidersHorizontal,
   Download,
+  Sparkles,
 } from "lucide-react";
 import {
   Dialog,
@@ -23,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { LayoutEditor } from "./layout-editor";
 import {
   carregarLayout,
@@ -65,7 +67,31 @@ const ORIGEM_TEXTO: Record<OrigemLayout, string> = {
   padrao: "Preset padrão",
 };
 
-function GuiaDeUso() {
+/** Chave única de dispensa da faixa de novidades. */
+export const NOVIDADES_KEY = "program-image-novidades-dispensadas";
+
+export function novidadesPendentes(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(NOVIDADES_KEY) !== "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Versão segura para render (evita divergência de hidratação). */
+export function useNovidadesPendentes(): boolean {
+  const [pendente, setPendente] = useState(false);
+  useEffect(() => setPendente(novidadesPendentes()), []);
+  return pendente;
+}
+
+type Destaque = "origem" | "template" | "ajuda" | null;
+
+const ANEL =
+  "ring-2 ring-primary/50 ring-offset-2 ring-offset-background rounded-md transition-shadow duration-200";
+
+function GuiaDeUso({ realcado }: { realcado?: boolean }) {
   const passos = [
     {
       icon: SlidersHorizontal,
@@ -92,7 +118,10 @@ function GuiaDeUso() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0 text-muted-foreground transition-colors duration-200 hover:text-foreground"
+          className={cn(
+            "h-8 w-8 shrink-0 text-muted-foreground transition-colors duration-200 hover:text-foreground",
+            realcado && ANEL,
+          )}
           aria-label="Como usar o layout de imagem"
         >
           <HelpCircle className="h-4 w-4" />
@@ -137,12 +166,33 @@ export function ProgramImageDialog({
   const [preview, setPreview] = useState<string | null>(null);
   const [gerandoPreview, setGerandoPreview] = useState(false);
   const [exportando, setExportando] = useState<null | "png" | "jpg" | "pdf">(null);
+  const [novidades, setNovidades] = useState(false);
+  const [destaque, setDestaque] = useState<Destaque>(null);
 
   const sessionIds = useMemo(() => (programa ? idsDasSessoes(programa) : []), [programa]);
   const modalidade = programa?.metodologia ?? null;
   const modalidadeLabel = modalidade
     ? (METHODOLOGY_LABEL[modalidade as Methodology] ?? modalidade)
     : null;
+
+  useEffect(() => {
+    if (open) setNovidades(novidadesPendentes());
+  }, [open]);
+
+  useEffect(() => {
+    if (!destaque) return;
+    const t = setTimeout(() => setDestaque(null), 1600);
+    return () => clearTimeout(t);
+  }, [destaque]);
+
+  function dispensarNovidades() {
+    setNovidades(false);
+    try {
+      window.localStorage.setItem(NOVIDADES_KEY, "1");
+    } catch {
+      /* storage indisponível */
+    }
+  }
 
   // Carrega layout salvo + dados das sessões ao abrir
   useEffect(() => {
@@ -252,12 +302,12 @@ export function ProgramImageDialog({
                 Ajuste a grade de 12 colunas e exporte todas as sessões em PNG, JPG ou PDF.
               </DialogDescription>
             </div>
-            <GuiaDeUso />
+            <GuiaDeUso realcado={destaque === "ajuda"} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge
               variant={origem === "programa" ? "default" : "outline"}
-              className="font-medium"
+              className={cn("font-medium", destaque === "origem" && ANEL)}
             >
               {ORIGEM_TEXTO[origem]}
             </Badge>
@@ -271,6 +321,57 @@ export function ProgramImageDialog({
 
         <ScrollArea className="max-h-[62vh]">
           <div className="grid gap-6 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+            {novidades && (
+              <div className="lg:col-span-2 rounded-xl border border-primary/30 bg-primary/[0.04] p-4 duration-200 animate-in fade-in">
+                <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 space-y-3">
+                    <div>
+                      <p className="text-sm font-semibold leading-tight">
+                        Novidades neste painel
+                      </p>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        Toque num item para ver onde ele está.
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                      {(
+                        [
+                          ["origem", "Origem do layout"],
+                          ["template", "Padrão por modalidade"],
+                          ["ajuda", "Guia de uso"],
+                        ] as [Destaque, string][]
+                      ).map(([key, label]) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => setDestaque(key)}
+                          className={cn(
+                            "rounded-md border border-border/60 bg-background px-3 py-2 text-left text-xs font-semibold",
+                            "transition-[background-color,border-color,color] duration-200",
+                            "hover:border-primary/50 hover:bg-accent hover:text-accent-foreground active:scale-[0.99]",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                      onClick={dispensarNovidades}
+                    >
+                      Entendi
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {layout ? (
               <LayoutEditor layout={layout} onChange={atualizarLayout} />
             ) : (
@@ -307,7 +408,12 @@ export function ProgramImageDialog({
         </ScrollArea>
 
         <div className="flex flex-col gap-3 border-t border-border/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div
+            className={cn(
+              "flex flex-col gap-2 sm:flex-row sm:items-center",
+              destaque === "template" && ANEL,
+            )}
+          >
             <Button
               variant="outline"
               size="sm"
