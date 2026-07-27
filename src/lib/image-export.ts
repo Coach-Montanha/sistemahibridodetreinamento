@@ -324,6 +324,32 @@ export async function exportarSessoesEmMassa(
   URL.revokeObjectURL(url);
 }
 
+/** Exporta as sessões como PDF (uma página por sessão, alta densidade). */
+export async function exportarSessoesPDF(
+  sessoes: { input: SessaoImagemInput; nomeArquivo: string }[],
+  nomeArquivo = "treinos.pdf",
+) {
+  const { jsPDF } = await import("jspdf");
+  let doc: any = null;
+  for (const { input } of sessoes) {
+    const canvas = await renderizarSessaoCanvas(input);
+    const orientacao = canvas.width >= canvas.height ? "landscape" : "portrait";
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.94);
+    if (!doc) {
+      doc = new jsPDF({
+        orientation: orientacao,
+        unit: "px",
+        format: [canvas.width, canvas.height],
+        compress: true,
+      });
+    } else {
+      doc.addPage([canvas.width, canvas.height], orientacao);
+    }
+    doc.addImage(dataUrl, "JPEG", 0, 0, canvas.width, canvas.height, undefined, "FAST");
+  }
+  if (doc) doc.save(nomeArquivo);
+}
+
 /** Preview leve (largura reduzida) para o dialog. */
 export async function renderizarPreviewDataURL(
   input: SessaoImagemInput,
