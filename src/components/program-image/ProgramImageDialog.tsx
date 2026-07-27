@@ -79,6 +79,13 @@ export function novidadesPendentes(): boolean {
   }
 }
 
+/** Versão segura para render (evita divergência de hidratação). */
+export function useNovidadesPendentes(): boolean {
+  const [pendente, setPendente] = useState(false);
+  useEffect(() => setPendente(novidadesPendentes()), []);
+  return pendente;
+}
+
 type Destaque = "origem" | "template" | "ajuda" | null;
 
 const ANEL =
