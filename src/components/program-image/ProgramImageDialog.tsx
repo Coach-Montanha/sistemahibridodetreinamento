@@ -159,12 +159,33 @@ export function ProgramImageDialog({
   const [preview, setPreview] = useState<string | null>(null);
   const [gerandoPreview, setGerandoPreview] = useState(false);
   const [exportando, setExportando] = useState<null | "png" | "jpg" | "pdf">(null);
+  const [novidades, setNovidades] = useState(false);
+  const [destaque, setDestaque] = useState<Destaque>(null);
 
   const sessionIds = useMemo(() => (programa ? idsDasSessoes(programa) : []), [programa]);
   const modalidade = programa?.metodologia ?? null;
   const modalidadeLabel = modalidade
     ? (METHODOLOGY_LABEL[modalidade as Methodology] ?? modalidade)
     : null;
+
+  useEffect(() => {
+    if (open) setNovidades(novidadesPendentes());
+  }, [open]);
+
+  useEffect(() => {
+    if (!destaque) return;
+    const t = setTimeout(() => setDestaque(null), 1600);
+    return () => clearTimeout(t);
+  }, [destaque]);
+
+  function dispensarNovidades() {
+    setNovidades(false);
+    try {
+      window.localStorage.setItem(NOVIDADES_KEY, "1");
+    } catch {
+      /* storage indisponível */
+    }
+  }
 
   // Carrega layout salvo + dados das sessões ao abrir
   useEffect(() => {
