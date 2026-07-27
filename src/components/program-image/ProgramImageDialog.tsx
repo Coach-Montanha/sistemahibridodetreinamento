@@ -66,7 +66,24 @@ const ORIGEM_TEXTO: Record<OrigemLayout, string> = {
   padrao: "Preset padrão",
 };
 
-function GuiaDeUso() {
+/** Chave única de dispensa da faixa de novidades. */
+export const NOVIDADES_KEY = "program-image-novidades-dispensadas";
+
+export function novidadesPendentes(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(NOVIDADES_KEY) !== "1";
+  } catch {
+    return false;
+  }
+}
+
+type Destaque = "origem" | "template" | "ajuda" | null;
+
+const ANEL =
+  "ring-2 ring-primary/50 ring-offset-2 ring-offset-background rounded-md transition-shadow duration-200";
+
+function GuiaDeUso({ realcado }: { realcado?: boolean }) {
   const passos = [
     {
       icon: SlidersHorizontal,
@@ -93,7 +110,10 @@ function GuiaDeUso() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0 text-muted-foreground transition-colors duration-200 hover:text-foreground"
+          className={cn(
+            "h-8 w-8 shrink-0 text-muted-foreground transition-colors duration-200 hover:text-foreground",
+            realcado && ANEL,
+          )}
           aria-label="Como usar o layout de imagem"
         >
           <HelpCircle className="h-4 w-4" />
