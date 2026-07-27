@@ -464,6 +464,7 @@ function ProgramaCard({
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const temNovidades = useNovidadesPendentes();
   const data = programa.data_inicio
     ? new Date(programa.data_inicio).toLocaleDateString("pt-BR", {
         day: "2-digit",
