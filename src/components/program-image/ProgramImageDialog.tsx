@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ImageDown, FileDown, Loader2 } from "lucide-react";
+import {
+  ImageDown,
+  FileDown,
+  Loader2,
+  HelpCircle,
+  BookmarkCheck,
+  RotateCcw,
+  GripVertical,
+  SlidersHorizontal,
+  Download,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,12 +22,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LayoutEditor } from "./layout-editor";
 import {
   carregarLayout,
   salvarLayout,
+  salvarTemplateModalidade,
+  limparOverridePrograma,
   type ImageLayout,
+  type OrigemLayout,
 } from "@/lib/program-image-layout";
+import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { prepararSessoesParaImagem, type SessaoImagemPreparada } from "@/lib/session-image";
 import {
   exportarSessoesEmMassa,
@@ -28,6 +43,7 @@ import {
 type Programa = {
   id: string;
   titulo?: string | null;
+  metodologia?: string | null;
   program_weeks?: any[];
 };
 
@@ -43,6 +59,70 @@ function idsDasSessoes(programa: Programa): string[] {
     );
 }
 
+const ORIGEM_TEXTO: Record<OrigemLayout, string> = {
+  programa: "Ajustes deste programa",
+  modalidade: "Padrão da modalidade",
+  padrao: "Preset padrão",
+};
+
+function GuiaDeUso() {
+  const passos = [
+    {
+      icon: SlidersHorizontal,
+      titulo: "Editar o layout",
+      texto:
+        "Escolha um preset e ajuste a grade de 12 colunas, o fundo, o respiro e a escala do texto. A pré-visualização atualiza sozinha.",
+    },
+    {
+      icon: GripVertical,
+      titulo: "Reordenar arrastando",
+      texto:
+        "Nos programas e no construtor, segure o puxador de seis pontinhos para mover semanas, dias, blocos e exercícios. Pelo teclado: Espaço e setas.",
+    },
+    {
+      icon: Download,
+      titulo: "Exportar",
+      texto:
+        "PNG e JPG saem em um ZIP com todas as sessões; o PDF sai em arquivo único com uma página por sessão.",
+    },
+  ];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 text-muted-foreground transition-colors duration-200 hover:text-foreground"
+          aria-label="Como usar o layout de imagem"
+        >
+          <HelpCircle className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[min(22rem,calc(100vw-2rem))] p-0">
+        <div className="border-b border-border/60 px-4 py-3">
+          <p className="text-sm font-semibold leading-tight">Como usar</p>
+          <p className="text-xs leading-snug text-muted-foreground">
+            Três passos para sair do ajuste à imagem final.
+          </p>
+        </div>
+        <ul className="space-y-4 px-4 py-4">
+          {passos.map((p) => (
+            <li key={p.titulo} className="flex gap-3">
+              <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+                <p.icon className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 space-y-1">
+                <p className="text-sm font-semibold leading-tight">{p.titulo}</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">{p.texto}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function ProgramImageDialog({
   programa,
   onOpenChange,
@@ -52,12 +132,17 @@ export function ProgramImageDialog({
 }) {
   const open = !!programa;
   const [layout, setLayout] = useState<ImageLayout | null>(null);
+  const [origem, setOrigem] = useState<OrigemLayout>("padrao");
   const [sessoes, setSessoes] = useState<SessaoImagemPreparada[] | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [gerandoPreview, setGerandoPreview] = useState(false);
   const [exportando, setExportando] = useState<null | "png" | "jpg" | "pdf">(null);
 
   const sessionIds = useMemo(() => (programa ? idsDasSessoes(programa) : []), [programa]);
+  const modalidade = programa?.metodologia ?? null;
+  const modalidadeLabel = modalidade
+    ? (METHODOLOGY_LABEL[modalidade as Methodology] ?? modalidade)
+    : null;
 
   // Carrega layout salvo + dados das sessões ao abrir
   useEffect(() => {
@@ -66,7 +151,9 @@ export function ProgramImageDialog({
       setPreview(null);
       return;
     }
-    setLayout(carregarLayout(programa.id));
+    const resolvido = carregarLayout(programa.id, modalidade);
+    setLayout(resolvido.layout);
+    setOrigem(resolvido.origem);
     let cancelado = false;
     (async () => {
       try {
@@ -79,7 +166,7 @@ export function ProgramImageDialog({
     return () => {
       cancelado = true;
     };
-  }, [programa, sessionIds]);
+  }, [programa, sessionIds, modalidade]);
 
   // Preview ao vivo da primeira sessão (debounce curto)
   useEffect(() => {
@@ -107,7 +194,25 @@ export function ProgramImageDialog({
 
   function atualizarLayout(next: ImageLayout) {
     setLayout(next);
-    if (programa) salvarLayout(programa.id, next);
+    if (programa) {
+      salvarLayout(programa.id, next);
+      setOrigem("programa");
+    }
+  }
+
+  function definirComoPadraoDaModalidade() {
+    if (!layout || !modalidade) return;
+    salvarTemplateModalidade(modalidade, layout);
+    toast.success(`Layout salvo como padrão de ${modalidadeLabel}`);
+  }
+
+  function restaurarPadraoDaModalidade() {
+    if (!programa) return;
+    limparOverridePrograma(programa.id);
+    const resolvido = carregarLayout(programa.id, modalidade);
+    setLayout(resolvido.layout);
+    setOrigem(resolvido.origem);
+    toast.success("Ajustes deste programa descartados");
   }
 
   async function exportar(formato: "png" | "jpg" | "pdf") {
@@ -132,18 +237,36 @@ export function ProgramImageDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] max-w-5xl overflow-hidden p-0">
-        <DialogHeader className="border-b border-border/60 px-6 py-4">
-          <DialogTitle className="flex flex-wrap items-center gap-2 text-base">
-            Layout de imagem
-            {programa?.titulo && (
-              <Badge variant="secondary" className="max-w-[16rem] truncate font-normal">
-                {programa.titulo}
-              </Badge>
+        <DialogHeader className="space-y-2 border-b border-border/60 px-4 py-4 sm:px-6">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+            <div className="min-w-0 space-y-1.5">
+              <DialogTitle className="flex flex-wrap items-center gap-2 text-base leading-tight">
+                Layout de imagem
+                {programa?.titulo && (
+                  <Badge variant="secondary" className="max-w-[16rem] truncate font-normal">
+                    {programa.titulo}
+                  </Badge>
+                )}
+              </DialogTitle>
+              <DialogDescription className="leading-snug">
+                Ajuste a grade de 12 colunas e exporte todas as sessões em PNG, JPG ou PDF.
+              </DialogDescription>
+            </div>
+            <GuiaDeUso />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant={origem === "programa" ? "default" : "outline"}
+              className="font-medium"
+            >
+              {ORIGEM_TEXTO[origem]}
+            </Badge>
+            {modalidadeLabel && (
+              <span className="text-[11px] leading-snug text-muted-foreground">
+                Modalidade: {modalidadeLabel}
+              </span>
             )}
-          </DialogTitle>
-          <DialogDescription>
-            Ajuste a grade de 12 colunas e exporte todas as sessões em PNG, JPG ou PDF.
-          </DialogDescription>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="max-h-[62vh]">
@@ -183,7 +306,33 @@ export function ProgramImageDialog({
           </div>
         </ScrollArea>
 
-        <div className="flex flex-wrap justify-end gap-2 border-t border-border/60 px-6 py-4">
+        <div className="flex flex-col gap-3 border-t border-border/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 transition-colors duration-200"
+              disabled={!layout || !modalidade}
+              onClick={definirComoPadraoDaModalidade}
+            >
+              <BookmarkCheck className="h-4 w-4" />
+              <span className="truncate">
+                Salvar como padrão{modalidadeLabel ? ` de ${modalidadeLabel}` : ""}
+              </span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-muted-foreground transition-colors duration-200 hover:text-foreground"
+              disabled={origem !== "programa"}
+              onClick={restaurarPadraoDaModalidade}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Restaurar padrão
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
@@ -225,6 +374,7 @@ export function ProgramImageDialog({
             )}
             Exportar PNG
           </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

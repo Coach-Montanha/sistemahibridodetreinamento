@@ -83,24 +83,64 @@ export const PRESETS_LAYOUT: Record<
 };
 
 const KEY = (programId: string) => `program-image-layout:${programId}`;
+const KEY_MOD = (modalidade: string) => `program-image-layout:modalidade:${modalidade}`;
 
-export function carregarLayout(programId: string): ImageLayout {
-  if (typeof window === "undefined") return LAYOUT_PADRAO;
+/** De onde veio o layout atualmente em uso. */
+export type OrigemLayout = "programa" | "modalidade" | "padrao";
+
+function ler(key: string): ImageLayout | null {
+  if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(KEY(programId));
-    if (!raw) return LAYOUT_PADRAO;
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
     return { ...LAYOUT_PADRAO, ...(JSON.parse(raw) as Partial<ImageLayout>) };
   } catch {
-    return LAYOUT_PADRAO;
+    return null;
   }
 }
 
-export function salvarLayout(programId: string, layout: ImageLayout) {
+function gravar(key: string, layout: ImageLayout) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEY(programId), JSON.stringify(layout));
+    window.localStorage.setItem(key, JSON.stringify(layout));
   } catch {
     /* storage indisponível — layout segue apenas em memória */
+  }
+}
+
+/**
+ * Cascata de resolução: ajuste do programa → template da modalidade → preset padrão.
+ */
+export function carregarLayout(
+  programId: string,
+  modalidade?: string | null,
+): { layout: ImageLayout; origem: OrigemLayout } {
+  const doPrograma = ler(KEY(programId));
+  if (doPrograma) return { layout: doPrograma, origem: "programa" };
+  const daModalidade = modalidade ? ler(KEY_MOD(modalidade)) : null;
+  if (daModalidade) return { layout: daModalidade, origem: "modalidade" };
+  return { layout: LAYOUT_PADRAO, origem: "padrao" };
+}
+
+export function salvarLayout(programId: string, layout: ImageLayout) {
+  gravar(KEY(programId), layout);
+}
+
+export function salvarTemplateModalidade(modalidade: string, layout: ImageLayout) {
+  gravar(KEY_MOD(modalidade), layout);
+}
+
+export function carregarTemplateModalidade(modalidade: string): ImageLayout | null {
+  return ler(KEY_MOD(modalidade));
+}
+
+/** Descarta o ajuste específico do programa, voltando ao template da modalidade. */
+export function limparOverridePrograma(programId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(KEY(programId));
+  } catch {
+    /* nada a fazer */
   }
 }
 

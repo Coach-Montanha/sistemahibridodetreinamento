@@ -139,6 +139,7 @@ export function SortableRow({
         {...listeners}
         disabled={disabled}
         aria-label={handleLabel}
+        title={`${handleLabel} — arraste ou use Espaço + setas`}
         className={dragHandleClass}
       >
         <GripVertical className="h-4 w-4" />
