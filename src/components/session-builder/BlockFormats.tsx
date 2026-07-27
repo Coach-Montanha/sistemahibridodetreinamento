@@ -6,6 +6,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ExercisePicker } from "./ExercisePicker";
 import { useBuilder, type BuilderBlock } from "@/lib/session-builder-store";
 import { SetsEditor } from "./SetsEditor";
+import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 
 function BlockExercises({
   block,
@@ -19,6 +20,7 @@ function BlockExercises({
   const addExercise = useBuilder((s) => s.addExercise);
   const removeExercise = useBuilder((s) => s.removeExercise);
   const updateExercise = useBuilder((s) => s.updateExercise);
+  const reorderExercises = useBuilder((s) => s.reorderExercises);
   void modo;
   const lista = slot
     ? block.exercises.filter((e) => (e.slot ?? "aquecimento") === slot)
@@ -27,15 +29,23 @@ function BlockExercises({
 
   return (
     <div className="mt-3 space-y-2">
-      {lista.map((e) => (
-        <div
-          key={e.tempId}
-          className="rounded-lg border border-border/60 bg-background/60 p-3 transition-colors hover:border-border"
-        >
-          <div className="group flex items-center gap-2">
-            <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-              {e.nome_livre ?? "Exercício"}
-            </div>
+      <SortableList
+        ids={lista.map((e) => e.tempId)}
+        label="Exercício"
+        onReorder={(a, o) => reorderExercises(block.tempId, a, o)}
+      >
+        <div className="space-y-2">
+          {lista.map((e) => (
+            <SortableRow
+              key={e.tempId}
+              id={e.tempId}
+              handleLabel={`Reordenar ${e.nome_livre ?? "exercício"}`}
+              className="flex-col items-stretch bg-background/60 p-2 pl-1.5"
+            >
+              <div className="group flex w-full items-center gap-2">
+                <div className="min-w-0 flex-1 truncate text-sm font-medium leading-6 text-foreground">
+                  {e.nome_livre ?? "Exercício"}
+                </div>
             {isMobilidade && (
               <div className="relative">
                 <Input
@@ -62,10 +72,16 @@ function BlockExercises({
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-          </div>
-          {!isMobilidade && <SetsEditor block={block} exercise={e} />}
+              </div>
+              {!isMobilidade && (
+                <div className="w-full">
+                  <SetsEditor block={block} exercise={e} />
+                </div>
+              )}
+            </SortableRow>
+          ))}
         </div>
-      ))}
+      </SortableList>
       <ExercisePicker
         onPick={(ex) =>
           addExercise(block.tempId, {
