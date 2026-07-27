@@ -401,7 +401,12 @@ export function ProgramImageDialog({
         </ScrollArea>
 
         <div className="flex flex-col gap-3 border-t border-border/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div
+            className={cn(
+              "flex flex-col gap-2 sm:flex-row sm:items-center",
+              destaque === "template" && ANEL,
+            )}
+          >
             <Button
               variant="outline"
               size="sm"
