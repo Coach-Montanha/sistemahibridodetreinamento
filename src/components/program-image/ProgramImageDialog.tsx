@@ -295,12 +295,12 @@ export function ProgramImageDialog({
                 Ajuste a grade de 12 colunas e exporte todas as sessões em PNG, JPG ou PDF.
               </DialogDescription>
             </div>
-            <GuiaDeUso />
+            <GuiaDeUso realcado={destaque === "ajuda"} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge
               variant={origem === "programa" ? "default" : "outline"}
-              className="font-medium"
+              className={cn("font-medium", destaque === "origem" && ANEL)}
             >
               {ORIGEM_TEXTO[origem]}
             </Badge>
@@ -314,6 +314,57 @@ export function ProgramImageDialog({
 
         <ScrollArea className="max-h-[62vh]">
           <div className="grid gap-6 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+            {novidades && (
+              <div className="lg:col-span-2 rounded-xl border border-primary/30 bg-primary/[0.04] p-4 duration-200 animate-in fade-in">
+                <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 space-y-3">
+                    <div>
+                      <p className="text-sm font-semibold leading-tight">
+                        Novidades neste painel
+                      </p>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        Toque num item para ver onde ele está.
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                      {(
+                        [
+                          ["origem", "Origem do layout"],
+                          ["template", "Padrão por modalidade"],
+                          ["ajuda", "Guia de uso"],
+                        ] as [Destaque, string][]
+                      ).map(([key, label]) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => setDestaque(key)}
+                          className={cn(
+                            "rounded-md border border-border/60 bg-background px-3 py-2 text-left text-xs font-semibold",
+                            "transition-[background-color,border-color,color] duration-200",
+                            "hover:border-primary/50 hover:bg-accent hover:text-accent-foreground active:scale-[0.99]",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                      onClick={dispensarNovidades}
+                    >
+                      Entendi
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {layout ? (
               <LayoutEditor layout={layout} onChange={atualizarLayout} />
             ) : (
