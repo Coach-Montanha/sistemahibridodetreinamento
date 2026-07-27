@@ -323,6 +323,7 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
       )}
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        {null}
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir programa?</AlertDialogTitle>
