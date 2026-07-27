@@ -2,17 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   DndContext,
-  PointerSensor,
   closestCenter,
-  useSensor,
-  useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import {
-  SortableContext,
-  arrayMove,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+  ptAnnouncements,
+  useSortableSensors,
+} from "@/components/dnd/sortable-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,7 +94,7 @@ export function SessionBuilder({
 }) {
   const navigate = useNavigate();
   const state = useBuilder();
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const sensors = useSortableSensors();
   const { presets } = useFormatRegistry();
   const [imgOpen, setImgOpen] = useState(false);
 
@@ -360,7 +358,13 @@ export function SessionBuilder({
         </div>
       </Card>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+        accessibility={{ announcements: ptAnnouncements("Bloco") }}
+        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+      >
         <SortableContext
           items={state.blocks.map((b) => b.tempId)}
           strategy={verticalListSortingStrategy}
