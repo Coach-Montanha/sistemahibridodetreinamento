@@ -46,6 +46,8 @@ import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
 import { prepararSessoesParaImagem } from "@/lib/session-image";
 import { exportarSessoesEmMassa } from "@/lib/image-export";
+import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
+import { ProgramImageDialog } from "@/components/program-image/ProgramImageDialog";
 
 export const Route = createFileRoute("/_authenticated/app/programas")({
   component: ProgramasPage,
@@ -67,9 +69,12 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [bulkImg, setBulkImg] = useState<"png" | "jpg" | null>(null);
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
+  const [layoutPrograma, setLayoutPrograma] = useState<any | null>(null);
+
+  const programasKey = ["programas", coach?.id] as const;
 
   const { data: programas = [], isLoading } = useQuery({
-    queryKey: ["programas", coach?.id],
+    queryKey: programasKey,
     enabled: !!coach,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -103,6 +108,80 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  /** Reordena sessões dentro de uma semana gravando `numero_dia`. */
+  async function reorderSessoes(programId: string, weekId: string, orderedIds: string[]) {
+    const snapshot = qc.getQueryData(programasKey);
+    qc.setQueryData(programasKey, (old: any) =>
+      (old ?? []).map((p: any) =>
+        p.id !== programId
+          ? p
+          : {
+              ...p,
+              program_weeks: (p.program_weeks ?? []).map((w: any) =>
+                w.id !== weekId
+                  ? w
+                  : {
+                      ...w,
+                      sessions: orderedIds.map((id, i) => ({
+                        ...(w.sessions ?? []).find((s: any) => s.id === id),
+                        numero_dia: i + 1,
+                      })),
+                    },
+              ),
+            },
+      ),
+    );
+    try {
+      for (let i = 0; i < orderedIds.length; i++) {
+        const { error } = await supabase
+          .from("sessions")
+          .update({ numero_dia: i + 1 })
+          .eq("id", orderedIds[i]);
+        if (error) throw error;
+      }
+    } catch (e: any) {
+      qc.setQueryData(programasKey, snapshot);
+      toast.error(e?.message ?? "Não foi possível salvar a nova ordem dos dias");
+    }
+  }
+
+  /** Reordena semanas gravando `numero_semana` (duas passadas por causa do unique). */
+  async function reorderSemanas(programId: string, orderedIds: string[]) {
+    const snapshot = qc.getQueryData(programasKey);
+    qc.setQueryData(programasKey, (old: any) =>
+      (old ?? []).map((p: any) =>
+        p.id !== programId
+          ? p
+          : {
+              ...p,
+              program_weeks: orderedIds.map((id, i) => ({
+                ...(p.program_weeks ?? []).find((w: any) => w.id === id),
+                numero_semana: i + 1,
+              })),
+            },
+      ),
+    );
+    try {
+      for (let i = 0; i < orderedIds.length; i++) {
+        const { error } = await supabase
+          .from("program_weeks")
+          .update({ numero_semana: -(i + 1) })
+          .eq("id", orderedIds[i]);
+        if (error) throw error;
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        const { error } = await supabase
+          .from("program_weeks")
+          .update({ numero_semana: i + 1 })
+          .eq("id", orderedIds[i]);
+        if (error) throw error;
+      }
+    } catch (e: any) {
+      qc.setQueryData(programasKey, snapshot);
+      toast.error(e?.message ?? "Não foi possível salvar a nova ordem das semanas");
+    }
+  }
 
   const bulkDel = useMutation({
     mutationFn: async (ids: string[]) => {
@@ -231,6 +310,9 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
                 selected={selected}
                 onToggleSession={toggle}
                 onToggleWeek={toggleWeek}
+                onReorderSessoes={(weekId, ids) => reorderSessoes(p.id, weekId, ids)}
+                onReorderSemanas={(ids) => reorderSemanas(p.id, ids)}
+                onOpenLayout={() => setLayoutPrograma(p)}
                 onDelete={() =>
                   setToDelete({ id: p.id, titulo: p.titulo ?? "programa" })
                 }
