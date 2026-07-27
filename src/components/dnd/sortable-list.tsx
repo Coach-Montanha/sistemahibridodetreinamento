@@ -99,12 +99,14 @@ export function SortableList({
 export function SortableRow({
   id,
   className,
+  contentClassName,
   handleLabel = "Reordenar",
   children,
   disabled,
 }: {
   id: string;
   className?: string;
+  contentClassName?: string;
   handleLabel?: string;
   disabled?: boolean;
   children: React.ReactNode;
@@ -141,7 +143,9 @@ export function SortableRow({
       >
         <GripVertical className="h-4 w-4" />
       </button>
-      <div className="flex min-w-0 flex-1 items-center gap-2">{children}</div>
+      <div className={cn("flex min-w-0 flex-1 items-center gap-2", contentClassName)}>
+        {children}
+      </div>
     </div>
   );
 }
