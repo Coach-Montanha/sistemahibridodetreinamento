@@ -41,6 +41,7 @@ function BlockExercises({
               id={e.tempId}
               handleLabel={`Reordenar ${e.nome_livre ?? "exercício"}`}
               className="flex-col items-stretch bg-background/60 p-2 pl-1.5"
+              contentClassName="flex-col items-stretch gap-2"
             >
               <div className="group flex w-full items-center gap-2">
                 <div className="min-w-0 flex-1 truncate text-sm font-medium leading-6 text-foreground">
