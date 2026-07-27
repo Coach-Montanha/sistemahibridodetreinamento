@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import {
   SYSTEM_PROMPT,
   calcularDataFim,
@@ -33,6 +32,11 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
     if (!programa) throw new Error("Programa não encontrado ou sem permissão de acesso");
+    if (programa.metodologia !== "musculacao") {
+      throw new Error(
+        "Prescrever com IA está disponível apenas para a modalidade Musculação",
+      );
+    }
 
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(
       (w: any) => (w.sessions ?? []).map((s: any) => s.titulo ?? null),
@@ -40,8 +44,6 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     const ctx = {
       titulo: programa.titulo ?? "Programa",
-      modalidade:
-        METHODOLOGY_LABEL[programa.metodologia as Methodology] ?? programa.metodologia,
       duracao_semanas: programa.duracao_semanas ?? 1,
       data_inicio: programa.data_inicio ?? null,
       data_fim: calcularDataFim(programa.data_inicio ?? null, programa.duracao_semanas ?? 1),

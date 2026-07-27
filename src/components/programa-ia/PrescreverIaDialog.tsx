@@ -20,7 +20,8 @@ import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
 
 const PLACEHOLDER = `Ex.: divisão A/B/C/D para hipertrofia, 4 treinos por semana.
 Dia A peito e tríceps, Dia B costas e bíceps, Dia C pernas, Dia D ombros e core.
-4 séries de 8 a 12 repetições nos compostos e 3x12 nos isoladores, 90s de descanso.`;
+4 séries de 8 a 12 repetições nos compostos e 3x12 nos isoladores, 90s de descanso.
+Priorizar barra e halteres; incluir progressão de carga semanal.`;
 
 /** "4x10" -> { series: 4, reps: "10" } */
 function parseSetsReps(v: string): { series: number | null; reps: string | null } {
@@ -268,13 +269,16 @@ export function PrescreverIaDialog({
               <Sparkles className="h-4 w-4" />
             </span>
             Prescrever com IA
+            <Badge variant="secondary" className="ml-1 text-[10px] uppercase tracking-wide">
+              Musculação
+            </Badge>
           </DialogTitle>
           <DialogDescription className="text-xs">
             {programa?.titulo
               ? `Gerando para "${programa.titulo}".`
               : "Gere uma prescrição estruturada."}{" "}
-            A IA já usa a modalidade, o período e os objetivos da rotina — descreva só o
-            que muda.
+            Motor dedicado de musculação: a IA já considera período, objetivos e
+            nomenclatura dos dias da rotina — descreva a divisão e o volume desejados.
           </DialogDescription>
         </DialogHeader>
 
