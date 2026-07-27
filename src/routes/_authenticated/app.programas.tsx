@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -51,6 +51,11 @@ import {
   ProgramImageDialog,
   useNovidadesPendentes,
 } from "@/components/program-image/ProgramImageDialog";
+const PrescreverIaDialog = lazy(() =>
+  import("@/components/programa-ia/PrescreverIaDialog").then((m) => ({
+    default: m.PrescreverIaDialog,
+  })),
+);
 
 export const Route = createFileRoute("/_authenticated/app/programas")({
   component: ProgramasPage,
@@ -73,6 +78,7 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
   const [bulkImg, setBulkImg] = useState<"png" | "jpg" | null>(null);
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
   const [layoutPrograma, setLayoutPrograma] = useState<any | null>(null);
+  const [iaPrograma, setIaPrograma] = useState<any | null>(null);
 
   const programasKey = ["programas", coach?.id] as const;
 
@@ -316,6 +322,7 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
                 onReorderSessoes={(weekId, ids) => reorderSessoes(p.id, weekId, ids)}
                 onReorderSemanas={(ids) => reorderSemanas(p.id, ids)}
                 onOpenLayout={() => setLayoutPrograma(p)}
+                onOpenIa={() => setIaPrograma(p)}
                 onDelete={() =>
                   setToDelete({ id: p.id, titulo: p.titulo ?? "programa" })
                 }
@@ -329,6 +336,15 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
         programa={layoutPrograma}
         onOpenChange={(o) => !o && setLayoutPrograma(null)}
       />
+
+      {iaPrograma && (
+        <Suspense fallback={null}>
+          <PrescreverIaDialog
+            programa={iaPrograma}
+            onOpenChange={(o) => !o && setIaPrograma(null)}
+          />
+        </Suspense>
+      )}
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
@@ -450,6 +466,7 @@ function ProgramaCard({
   onReorderSessoes,
   onReorderSemanas,
   onOpenLayout,
+  onOpenIa,
   onDelete,
 }: {
   programa: any;
@@ -461,6 +478,7 @@ function ProgramaCard({
   onReorderSessoes: (weekId: string, orderedIds: string[]) => void;
   onReorderSemanas: (orderedIds: string[]) => void;
   onOpenLayout: () => void;
+  onOpenIa: () => void;
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -632,6 +650,18 @@ function ProgramaCard({
               </SortableList>
             )}
             <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <Button
+                size="sm"
+                className="gap-2 transition-all duration-200"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenIa();
+                }}
+              >
+                <Sparkles className="h-4 w-4" />
+                Prescrever com IA
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
