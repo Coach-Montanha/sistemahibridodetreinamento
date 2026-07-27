@@ -1,6 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { dragHandleClass } from "@/components/dnd/sortable-list";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,27 +20,48 @@ import {
 } from "./BlockFormats";
 
 export function BlockCard({ block }: { block: BuilderBlock }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: block.tempId });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({ id: block.tempId });
   const update = useBuilder((s) => s.updateBlock);
   const remove = useBuilder((s) => s.removeBlock);
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transform: CSS.Transform.toString(
+      transform ? { ...transform, scaleX: 1, scaleY: 1 } : null,
+    ),
+    transition: transition ?? "transform 200ms cubic-bezier(0.2,0,0,1)",
   };
 
   return (
-    <Card ref={setNodeRef} style={style} className="p-4">
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "p-4 transition-[border-color,box-shadow] duration-200",
+        isDragging
+          ? "z-20 scale-[1.01] border-primary/60 shadow-xl shadow-primary/10"
+          : "border-border/70 hover:border-primary/40",
+        isOver && !isDragging && "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
+      )}
+    >
       <div className="flex items-start gap-2">
         <button
+          type="button"
+          ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
-          className="mt-1 cursor-grab text-muted-foreground hover:text-foreground"
-          aria-label="Reordenar"
+          className={cn(dragHandleClass, "mt-0.5")}
+          aria-label={`Reordenar bloco ${block.titulo ?? ""}`.trim()}
         >
-          <GripVertical className="h-5 w-5" />
+          <GripVertical className="h-4 w-4" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-2">
