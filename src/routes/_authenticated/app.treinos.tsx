@@ -101,7 +101,7 @@ function TreinosHub() {
 
       <div>
         {active === "programas" && (
-          <ProgramasPanel showHeader={false} destacarIa={ia} />
+          <ProgramasPanel key={ia ? "ia" : "todos"} showHeader={false} destacarIa={ia} />
         )}
         {active === "nova" && <SessionBuilder />}
         {active === "gerar" && <GerarPanel showHeader={false} />}
