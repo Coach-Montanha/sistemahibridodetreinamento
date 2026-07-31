@@ -95,7 +95,7 @@ function juntarObs(...partes: (string | null | undefined)[]) {
  * Converte os grupos da IA ("A1"/"A2") no mapa `grupos` por ordem que o
  * construtor de sessão já lê do config do bloco.
  */
-function gruposDoDia(dia: AiDay): Record<string, unknown> {
+function gruposDoDia(dia: AiDay): Record<string, Record<string, string>> {
   const grupos: Record<string, string> = {};
   dia.exercises.forEach((e, i) => {
     if (e.group_type !== "individual" && e.group) {
