@@ -56,11 +56,19 @@ const EXEMPLOS = [
 
 const LIMITACOES = [
   "Exclusivo da modalidade Musculação.",
+  "A IA não usa o banco de exercícios da plataforma: os movimentos vêm prontos, só de musculação.",
+  "Suporta exercícios individuais e combinados (bi-set, tri-set).",
   "Até 4.000 caracteres por prompt.",
   "A IA gera uma prévia — nada é salvo até você confirmar.",
   "Os treinos entram na última semana da rotina, seguindo a numeração de dias existente.",
   "Cargas e observações são sugestões: revise antes de publicar.",
 ];
+
+const COMBINACAO_LABEL: Record<string, string> = {
+  biset: "Bi-set",
+  triset: "Tri-set",
+  superset: "Superset",
+};
 
 /** "4x10" -> { series: 4, reps: "10" } */
 function parseSetsReps(v: string): { series: number | null; reps: string | null } {
@@ -81,6 +89,20 @@ function parseCarga(v: string): number | null {
 function juntarObs(...partes: (string | null | undefined)[]) {
   const s = partes.filter((p) => p && p.trim().length > 0).join(" · ");
   return s.length ? s : null;
+}
+
+/**
+ * Converte os grupos da IA ("A1"/"A2") no mapa `grupos` por ordem que o
+ * construtor de sessão já lê do config do bloco.
+ */
+function gruposDoDia(dia: AiDay): Record<string, Record<string, string>> {
+  const grupos: Record<string, string> = {};
+  dia.exercises.forEach((e, i) => {
+    if (e.group_type !== "individual" && e.group) {
+      grupos[String(i + 1)] = e.group.charAt(0).toUpperCase();
+    }
+  });
+  return Object.keys(grupos).length ? { grupos } : {};
 }
 
 const DiaCard = memo(function DiaCard({ dia, index }: { dia: AiDay; index: number }) {
@@ -108,7 +130,17 @@ const DiaCard = memo(function DiaCard({ dia, index }: { dia: AiDay; index: numbe
             className="rounded-lg border border-border/50 bg-muted/25 px-3 py-2"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <span className="text-sm font-medium">{e.name}</span>
+              <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                {e.name}
+                {e.group_type !== "individual" && e.group && (
+                  <Badge
+                    variant="outline"
+                    className="border-primary/30 bg-primary/10 text-[10px] uppercase tracking-wide text-primary"
+                  >
+                    {COMBINACAO_LABEL[e.group_type] ?? "Combinado"} · {e.group}
+                  </Badge>
+                )}
+              </span>
               <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                 {e.sets_reps && (
                   <span className="inline-flex items-center gap-1">
@@ -222,7 +254,7 @@ export function PrescreverIaDialog({
             ordem: 1,
             formato: "bodybuilding_sets",
             titulo: dia.day_label || dia.description || "Bloco principal",
-            config: {},
+            config: gruposDoDia(dia),
           })
           .select("id")
           .single();

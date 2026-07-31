@@ -6,6 +6,9 @@ export type AiExercise = {
   load: string;
   rest_seconds: number | null;
   observations: string;
+  /** Rótulo de agrupamento (ex.: "A1", "A2"). Vazio = exercício individual. */
+  group: string;
+  group_type: "individual" | "biset" | "triset" | "superset";
 };
 
 export type AiDay = {
@@ -17,7 +20,11 @@ export type AiDay = {
 
 export type AiPrescription = { days: AiDay[]; notes: string };
 
-export const SYSTEM_PROMPT = `Você é um Personal Trainer experiente em MUSCULAÇÃO (treinamento resistido com pesos), atendendo atletas, pessoas comuns e pessoas com necessidades especiais. Este motor é exclusivo de musculação: monte divisões de treino (A/B/C/D...), com foco muscular por dia, exercícios de sala de musculação, séries, repetições, carga e descanso. Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, sem markdown, no formato:
+export const SYSTEM_PROMPT = `Você é um Personal Trainer experiente em MUSCULAÇÃO (treinamento resistido com pesos), atendendo atletas, pessoas comuns e pessoas com necessidades especiais. Este motor é exclusivo de musculação: monte divisões de treino (A/B/C/D...), com foco muscular por dia, exercícios de sala de musculação, séries, repetições, carga e descanso.
+PROIBIDO usar movimentos de kettlebell (swing, snatch, jerk, turkish get-up), levantamento de peso olímpico (clean, arranco, arremesso), ginásticos (muscle-up, handstand), CrossFit/MetCon (burpee, wall ball, box jump, thruster) ou qualquer condicionamento metabólico. Use apenas exercícios clássicos de sala de musculação com barra, halteres, polias, máquinas e peso corporal guiado.
+Você NÃO tem acesso a nenhum banco de exercícios: escreva os nomes por extenso, em português.
+Exercícios podem ser individuais ou combinados. Para combinar, use o mesmo prefixo em "group" ("A1"/"A2" = par combinado) e defina "group_type" como "biset", "triset" ou "superset". Exercício isolado: "group" vazio e "group_type" igual a "individual".
+Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, sem markdown, no formato:
 {
   "days": [
     { "name": "Treino 1",
@@ -25,7 +32,8 @@ export const SYSTEM_PROMPT = `Você é um Personal Trainer experiente em MUSCULA
       "description": "Foco muscular / observações gerais",
       "exercises": [
         { "name": "Supino reto", "sets_reps": "4x10", "load": "60kg",
-          "rest_seconds": 90, "observations": "Cadência 2:1" }
+          "rest_seconds": 90, "observations": "Cadência 2:1",
+          "group": "", "group_type": "individual" }
       ] }
   ],
   "notes": "Observações finais do plano"
@@ -82,6 +90,15 @@ function texto(v: unknown, fallback = ""): string {
   return typeof v === "string" ? v.trim() : fallback;
 }
 
+const GROUP_TYPES = ["individual", "biset", "triset", "superset"] as const;
+
+function tipoDeGrupo(v: unknown, grupo: string): AiExercise["group_type"] {
+  const t = texto(v).toLowerCase().replace(/[\s-]/g, "");
+  const achado = GROUP_TYPES.find((g) => g === t);
+  if (achado && achado !== "individual") return grupo ? achado : "individual";
+  return grupo ? "biset" : "individual";
+}
+
 /** JSON.parse defensivo + normalização do formato esperado. */
 export function normalizarPrescricao(bruto: string): AiPrescription {
   let json: any;
@@ -104,16 +121,21 @@ export function normalizarPrescricao(bruto: string): AiPrescription {
       day_label: texto(d?.day_label),
       description: texto(d?.description),
       exercises: exRaw
-        .map((e: any) => ({
-          name: texto(e?.name),
-          sets_reps: texto(e?.sets_reps),
-          load: texto(e?.load),
-          rest_seconds:
-            typeof e?.rest_seconds === "number" && Number.isFinite(e.rest_seconds)
-              ? Math.max(0, Math.round(e.rest_seconds))
-              : null,
-          observations: texto(e?.observations),
-        }))
+        .map((e: any) => {
+          const grupo = texto(e?.group).toUpperCase().slice(0, 4);
+          return {
+            name: texto(e?.name),
+            sets_reps: texto(e?.sets_reps),
+            load: texto(e?.load),
+            rest_seconds:
+              typeof e?.rest_seconds === "number" && Number.isFinite(e.rest_seconds)
+                ? Math.max(0, Math.round(e.rest_seconds))
+                : null,
+            observations: texto(e?.observations),
+            group: grupo,
+            group_type: tipoDeGrupo(e?.group_type, grupo),
+          };
+        })
         .filter((e: AiExercise) => e.name.length > 0),
     };
   });

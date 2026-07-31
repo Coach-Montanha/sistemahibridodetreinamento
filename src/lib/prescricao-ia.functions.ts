@@ -20,6 +20,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => INPUT.parse(input))
   .handler(async ({ data, context }): Promise<AiPrescription> => {
+    // Motor dedicado: NÃO consulta a tabela `exercises`. Os movimentos vêm
+    // exclusivamente do modelo, evitando mistura com outras modalidades.
     const supabase = context.supabase;
 
     const { data: programa, error } = await supabase

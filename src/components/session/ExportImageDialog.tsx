@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -10,16 +10,25 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ImageDown, Loader2, ImageIcon, AlertTriangle } from "lucide-react";
 import { prepararSessaoParaImagem } from "@/lib/session-image";
 import {
   exportarSessaoImagem,
+  exportarSessoesPDF,
   renderizarPreviewDataURL,
   type SessaoImagemInput,
 } from "@/lib/image-export";
+import { PRESETS_LAYOUT } from "@/lib/program-image-layout";
 import { cn } from "@/lib/utils";
 
-type Formato = "png" | "jpg";
+type Formato = "png" | "jpg" | "pdf";
 
 export function ExportImageDialog({
   open,
@@ -31,6 +40,7 @@ export function ExportImageDialog({
   sessionId: string;
 }) {
   const [formato, setFormato] = useState<Formato>("png");
+  const [presetId, setPresetId] = useState<string>("padrao");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -39,6 +49,11 @@ export function ExportImageDialog({
     nomeArquivo: string;
   } | null>(null);
   const [baixando, setBaixando] = useState(false);
+
+  const layout = useMemo(
+    () => (PRESETS_LAYOUT[presetId] ?? PRESETS_LAYOUT.padrao).layout,
+    [presetId],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -50,8 +65,12 @@ export function ExportImageDialog({
       try {
         const prep = await prepararSessaoParaImagem(sessionId);
         if (cancel) return;
-        setPayload(prep);
-        const url = await renderizarPreviewDataURL(prep.input, 1280);
+        const comLayout = { ...prep, input: { ...prep.input, layout } };
+        setPayload(comLayout);
+        const url = await renderizarPreviewDataURL(
+          comLayout.input,
+          Math.min(1280, layout.largura),
+        );
         if (cancel) return;
         setPreview(url);
       } catch (e: any) {
@@ -63,13 +82,17 @@ export function ExportImageDialog({
     return () => {
       cancel = true;
     };
-  }, [open, sessionId]);
+  }, [open, sessionId, layout]);
 
   async function baixar() {
     if (!payload) return;
     setBaixando(true);
     try {
-      await exportarSessaoImagem(payload.input, payload.nomeArquivo, formato);
+      if (formato === "pdf") {
+        await exportarSessoesPDF([payload], `${payload.nomeArquivo}.pdf`);
+      } else {
+        await exportarSessaoImagem(payload.input, payload.nomeArquivo, formato);
+      }
       toast.success(`${payload.nomeArquivo}.${formato} baixado`);
       onOpenChange(false);
     } catch (e: any) {
@@ -92,7 +115,8 @@ export function ExportImageDialog({
                 Exportar como imagem
               </DialogTitle>
               <DialogDescription className="mt-1 text-sm leading-relaxed">
-                Canvas 5760×2160, pronto pra publicar nas redes ou enviar ao aluno.
+                Escolha o formato de tela e o arquivo: pronto pra publicar nas redes,
+                enviar ao aluno ou imprimir.
               </DialogDescription>
             </div>
           </div>
@@ -100,9 +124,9 @@ export function ExportImageDialog({
 
         <div className="space-y-4">
           <div
+            style={{ aspectRatio: `${layout.largura} / ${layout.altura}` }}
             className={cn(
-              "relative overflow-hidden rounded-lg border border-border/60 bg-muted/40",
-              "aspect-[5760/2160]",
+              "relative mx-auto max-h-[52vh] w-full overflow-hidden rounded-lg border border-border/60 bg-muted/40",
             )}
           >
             {loading && (
@@ -134,7 +158,24 @@ export function ExportImageDialog({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Formato
+                Formato de tela
+              </p>
+              <Select value={presetId} onValueChange={setPresetId}>
+                <SelectTrigger className="h-9 w-[220px] text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(PRESETS_LAYOUT).map(([id, p]) => (
+                    <SelectItem key={id} value={id} className="text-sm">
+                      {p.nome} · {p.layout.largura}×{p.layout.altura}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Arquivo
               </p>
               <ToggleGroup
                 type="single"
@@ -142,18 +183,15 @@ export function ExportImageDialog({
                 onValueChange={(v) => v && setFormato(v as Formato)}
                 className="gap-1 rounded-lg border border-border/60 bg-muted/40 p-1"
               >
-                <ToggleGroupItem
-                  value="png"
-                  className="h-8 min-w-[64px] rounded-md px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-200 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
-                >
-                  PNG
-                </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="jpg"
-                  className="h-8 min-w-[64px] rounded-md px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-200 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
-                >
-                  JPG
-                </ToggleGroupItem>
+                {(["png", "jpg", "pdf"] as const).map((f) => (
+                  <ToggleGroupItem
+                    key={f}
+                    value={f}
+                    className="h-8 min-w-[64px] rounded-md px-3 text-xs font-semibold uppercase tracking-wide transition-all duration-200 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+                  >
+                    {f}
+                  </ToggleGroupItem>
+                ))}
               </ToggleGroup>
             </div>
             {payload && (

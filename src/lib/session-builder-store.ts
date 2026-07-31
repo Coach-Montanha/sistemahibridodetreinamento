@@ -38,6 +38,8 @@ export type BuilderExercise = {
   observacoes?: string | null;
   /** slot dentro do bloco (usado em preparação de movimento) */
   slot?: "mobilidade" | "aquecimento" | null;
+  /** rótulo de combinação (bi-set/tri-set): "A", "B", ... ; null = individual */
+  grupo?: string | null;
   /** séries tipadas (editor avançado); ausente ⇒ usa reps/series legados */
   sets?: BuilderSet[];
 };

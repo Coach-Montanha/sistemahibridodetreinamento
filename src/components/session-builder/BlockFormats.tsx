@@ -1,22 +1,35 @@
+import { useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2, Flame, Wind } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ExercisePicker } from "./ExercisePicker";
 import { useBuilder, type BuilderBlock } from "@/lib/session-builder-store";
 import { SetsEditor } from "./SetsEditor";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 
+const GRUPOS = ["A", "B", "C", "D"] as const;
+const NOME_COMBINACAO: Record<number, string> = { 2: "Bi-set", 3: "Tri-set" };
+
 function BlockExercises({
   block,
   slot,
   modo,
+  agrupavel,
 }: {
   block: BuilderBlock;
   slot?: "mobilidade" | "aquecimento";
   modo?: "circuito" | "series_fixas";
+  agrupavel?: boolean;
 }) {
   const addExercise = useBuilder((s) => s.addExercise);
   const removeExercise = useBuilder((s) => s.removeExercise);
@@ -27,6 +40,19 @@ function BlockExercises({
     ? block.exercises.filter((e) => (e.slot ?? "aquecimento") === slot)
     : block.exercises;
   const isMobilidade = slot === "mobilidade";
+
+  const rotuloGrupo = useMemo(() => {
+    if (!agrupavel) return {} as Record<string, string>;
+    const contagem = new Map<string, number>();
+    for (const e of lista) {
+      if (e.grupo) contagem.set(e.grupo, (contagem.get(e.grupo) ?? 0) + 1);
+    }
+    const out: Record<string, string> = {};
+    contagem.forEach((n, g) => {
+      if (n > 1) out[g] = NOME_COMBINACAO[n] ?? "Superset";
+    });
+    return out;
+  }, [agrupavel, lista]);
 
   return (
     <div className="mt-3 space-y-2">
@@ -47,7 +73,39 @@ function BlockExercises({
               <div className="group flex w-full items-center gap-2">
                 <div className="min-w-0 flex-1 truncate text-sm font-medium leading-6 text-foreground">
                   {e.nome_livre ?? "Exercício"}
+                  {e.grupo && rotuloGrupo[e.grupo] && (
+                    <span className="ml-2 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                      {rotuloGrupo[e.grupo]} {e.grupo}
+                    </span>
+                  )}
                 </div>
+            {agrupavel && (
+              <Select
+                value={e.grupo ?? "individual"}
+                onValueChange={(v) =>
+                  updateExercise(block.tempId, e.tempId, {
+                    grupo: v === "individual" ? null : v,
+                  })
+                }
+              >
+                <SelectTrigger
+                  className="h-8 w-[128px] text-xs"
+                  aria-label="Combinação do exercício"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual" className="text-xs">
+                    Individual
+                  </SelectItem>
+                  {GRUPOS.map((g) => (
+                    <SelectItem key={g} value={g} className="text-xs">
+                      Combinado {g}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {isMobilidade && (
               <div className="relative">
                 <Input
@@ -420,7 +478,10 @@ export function SetsRepsForm({ block }: { block: BuilderBlock }) {
       {SETS_HINT[block.formato] && (
         <p className="text-[11px] text-muted-foreground">{SETS_HINT[block.formato]}</p>
       )}
-      <BlockExercises block={block} />
+      <p className="text-[11px] text-muted-foreground">
+        Combine exercícios (bi-set, tri-set) marcando o mesmo grupo em “Combinado A/B/C”.
+      </p>
+      <BlockExercises block={block} agrupavel />
     </div>
   );
 }
