@@ -671,7 +671,11 @@ function ProgramaCard({
               {programa.metodologia === "musculacao" && (
                 <Button
                   size="sm"
-                  className="gap-2 transition-all duration-200"
+                  title="Gerar treinos de musculação com IA a partir de um prompt"
+                  aria-label="Prescrever treinos com IA nesta rotina"
+                  className={`gap-2 transition-all duration-200 ${
+                    destacarIa ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+                  }`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
