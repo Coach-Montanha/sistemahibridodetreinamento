@@ -1,7 +1,15 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Sparkles, Timer, Weight, ListOrdered } from "lucide-react";
+import {
+  ChevronDown,
+  Info,
+  ListOrdered,
+  Loader2,
+  Sparkles,
+  Timer,
+  Weight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +22,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { prescribeTrainingWithAi } from "@/lib/prescricao-ia.functions";
 import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
@@ -22,6 +35,32 @@ const PLACEHOLDER = `Ex.: divisão A/B/C/D para hipertrofia, 4 treinos por seman
 Dia A peito e tríceps, Dia B costas e bíceps, Dia C pernas, Dia D ombros e core.
 4 séries de 8 a 12 repetições nos compostos e 3x12 nos isoladores, 90s de descanso.
 Priorizar barra e halteres; incluir progressão de carga semanal.`;
+
+const EXEMPLOS = [
+  {
+    chip: "Hipertrofia 4x/semana",
+    texto:
+      "Divisão A/B/C/D para hipertrofia, 4 treinos por semana. 4x8-12 nos compostos e 3x12 nos isoladores, 90s de descanso.",
+  },
+  {
+    chip: "Full body 3x/semana",
+    texto:
+      "Full body 3 vezes por semana, 5 a 6 exercícios por treino, 3x10, 60s de descanso, foco em barra e halteres.",
+  },
+  {
+    chip: "Foco em membros inferiores",
+    texto:
+      "Divisão de 3 treinos com ênfase em membros inferiores (2 de perna e 1 de superiores), 4x8, 120s de descanso nos compostos.",
+  },
+] as const;
+
+const LIMITACOES = [
+  "Exclusivo da modalidade Musculação.",
+  "Até 4.000 caracteres por prompt.",
+  "A IA gera uma prévia — nada é salvo até você confirmar.",
+  "Os treinos entram na última semana da rotina, seguindo a numeração de dias existente.",
+  "Cargas e observações são sugestões: revise antes de publicar.",
+];
 
 /** "4x10" -> { series: 4, reps: "10" } */
 function parseSetsReps(v: string): { series: number | null; reps: string | null } {
