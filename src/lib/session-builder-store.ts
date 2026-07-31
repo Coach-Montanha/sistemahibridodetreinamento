@@ -120,7 +120,7 @@ const DEFAULT_CONFIG: Record<BlockFormat, Record<string, any>> = {
   e2mom: { rounds: 8, intervalo_min: 2, rest_after_min: 3, modo_execucao: "circuito" },
   amrap: { duracao_min: 12, modo_execucao: "circuito" },
   emom: { rounds: 10, intervalo_min: 1, modo_execucao: "circuito" },
-  circuito: { rounds: 3, modo_execucao: "circuito" },
+  circuito: { rounds: 3, series: 3, reps: "12", descanso_seg: 60, modo_execucao: "circuito" },
   kb_timed_sets: {
     aquecimento: [{ sets: 2, work_min: 2, rest_min: 2 }],
     tiro: [{ sets: 1, work_min: 2, rest_min: 2 }],
@@ -132,10 +132,10 @@ const DEFAULT_CONFIG: Record<BlockFormat, Record<string, any>> = {
       { pct: 70, sets: 1, reps: 4 },
     ],
   },
-  metcon: {},
+  metcon: { series: 3, reps: "10", descanso_seg: 60, modo_execucao: "circuito" },
   bodybuilding_sets: { series: 4, reps: "8-12", descanso_seg: 60, modo_execucao: "series_fixas" },
-  finalizador: {},
-  livre: {},
+  finalizador: { series: 3, reps: "15", descanso_seg: 45, modo_execucao: "circuito" },
+  livre: { instrucoes: "" },
 };
 
 export const useBuilder = create<State>((set) => ({
