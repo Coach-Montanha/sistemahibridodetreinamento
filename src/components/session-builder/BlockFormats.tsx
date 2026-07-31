@@ -360,6 +360,7 @@ export function ForcaPctForm({ block }: { block: BuilderBlock }) {
 }
 
 /* ---------- Kettlebell Sport AQ/TR ---------- */
+/* placeholder-anchor */
 export function KbTimedForm({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
   const cfg = block.config;
