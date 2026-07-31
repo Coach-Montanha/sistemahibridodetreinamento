@@ -17,6 +17,8 @@ import {
   TimedForm,
   ForcaPctForm,
   KbTimedForm,
+  SetsRepsForm,
+  LivreForm,
 } from "./BlockFormats";
 
 export function BlockCard({ block }: { block: BuilderBlock }) {
@@ -101,6 +103,13 @@ function BlockBody({ block }: { block: BuilderBlock }) {
       return <ForcaPctForm block={block} />;
     case "kb_timed_sets":
       return <KbTimedForm block={block} />;
+    case "bodybuilding_sets":
+    case "circuito":
+    case "metcon":
+    case "finalizador":
+      return <SetsRepsForm block={block} />;
+    case "livre":
+      return <LivreForm block={block} />;
     default:
       return (
         <p className="text-sm text-muted-foreground">
