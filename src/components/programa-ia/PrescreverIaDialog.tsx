@@ -91,6 +91,20 @@ function juntarObs(...partes: (string | null | undefined)[]) {
   return s.length ? s : null;
 }
 
+/**
+ * Converte os grupos da IA ("A1"/"A2") no mapa `grupos` por ordem que o
+ * construtor de sessão já lê do config do bloco.
+ */
+function gruposDoDia(dia: AiDay): Record<string, unknown> {
+  const grupos: Record<string, string> = {};
+  dia.exercises.forEach((e, i) => {
+    if (e.group_type !== "individual" && e.group) {
+      grupos[String(i + 1)] = e.group.charAt(0).toUpperCase();
+    }
+  });
+  return Object.keys(grupos).length ? { grupos } : {};
+}
+
 const DiaCard = memo(function DiaCard({ dia, index }: { dia: AiDay; index: number }) {
   return (
     <article className="rounded-xl border border-border/70 bg-card p-4">
@@ -240,7 +254,7 @@ export function PrescreverIaDialog({
             ordem: 1,
             formato: "bodybuilding_sets",
             titulo: dia.day_label || dia.description || "Bloco principal",
-            config: {},
+            config: gruposDoDia(dia),
           })
           .select("id")
           .single();
