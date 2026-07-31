@@ -322,6 +322,53 @@ export function PrescreverIaDialog({
         </DialogHeader>
 
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Rotina alvo", value: programa?.titulo ?? "—" },
+              { label: "Modalidade", value: "Musculação" },
+              { label: "Caracteres", value: `${prompt.trim().length}/4000` },
+            ].map((k) => (
+              <div
+                key={k.label}
+                className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2"
+              >
+                <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  {k.label}
+                </p>
+                <p title={k.value} className="mt-0.5 truncate text-sm font-medium tabular-nums">
+                  {k.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <Collapsible>
+            <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs font-medium transition-colors duration-200 hover:bg-muted/40">
+              <Info className="h-3.5 w-3.5 text-primary" />
+              Como usar e limitações
+              <ChevronDown className="ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 px-3 pb-1 pt-3">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Descreva: divisão dos dias (A/B/C…), frequência semanal, objetivo,
+                séries e repetições, descanso e equipamentos preferidos.
+              </p>
+              <ul className="space-y-1">
+                {LIMITACOES.map((l) => (
+                  <li
+                    key={l}
+                    className="flex gap-2 text-xs leading-relaxed text-muted-foreground"
+                  >
+                    <span aria-hidden className="text-primary">
+                      •
+                    </span>
+                    {l}
+                  </li>
+                ))}
+              </ul>
+            </CollapsibleContent>
+          </Collapsible>
+
           <div className="space-y-2">
             <label
               htmlFor="prompt-ia"
@@ -329,6 +376,21 @@ export function PrescreverIaDialog({
             >
               Instruções
             </label>
+            <div className="flex flex-wrap gap-1.5">
+              {EXEMPLOS.map((ex) => (
+                <Button
+                  key={ex.chip}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={gerarMut.isPending || salvarMut.isPending}
+                  onClick={() => setPrompt(ex.texto)}
+                  className="h-7 rounded-full px-3 text-[11px] font-medium"
+                >
+                  {ex.chip}
+                </Button>
+              ))}
+            </div>
             <Textarea
               id="prompt-ia"
               value={prompt}
