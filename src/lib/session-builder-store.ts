@@ -132,10 +132,10 @@ const DEFAULT_CONFIG: Record<BlockFormat, Record<string, any>> = {
       { pct: 70, sets: 1, reps: 4 },
     ],
   },
-  metcon: {},
+  metcon: { series: 3, reps: "10", descanso_seg: 60, modo_execucao: "circuito" },
   bodybuilding_sets: { series: 4, reps: "8-12", descanso_seg: 60, modo_execucao: "series_fixas" },
-  finalizador: {},
-  livre: {},
+  finalizador: { series: 3, reps: "15", descanso_seg: 45, modo_execucao: "circuito" },
+  livre: { instrucoes: "" },
 };
 
 export const useBuilder = create<State>((set) => ({
