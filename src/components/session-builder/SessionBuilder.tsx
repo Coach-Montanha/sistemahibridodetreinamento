@@ -151,6 +151,7 @@ export function SessionBuilder({
                   descanso_seg: e.descanso_seg,
                 }),
               slot: (b.config?.slots?.[String(e.ordem)] ?? null) as any,
+              grupo: (b.config?.grupos?.[String(e.ordem)] ?? null) as any,
             })),
         })),
       });
@@ -242,9 +243,14 @@ export function SessionBuilder({
         b.exercises.forEach((e) => {
           if (e.slot) slots[String(e.ordem)] = e.slot;
         });
+        const grupos: Record<string, string> = {};
+        b.exercises.forEach((e) => {
+          if (e.grupo) grupos[String(e.ordem)] = e.grupo;
+        });
         const configToSave = {
           ...b.config,
           ...(Object.keys(slots).length ? { slots } : {}),
+          ...(Object.keys(grupos).length ? { grupos } : {}),
         };
         const { data: bIns, error: be } = await supabase
           .from("session_blocks")
