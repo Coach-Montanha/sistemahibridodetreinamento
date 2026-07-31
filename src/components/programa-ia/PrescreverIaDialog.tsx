@@ -56,11 +56,19 @@ const EXEMPLOS = [
 
 const LIMITACOES = [
   "Exclusivo da modalidade Musculação.",
+  "A IA não usa o banco de exercícios da plataforma: os movimentos vêm prontos, só de musculação.",
+  "Suporta exercícios individuais e combinados (bi-set, tri-set).",
   "Até 4.000 caracteres por prompt.",
   "A IA gera uma prévia — nada é salvo até você confirmar.",
   "Os treinos entram na última semana da rotina, seguindo a numeração de dias existente.",
   "Cargas e observações são sugestões: revise antes de publicar.",
 ];
+
+const COMBINACAO_LABEL: Record<string, string> = {
+  biset: "Bi-set",
+  triset: "Tri-set",
+  superset: "Superset",
+};
 
 /** "4x10" -> { series: 4, reps: "10" } */
 function parseSetsReps(v: string): { series: number | null; reps: string | null } {
@@ -108,7 +116,17 @@ const DiaCard = memo(function DiaCard({ dia, index }: { dia: AiDay; index: numbe
             className="rounded-lg border border-border/50 bg-muted/25 px-3 py-2"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <span className="text-sm font-medium">{e.name}</span>
+              <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                {e.name}
+                {e.group_type !== "individual" && e.group && (
+                  <Badge
+                    variant="outline"
+                    className="border-primary/30 bg-primary/10 text-[10px] uppercase tracking-wide text-primary"
+                  >
+                    {COMBINACAO_LABEL[e.group_type] ?? "Combinado"} · {e.group}
+                  </Badge>
+                )}
+              </span>
               <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                 {e.sets_reps && (
                   <span className="inline-flex items-center gap-1">
