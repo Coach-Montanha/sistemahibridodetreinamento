@@ -68,11 +68,16 @@ function ProgramasPage() {
   return <ProgramasPanel />;
 }
 
-export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } = {}) {
+export function ProgramasPanel({
+  showHeader = true,
+  destacarIa = false,
+}: { showHeader?: boolean; destacarIa?: boolean } = {}) {
   const { data: coach } = useCoach();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
-  const [met, setMet] = useState<Methodology | "todos">("todos");
+  const [met, setMet] = useState<Methodology | "todos">(
+    destacarIa ? "musculacao" : "todos",
+  );
   const [toDelete, setToDelete] = useState<{ id: string; titulo: string } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmBulk, setConfirmBulk] = useState(false);
@@ -324,6 +329,7 @@ export function ProgramasPanel({ showHeader = true }: { showHeader?: boolean } =
                 onReorderSemanas={(ids) => reorderSemanas(p.id, ids)}
                 onOpenLayout={() => setLayoutPrograma(p)}
                 onOpenIa={() => setIaPrograma(p)}
+                destacarIa={destacarIa}
                 onDelete={() =>
                   setToDelete({ id: p.id, titulo: p.titulo ?? "programa" })
                 }
@@ -468,6 +474,7 @@ function ProgramaCard({
   onReorderSemanas,
   onOpenLayout,
   onOpenIa,
+  destacarIa,
   onDelete,
 }: {
   programa: any;
@@ -480,6 +487,7 @@ function ProgramaCard({
   onReorderSemanas: (orderedIds: string[]) => void;
   onOpenLayout: () => void;
   onOpenIa: () => void;
+  destacarIa?: boolean;
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -510,6 +518,15 @@ function ProgramaCard({
               >
                 {programa.status}
               </Badge>
+              {programa.metodologia === "musculacao" && (
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-primary/40 text-[10px] uppercase tracking-wide text-primary"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  IA
+                </Badge>
+              )}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
@@ -654,7 +671,11 @@ function ProgramaCard({
               {programa.metodologia === "musculacao" && (
                 <Button
                   size="sm"
-                  className="gap-2 transition-all duration-200"
+                  title="Gerar treinos de musculação com IA a partir de um prompt"
+                  aria-label="Prescrever treinos com IA nesta rotina"
+                  className={`gap-2 transition-all duration-200 ${
+                    destacarIa ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+                  }`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();

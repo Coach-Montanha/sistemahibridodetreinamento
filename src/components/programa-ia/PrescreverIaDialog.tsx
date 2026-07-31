@@ -1,7 +1,15 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Sparkles, Timer, Weight, ListOrdered } from "lucide-react";
+import {
+  ChevronDown,
+  Info,
+  ListOrdered,
+  Loader2,
+  Sparkles,
+  Timer,
+  Weight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +22,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { prescribeTrainingWithAi } from "@/lib/prescricao-ia.functions";
 import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
@@ -22,6 +35,32 @@ const PLACEHOLDER = `Ex.: divisão A/B/C/D para hipertrofia, 4 treinos por seman
 Dia A peito e tríceps, Dia B costas e bíceps, Dia C pernas, Dia D ombros e core.
 4 séries de 8 a 12 repetições nos compostos e 3x12 nos isoladores, 90s de descanso.
 Priorizar barra e halteres; incluir progressão de carga semanal.`;
+
+const EXEMPLOS = [
+  {
+    chip: "Hipertrofia 4x/semana",
+    texto:
+      "Divisão A/B/C/D para hipertrofia, 4 treinos por semana. 4x8-12 nos compostos e 3x12 nos isoladores, 90s de descanso.",
+  },
+  {
+    chip: "Full body 3x/semana",
+    texto:
+      "Full body 3 vezes por semana, 5 a 6 exercícios por treino, 3x10, 60s de descanso, foco em barra e halteres.",
+  },
+  {
+    chip: "Foco em membros inferiores",
+    texto:
+      "Divisão de 3 treinos com ênfase em membros inferiores (2 de perna e 1 de superiores), 4x8, 120s de descanso nos compostos.",
+  },
+] as const;
+
+const LIMITACOES = [
+  "Exclusivo da modalidade Musculação.",
+  "Até 4.000 caracteres por prompt.",
+  "A IA gera uma prévia — nada é salvo até você confirmar.",
+  "Os treinos entram na última semana da rotina, seguindo a numeração de dias existente.",
+  "Cargas e observações são sugestões: revise antes de publicar.",
+];
 
 /** "4x10" -> { series: 4, reps: "10" } */
 function parseSetsReps(v: string): { series: number | null; reps: string | null } {
@@ -283,6 +322,53 @@ export function PrescreverIaDialog({
         </DialogHeader>
 
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Rotina alvo", value: programa?.titulo ?? "—" },
+              { label: "Modalidade", value: "Musculação" },
+              { label: "Caracteres", value: `${prompt.trim().length}/4000` },
+            ].map((k) => (
+              <div
+                key={k.label}
+                className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2"
+              >
+                <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  {k.label}
+                </p>
+                <p title={k.value} className="mt-0.5 truncate text-sm font-medium tabular-nums">
+                  {k.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <Collapsible>
+            <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs font-medium transition-colors duration-200 hover:bg-muted/40">
+              <Info className="h-3.5 w-3.5 text-primary" />
+              Como usar e limitações
+              <ChevronDown className="ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 px-3 pb-1 pt-3">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Descreva: divisão dos dias (A/B/C…), frequência semanal, objetivo,
+                séries e repetições, descanso e equipamentos preferidos.
+              </p>
+              <ul className="space-y-1">
+                {LIMITACOES.map((l) => (
+                  <li
+                    key={l}
+                    className="flex gap-2 text-xs leading-relaxed text-muted-foreground"
+                  >
+                    <span aria-hidden className="text-primary">
+                      •
+                    </span>
+                    {l}
+                  </li>
+                ))}
+              </ul>
+            </CollapsibleContent>
+          </Collapsible>
+
           <div className="space-y-2">
             <label
               htmlFor="prompt-ia"
@@ -290,6 +376,21 @@ export function PrescreverIaDialog({
             >
               Instruções
             </label>
+            <div className="flex flex-wrap gap-1.5">
+              {EXEMPLOS.map((ex) => (
+                <Button
+                  key={ex.chip}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={gerarMut.isPending || salvarMut.isPending}
+                  onClick={() => setPrompt(ex.texto)}
+                  className="h-7 rounded-full px-3 text-[11px] font-medium"
+                >
+                  {ex.chip}
+                </Button>
+              ))}
+            </div>
             <Textarea
               id="prompt-ia"
               value={prompt}
