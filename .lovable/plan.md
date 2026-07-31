@@ -1,36 +1,48 @@
-# Deixar o "Prescrever com IA" visível e autoexplicativo
+# Editor visual para os formatos de bloco faltantes
 
-Hoje o recurso existe, mas só aparece como um botão dentro do card de cada programa de Musculação — quem não abre o card não descobre a função. O plano torna o acesso óbvio e explica claramente o que escrever no prompt e quais são os limites.
+## Problema
+Na tela "Editar sessão", ao adicionar um bloco de **Musculação (séries × reps)** aparece só a mensagem
+"Este formato de bloco ainda não tem editor visual". O mesmo acontece com **Circuito**, **MetCon**,
+**Finalizador** e **Bloco livre** — 5 dos 11 formatos ficam sem edição, e é justamente o formato que a
+função "Prescrever com IA" usa para gravar os treinos.
 
-## 1. Atalho claro no Hub de Treinos
+## Escopo
+Ativar editor visual para os 5 formatos órfãos reaproveitando o que já existe
+(`BlockExercises`, `SetsEditor`, `ExercisePicker`, `ModoToggle`). Nada de tabela, migração,
+lib ou componente novo além de um formulário no arquivo que já concentra os formatos.
 
-- Em `app.treinos.tsx`, adicionar uma faixa de destaque no topo (acima das abas): ícone de faísca, título "Prescrever com IA", subtítulo curto ("Descreva a divisão e o volume; a IA monta os treinos da rotina — exclusivo de Musculação") e um botão de ação.
-- O botão leva para a aba Programas e destaca os programas de Musculação elegíveis (mesmo padrão de anel de destaque temporário já usado no projeto).
-- Sem nenhum programa de Musculação, o botão vira "Criar rotina de Musculação" com um texto curto explicando o pré-requisito.
+## Passo a passo
 
-## 2. Botão mais legível no card do programa
+1. **`src/components/session-builder/BlockFormats.tsx`**
+   - Novo `SetsRepsForm` (Musculação / Circuito / MetCon / Finalizador):
+     - Cabeçalho compacto com os campos que já existem no config padrão:
+       `Séries`, `Reps` (texto, aceita "8-12"), `Descanso (seg)`.
+     - `ModoToggle` (Circuito × Séries fixas) ao lado — reuso do componente atual.
+     - Lista de exercícios via `BlockExercises` (drag-and-drop e `SetsEditor` por exercício
+       já vêm de graça, incluindo séries tipadas).
+     - Para MetCon/Finalizador os mesmos campos servem; só muda o texto de dica.
+   - Novo `LivreForm` (Bloco livre):
+     - Campo de texto (`Textarea`) para instruções livres, gravado em `config.instrucoes`.
+     - `BlockExercises` opcional abaixo.
 
-- Manter o botão atual em `app.programas.tsx`, com `title`/`aria-label` descritivo e um selo discreto "IA" no cabeçalho dos cards de Musculação, para saber de longe quais rotinas aceitam a função.
+2. **`src/components/session-builder/BlockCard.tsx`**
+   - Mapear no `switch`: `bodybuilding_sets | circuito | metcon | finalizador` → `SetsRepsForm`,
+     `livre` → `LivreForm`. O `default` com a mensagem "sem editor visual" some da prática.
 
-## 3. Janela do prompt com características e limitações
+3. **`src/lib/session-builder-store.ts`**
+   - Conferir/completar os defaults de config para `circuito`, `metcon`, `finalizador`, `livre`
+     no mesmo padrão do `bodybuilding_sets` (`series`, `reps`, `descanso_seg`, `modo_execucao`).
+     Nenhuma mudança de tipo ou de persistência — os campos já existem no schema.
 
-Reformular o corpo do `PrescreverIaDialog.tsx` (sem mexer na lógica de geração/salvamento):
+4. **Verificação**
+   - Criar sessão → adicionar bloco Musculação → editar séries/reps/descanso, adicionar exercícios,
+     reordenar, salvar rascunho e reabrir.
+   - Conferir que um treino vindo de "Prescrever com IA" agora abre editável.
 
-- Bloco "Como usar", colapsável e fechado por padrão: 3 a 4 linhas dizendo o que descrever — divisão (A/B/C), frequência semanal, objetivo, séries/reps, descanso, equipamentos preferidos.
-- Chips de exemplo clicáveis (ex.: "Hipertrofia 4x/semana", "Full body 3x/semana", "Foco em membros inferiores") que preenchem o textarea. Só botões shadcn, sem lib nova.
-- Bloco "Limitações": exclusivo Musculação; até 4000 caracteres; a IA gera uma prévia e nada é salvo até você confirmar; os treinos entram na última semana da rotina, na sequência dos dias existentes; carga e observações são sugestões a revisar.
-- Mini-KPIs no topo do diálogo (3 cards pequenos): rotina alvo, onde os treinos serão inseridos e contador de caracteres — reaproveitando o `KpiRow` que já existe em `src/components/settings/kpi-row.tsx`.
-
-## 4. Design e performance
-
-- Só tokens semânticos do design system; Tailwind + shadcn + Lucide; nenhuma dependência nova.
-- O diálogo continua em `React.lazy`; textos de ajuda são estáticos (sem estado global, sem efeito novo). `useMemo`/`useCallback` apenas onde evita re-render real.
-- Nenhuma tabela, migração, server function ou endpoint novo.
-
-## Detalhes técnicos
-
-Arquivos tocados: `src/routes/_authenticated/app.treinos.tsx` (faixa de atalho), `src/routes/_authenticated/app.programas.tsx` (selo, rótulos acessíveis, destaque ao vir do atalho) e `src/components/programa-ia/PrescreverIaDialog.tsx` (ajuda, exemplos, limitações, KPIs). Sem mudanças em `prescricao-ia.functions.ts` / `prescricao-ia.server.ts`.
-
-## Trade-off
-
-O diálogo fica um pouco mais alto por causa dos blocos de ajuda — por isso "Como usar" vem fechado por padrão e as limitações ficam em texto compacto, mantendo o prompt como foco visual.
+## Performance / trade-offs
+- Zero dependência nova; só um formulário a mais no bundle já carregado do construtor.
+- Um único componente cobre 4 formatos (diferença apenas no texto de dica) em vez de 4 arquivos.
+- Sem estado global novo: continua tudo no store Zustand já existente do construtor.
+- Trade-off: MetCon e Finalizador ficam com o mesmo editor de séries×reps em vez de um
+  editor especializado (tempo/tarefa). Se você quiser um editor próprio para MetCon depois,
+  dá pra separar sem refazer nada.
