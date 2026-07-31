@@ -359,8 +359,98 @@ export function ForcaPctForm({ block }: { block: BuilderBlock }) {
   );
 }
 
+/* ---------- Séries × Reps (musculação, circuito, metcon, finalizador) ---------- */
+const SETS_HINT: Partial<Record<BuilderBlock["formato"], string>> = {
+  bodybuilding_sets:
+    "Defina o padrão do bloco; cada exercício pode sobrescrever nas séries tipadas.",
+  circuito: "Percorra os exercícios em sequência e repita o número de voltas.",
+  metcon: "Condicionamento: use 0 em séries ou reps para sinalizar “sem limite”.",
+  finalizador: "Bloco curto de finalização, geralmente em alta densidade.",
+};
+
+export function SetsRepsForm({ block }: { block: BuilderBlock }) {
+  const update = useBuilder((s) => s.updateBlock);
+  const cfg = block.config;
+  const setCfg = (patch: Record<string, unknown>) =>
+    update(block.tempId, { config: { ...cfg, ...patch } });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 p-3">
+        <div className="grid flex-1 grid-cols-3 gap-3 sm:max-w-md">
+          <div>
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Séries
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              className="tabular-nums"
+              value={cfg.series ?? 3}
+              onChange={(e) => setCfg({ series: Number(e.target.value) })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Reps
+            </Label>
+            <Input
+              className="tabular-nums"
+              placeholder="8-12"
+              value={cfg.reps ?? ""}
+              onChange={(e) => setCfg({ reps: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Descanso (seg)
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              step={5}
+              className="tabular-nums"
+              value={cfg.descanso_seg ?? 60}
+              onChange={(e) => setCfg({ descanso_seg: Number(e.target.value) })}
+            />
+          </div>
+        </div>
+        <ModoToggle block={block} />
+      </div>
+      {SETS_HINT[block.formato] && (
+        <p className="text-[11px] text-muted-foreground">{SETS_HINT[block.formato]}</p>
+      )}
+      <BlockExercises block={block} />
+    </div>
+  );
+}
+
+/* ---------- Bloco livre ---------- */
+export function LivreForm({ block }: { block: BuilderBlock }) {
+  const update = useBuilder((s) => s.updateBlock);
+  const cfg = block.config;
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Instruções
+        </Label>
+        <Textarea
+          rows={3}
+          className="mt-1 resize-y text-sm leading-relaxed"
+          placeholder="Descreva livremente o que deve ser executado neste bloco."
+          value={(cfg.instrucoes as string) ?? ""}
+          onChange={(e) =>
+            update(block.tempId, { config: { ...cfg, instrucoes: e.target.value } })
+          }
+        />
+      </div>
+      <BlockExercises block={block} />
+    </div>
+  );
+}
+
 /* ---------- Kettlebell Sport AQ/TR ---------- */
-/* placeholder-anchor */
 export function KbTimedForm({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
   const cfg = block.config;
