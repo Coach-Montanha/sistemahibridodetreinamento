@@ -478,7 +478,10 @@ export function SetsRepsForm({ block }: { block: BuilderBlock }) {
       {SETS_HINT[block.formato] && (
         <p className="text-[11px] text-muted-foreground">{SETS_HINT[block.formato]}</p>
       )}
-      <BlockExercises block={block} />
+      <p className="text-[11px] text-muted-foreground">
+        Combine exercícios (bi-set, tri-set) marcando o mesmo grupo em “Combinado A/B/C”.
+      </p>
+      <BlockExercises block={block} agrupavel />
     </div>
   );
 }
