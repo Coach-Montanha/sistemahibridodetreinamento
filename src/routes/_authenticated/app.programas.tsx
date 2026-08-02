@@ -690,35 +690,52 @@ function ProgramaCard({
                                 key={s.id}
                                 id={String(s.id)}
                                 handleLabel={`Reordenar dia ${s.numero_dia}`}
-                                className={`group px-1.5 py-1.5 text-sm ${
+                                className={`group items-start rounded-lg border border-border/60 bg-card px-3 py-3 text-sm transition-colors hover:border-primary/40 ${
                                   isSel ? "border-primary/60 bg-primary/5" : ""
                                 }`}
+                                contentClassName="items-start gap-3"
                               >
                                 <Checkbox
                                   checked={isSel}
                                   onCheckedChange={() => onToggleSession(s.id)}
-                                  className="shrink-0"
+                                  className="mt-1 shrink-0"
                                   aria-label="Selecionar sessão"
                                 />
-                                <Link
-                                  to="/app/sessoes/$id"
-                                  params={{ id: s.id }}
-                                  className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                >
-                                  <div className="flex min-w-0 items-center gap-2">
-                                    <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-primary" />
-                                    <span className="truncate">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h4 className="truncate text-base font-semibold tracking-tight">
+                                      {s.titulo ?? `Treino ${s.numero_dia}`}
+                                    </h4>
+                                    <Badge
+                                      variant="secondary"
+                                      className="shrink-0 text-[10px] font-medium"
+                                    >
                                       Dia {s.numero_dia}
-                                      {s.titulo ? ` · ${s.titulo}` : ""}
-                                    </span>
+                                    </Badge>
                                   </div>
-                                  <Badge
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    {s.status === "publicada"
+                                      ? "Publicada para o aluno"
+                                      : "Ainda não executado"}
+                                  </p>
+                                  <Button
+                                    asChild
+                                    size="sm"
                                     variant="outline"
-                                    className="ml-2 shrink-0 text-[10px] uppercase"
+                                    className="mt-3 h-8 gap-1.5"
                                   >
-                                    {s.status}
-                                  </Badge>
-                                </Link>
+                                    <Link to="/app/sessoes/$id" params={{ id: s.id }}>
+                                      <FileText className="h-3.5 w-3.5" />
+                                      Ver exercícios
+                                    </Link>
+                                  </Button>
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className="mt-1 shrink-0 text-[10px] uppercase"
+                                >
+                                  {s.status}
+                                </Badge>
                               </SortableRow>
                             );
                           })}
