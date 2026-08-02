@@ -106,7 +106,7 @@ export function ProgramaEditorDialog({
           titulo: form.titulo.trim(),
           descricao: form.descricao.trim() || null,
           metodologia: form.metodologia,
-          data_inicio: form.data_inicio || null,
+          ...(form.data_inicio ? { data_inicio: form.data_inicio } : {}),
           duracao_semanas: Math.max(1, Math.min(52, Number(form.duracao_semanas) || 1)),
           status: form.status as any,
         })
