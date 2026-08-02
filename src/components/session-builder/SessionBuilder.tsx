@@ -319,7 +319,6 @@ export function SessionBuilder({
           >
             Voltar
           </Button>
-        <div className="flex gap-2">
           {sessionId && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
