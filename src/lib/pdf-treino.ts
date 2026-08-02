@@ -202,8 +202,8 @@ export async function exportarTreinoPdf(treino: TreinoPdf, nomeArquivo = "treino
       headStyles: { fillColor: [26, 26, 26], textColor: [255, 255, 255], fontStyle: "bold" },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       columnStyles: {
-        0: { cellWidth: 55 },
-        1: { cellWidth: 24 },
+        0: { cellWidth: 52 },
+        1: { cellWidth: 27 },
         2: { cellWidth: 18 },
         3: { cellWidth: 20 },
         4: { cellWidth: "auto" },
