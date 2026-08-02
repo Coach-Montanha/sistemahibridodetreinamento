@@ -35,6 +35,13 @@ const SEMANAS_POR_ESCOPO: Record<string, number> = {
   ano: 52,
 };
 
+const ESCOPO_LABEL: Record<string, string> = {
+  sessao: "1 sessão",
+  semana: "1 semana",
+  mes: "1 mês (4 semanas)",
+  ano: "1 ano (52 semanas)",
+};
+
 export const Route = createFileRoute("/_authenticated/app/gerar")({
   component: GerarPage,
 });
@@ -57,6 +64,12 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const [iaPrograma, setIaPrograma] = useState<{ id: string; titulo: string } | null>(
     null,
   );
+  const [iaEscopo, setIaEscopo] = useState<{
+    label: string;
+    semanas: number;
+    diasPorSemana: number;
+    dataInicio: string;
+  } | null>(null);
   const isMusculacao = metodologia === "musculacao";
 
   const prefs = useQuery({
@@ -83,6 +96,12 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
           .select("id, titulo")
           .single();
         if (error || !prog) throw new Error(error?.message ?? "Falha ao criar rotina");
+        setIaEscopo({
+          label: ESCOPO_LABEL[escopo] ?? escopo,
+          semanas: SEMANAS_POR_ESCOPO[escopo] ?? 4,
+          diasPorSemana: escopo === "sessao" ? 1 : dias,
+          dataInicio,
+        });
         setIaPrograma({ id: prog.id, titulo: prog.titulo ?? titulo });
         return;
       }
@@ -263,9 +282,11 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         <Suspense fallback={null}>
           <PrescreverIaDialog
             programa={iaPrograma}
+            escopo={iaEscopo}
             onOpenChange={(o: boolean) => {
               if (!o) {
                 setIaPrograma(null);
+                setIaEscopo(null);
                 navigate({ to: "/app/programas" });
               }
             }}
