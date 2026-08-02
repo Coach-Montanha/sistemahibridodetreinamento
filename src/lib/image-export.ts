@@ -351,6 +351,7 @@ export async function exportarSessoesPDF(
 }
 
 /** Preview leve (largura reduzida) para o dialog. */
+
 export async function renderizarPreviewDataURL(
   input: SessaoImagemInput,
   targetWidth = 1280,
