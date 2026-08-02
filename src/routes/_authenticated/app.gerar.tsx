@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,21 @@ import { useQuery } from "@tanstack/react-query";
 import { getGeneratorPrefs } from "@/lib/generator-prefs.functions";
 import { gerarTreino } from "@/lib/gerador.functions";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
+import { supabase } from "@/integrations/supabase/client";
+import { useCoach } from "@/hooks/use-coach";
+
+const PrescreverIaDialog = lazy(() =>
+  import("@/components/programa-ia/PrescreverIaDialog").then((m) => ({
+    default: m.PrescreverIaDialog,
+  })),
+);
+
+const SEMANAS_POR_ESCOPO: Record<string, number> = {
+  sessao: 1,
+  semana: 1,
+  mes: 4,
+  ano: 52,
+};
 
 export const Route = createFileRoute("/_authenticated/app/gerar")({
   component: GerarPage,
@@ -31,6 +46,7 @@ function GerarPage() {
 export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {}) {
   const navigate = useNavigate();
   const gerar = useServerFn(gerarTreino);
+  const { data: coach } = useCoach();
   const [loading, setLoading] = useState(false);
   const [metodologia, setMetodologia] = useState<Methodology>("hibrido");
   const [escopo, setEscopo] = useState<"sessao" | "semana" | "mes" | "ano">("sessao");
@@ -38,6 +54,10 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10));
   const [dias, setDias] = useState(3);
   const [avisos, setAvisos] = useState<string[]>([]);
+  const [iaPrograma, setIaPrograma] = useState<{ id: string; titulo: string } | null>(
+    null,
+  );
+  const isMusculacao = metodologia === "musculacao";
 
   const prefs = useQuery({
     queryKey: ["generator-prefs", metodologia],
@@ -49,6 +69,23 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
     setLoading(true);
     setAvisos([]);
     try {
+      if (isMusculacao) {
+        if (!coach) throw new Error("Perfil de treinador não encontrado");
+        const { data: prog, error } = await supabase
+          .from("programs")
+          .insert({
+            coach_id: coach.id,
+            metodologia: "musculacao",
+            titulo,
+            data_inicio: dataInicio,
+            duracao_semanas: SEMANAS_POR_ESCOPO[escopo] ?? 4,
+          })
+          .select("id, titulo")
+          .single();
+        if (error || !prog) throw new Error(error?.message ?? "Falha ao criar rotina");
+        setIaPrograma({ id: prog.id, titulo: prog.titulo ?? titulo });
+        return;
+      }
       const res = await gerar({
         data: {
           metodologia,
@@ -92,7 +129,18 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       )}
 
       <Card className="p-6">
-        {metodologia === "kettlebell_fitness" ? (
+        {isMusculacao ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <p className="flex-1 leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">Musculação usa IA.</strong> Esta
+              modalidade não usa o banco de exercícios nem os templates de blocos: ao
+              gerar, criamos a rotina e abrimos o <strong className="text-foreground">Prescrever
+              com IA</strong>, onde você descreve a divisão desejada e revisa a prévia
+              antes de salvar.
+            </p>
+          </div>
+        ) : metodologia === "kettlebell_fitness" ? (
           <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
             <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <p className="flex-1 leading-relaxed text-muted-foreground">
@@ -183,7 +231,13 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
           </div>
 
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Gerando..." : "Gerar treino"}
+            {loading
+              ? isMusculacao
+                ? "Criando rotina..."
+                : "Gerando..."
+              : isMusculacao
+                ? "Prescrever com IA"
+                : "Gerar treino"}
           </Button>
         </form>
 
@@ -204,6 +258,20 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
           </div>
         )}
       </Card>
+
+      {iaPrograma && (
+        <Suspense fallback={null}>
+          <PrescreverIaDialog
+            programa={iaPrograma}
+            onOpenChange={(o: boolean) => {
+              if (!o) {
+                setIaPrograma(null);
+                navigate({ to: "/app/programas" });
+              }
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
