@@ -450,6 +450,9 @@ export function ProgramasPanel({
                 <ImageDown className="h-3.5 w-3.5" />
               )}
               PNG
+              <span className="rounded-full bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground">
+                {geradas.png ?? selected.size}
+              </span>
             </Button>
             <Button
               size="sm"
@@ -464,6 +467,9 @@ export function ProgramasPanel({
                 <ImageDown className="h-3.5 w-3.5" />
               )}
               JPG
+              <span className="rounded-full bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground">
+                {geradas.jpg ?? selected.size}
+              </span>
             </Button>
             <Button
               size="sm"
@@ -478,20 +484,6 @@ export function ProgramasPanel({
                 <FileText className="h-3.5 w-3.5" />
               )}
               PDF (A4)
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={exportarPdfImagem}
-              disabled={bulkImgLoading}
-              className="h-8 gap-1.5"
-            >
-              {bulkPdfImg ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <ImageDown className="h-3.5 w-3.5" />
-              )}
-              PDF (imagem)
             </Button>
             <Button
               size="sm"
