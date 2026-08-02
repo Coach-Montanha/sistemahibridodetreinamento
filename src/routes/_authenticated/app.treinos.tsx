@@ -5,6 +5,7 @@ import { Dumbbell, FolderKanban, PlusSquare, Wand2 } from "lucide-react";
 import { ProgramasPanel } from "./app.programas";
 import { GerarPanel } from "./app.gerar";
 import { SessionBuilder } from "@/components/session-builder/SessionBuilder";
+import { Button } from "@/components/ui/button";
 
 const searchSchema = z.object({
   aba: fallback(z.string(), "programas").default("programas"),
