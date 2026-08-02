@@ -46,7 +46,7 @@ import { toast } from "sonner";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
 import { prepararSessoesParaImagem } from "@/lib/session-image";
-import { exportarSessoesEmMassa } from "@/lib/image-export";
+import { exportarSessoesEmMassa, exportarSessoesPDFA4 } from "@/lib/image-export";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import {
   ProgramImageDialog,
@@ -82,6 +82,7 @@ export function ProgramasPanel({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [bulkImg, setBulkImg] = useState<"png" | "jpg" | null>(null);
+  const [bulkPdf, setBulkPdf] = useState(false);
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
   const [layoutPrograma, setLayoutPrograma] = useState<any | null>(null);
   const [iaPrograma, setIaPrograma] = useState<any | null>(null);
@@ -244,6 +245,23 @@ export function ProgramasPanel({
     } finally {
       setBulkImgLoading(false);
       setBulkImg(null);
+    }
+  }
+
+  async function exportarPdfA4() {
+    if (selected.size === 0) return;
+    setBulkImgLoading(true);
+    setBulkPdf(true);
+    try {
+      const ids = Array.from(selected);
+      const preparadas = await prepararSessoesParaImagem(ids);
+      await exportarSessoesPDFA4(preparadas, "treinos-a4.pdf");
+      toast.success(`PDF A4 com ${preparadas.length} sessão(ões) gerado`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao exportar PDF");
+    } finally {
+      setBulkImgLoading(false);
+      setBulkPdf(false);
     }
   }
 
@@ -445,6 +463,20 @@ export function ProgramasPanel({
                 <ImageDown className="h-3.5 w-3.5" />
               )}
               JPG
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={exportarPdfA4}
+              disabled={bulkImgLoading}
+              className="h-8 gap-1.5"
+            >
+              {bulkPdf ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileText className="h-3.5 w-3.5" />
+              )}
+              PDF (A4)
             </Button>
             <Button
               size="sm"

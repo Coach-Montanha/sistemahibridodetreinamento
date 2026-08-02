@@ -351,6 +351,37 @@ export async function exportarSessoesPDF(
 }
 
 /** Preview leve (largura reduzida) para o dialog. */
+/** Exporta as sessões como PDF A4 (uma sessão por página, ajustada à folha). */
+export async function exportarSessoesPDFA4(
+  sessoes: { input: SessaoImagemInput; nomeArquivo: string }[],
+  nomeArquivo = "treinos-a4.pdf",
+  margemMm = 10,
+) {
+  const { jsPDF } = await import("jspdf");
+  let doc: any = null;
+  for (const { input } of sessoes) {
+    const canvas = await renderizarSessaoCanvas(input);
+    const orientacao = canvas.width >= canvas.height ? "landscape" : "portrait";
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.94);
+    if (!doc) {
+      doc = new jsPDF({ orientation: orientacao, unit: "mm", format: "a4", compress: true });
+    } else {
+      doc.addPage("a4", orientacao);
+    }
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const escala = Math.min(
+      (pageW - margemMm * 2) / canvas.width,
+      (pageH - margemMm * 2) / canvas.height,
+    );
+    const w = canvas.width * escala;
+    const h = canvas.height * escala;
+    doc.addImage(dataUrl, "JPEG", (pageW - w) / 2, (pageH - h) / 2, w, h, undefined, "FAST");
+  }
+  if (doc) doc.save(nomeArquivo);
+}
+
+/** Preview leve (largura reduzida) para o dialog. */
 export async function renderizarPreviewDataURL(
   input: SessaoImagemInput,
   targetWidth = 1280,
