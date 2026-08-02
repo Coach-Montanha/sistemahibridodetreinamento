@@ -157,7 +157,11 @@ function BlockExercises({
 
 function ModoToggle({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
-  const modo = (block.config?.modo_execucao as any) ?? "circuito";
+  // Musculação nasce em séries fixas (padrão da modalidade); os demais
+  // formatos seguem em circuito.
+  const modo =
+    (block.config?.modo_execucao as any) ??
+    (block.formato === "bodybuilding_sets" ? "series_fixas" : "circuito");
   return (
     <div className="flex items-center gap-2">
       <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
