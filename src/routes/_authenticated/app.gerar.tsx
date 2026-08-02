@@ -134,17 +134,27 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   return (
     <div className={showHeader ? "mx-auto max-w-2xl p-6" : "mx-auto max-w-2xl"}>
       {showHeader && (
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Wand2 className="h-5 w-5" />
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Wand2 className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Gerar treino</h1>
+              <p className="text-sm text-muted-foreground">
+                Motor automático baseado nos templates da modalidade.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate({ to: "/app/treinos", search: { aba: "programas" } })}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Voltar
+          </Button>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Gerar treino</h1>
-          <p className="text-sm text-muted-foreground">
-            Motor automático baseado nos templates da modalidade.
-          </p>
-        </div>
-      </div>
       )}
 
       <Card className="p-6">

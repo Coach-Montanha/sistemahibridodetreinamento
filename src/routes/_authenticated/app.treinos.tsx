@@ -5,6 +5,7 @@ import { Dumbbell, FolderKanban, PlusSquare, Wand2 } from "lucide-react";
 import { ProgramasPanel } from "./app.programas";
 import { GerarPanel } from "./app.gerar";
 import { SessionBuilder } from "@/components/session-builder/SessionBuilder";
+import { Button } from "@/components/ui/button";
 
 const searchSchema = z.object({
   aba: fallback(z.string(), "programas").default("programas"),
@@ -36,16 +37,28 @@ function TreinosHub() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-      <header className="mb-6 flex items-start gap-3 sm:mb-8">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-          <Dumbbell className="h-5 w-5" />
+      <header className="mb-6 flex items-start justify-between gap-3 sm:mb-8">
+        <div className="flex items-start gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+            <Dumbbell className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Treinos</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Programas, nova sessão e gerador automático — tudo num só lugar.
+            </p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Treinos</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Programas, nova sessão e gerador automático — tudo num só lugar.
-          </p>
-        </div>
+        {active !== "programas" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTab("programas")}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Voltar
+          </Button>
+        )}
       </header>
 
       <div
