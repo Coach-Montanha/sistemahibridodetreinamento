@@ -45,7 +45,6 @@ import {
 import { toast } from "sonner";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
-import { prepararSessoesParaImagem } from "@/lib/session-image";
 import { exportarSessoesPdfTabela } from "@/lib/pdf-treino";
 import { exportarSessoesImagemA4 } from "@/lib/a4-image-export";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
@@ -216,6 +215,7 @@ export function ProgramasPanel({
   });
 
   function toggle(id: string) {
+    setGeradas({});
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
