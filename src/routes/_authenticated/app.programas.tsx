@@ -47,6 +47,7 @@ import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
 import { prepararSessoesParaImagem } from "@/lib/session-image";
 import { exportarSessoesEmMassa, exportarSessoesPDFA4 } from "@/lib/image-export";
+import { exportarSessoesPdfTabela } from "@/lib/pdf-treino";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import {
   ProgramImageDialog,
@@ -83,6 +84,7 @@ export function ProgramasPanel({
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [bulkImg, setBulkImg] = useState<"png" | "jpg" | null>(null);
   const [bulkPdf, setBulkPdf] = useState(false);
+  const [bulkPdfImg, setBulkPdfImg] = useState(false);
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
   const [layoutPrograma, setLayoutPrograma] = useState<any | null>(null);
   const [iaPrograma, setIaPrograma] = useState<any | null>(null);
@@ -254,14 +256,30 @@ export function ProgramasPanel({
     setBulkPdf(true);
     try {
       const ids = Array.from(selected);
-      const preparadas = await prepararSessoesParaImagem(ids);
-      await exportarSessoesPDFA4(preparadas, "treinos-a4.pdf");
-      toast.success(`PDF A4 com ${preparadas.length} sessão(ões) gerado`);
+      await exportarSessoesPdfTabela(ids, "treinos-a4.pdf");
+      toast.success(`PDF A4 com ${ids.length} sessão(ões) gerado`);
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao exportar PDF");
     } finally {
       setBulkImgLoading(false);
       setBulkPdf(false);
+    }
+  }
+
+  /** PDF com a arte da imagem do treino (uma sessão por página). */
+  async function exportarPdfImagem() {
+    if (selected.size === 0) return;
+    setBulkImgLoading(true);
+    setBulkPdfImg(true);
+    try {
+      const preparadas = await prepararSessoesParaImagem(Array.from(selected));
+      await exportarSessoesPDFA4(preparadas, "treinos-imagem-a4.pdf");
+      toast.success(`PDF (imagem) com ${preparadas.length} sessão(ões) gerado`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao exportar PDF");
+    } finally {
+      setBulkImgLoading(false);
+      setBulkPdfImg(false);
     }
   }
 
@@ -477,6 +495,20 @@ export function ProgramasPanel({
                 <FileText className="h-3.5 w-3.5" />
               )}
               PDF (A4)
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={exportarPdfImagem}
+              disabled={bulkImgLoading}
+              className="h-8 gap-1.5"
+            >
+              {bulkPdfImg ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ImageDown className="h-3.5 w-3.5" />
+              )}
+              PDF (imagem)
             </Button>
             <Button
               size="sm"
