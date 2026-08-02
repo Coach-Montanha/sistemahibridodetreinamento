@@ -84,7 +84,7 @@ export function ProgramasPanel({
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [bulkImg, setBulkImg] = useState<"png" | "jpg" | null>(null);
   const [bulkPdf, setBulkPdf] = useState(false);
-  const [bulkPdfImg, setBulkPdfImg] = useState(false);
+  const [geradas, setGeradas] = useState<{ png?: number; jpg?: number }>({});
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
   const [layoutPrograma, setLayoutPrograma] = useState<any | null>(null);
   const [iaPrograma, setIaPrograma] = useState<any | null>(null);
