@@ -176,9 +176,16 @@ const DiaCard = memo(function DiaCard({ dia, index }: { dia: AiDay; index: numbe
 
 export function PrescreverIaDialog({
   programa,
+  escopo,
   onOpenChange,
 }: {
   programa: { id: string; titulo?: string | null } | null;
+  escopo?: {
+    label?: string | null;
+    semanas?: number | null;
+    diasPorSemana?: number | null;
+    dataInicio?: string | null;
+  } | null;
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
@@ -194,7 +201,14 @@ export function PrescreverIaDialog({
   const gerarMut = useMutation({
     mutationFn: async () => {
       if (!programa) throw new Error("Programa não selecionado");
-      return gerar({ data: { programId: programa.id, prompt: prompt.trim() } });
+      return gerar({
+        data: {
+          programId: programa.id,
+          prompt: prompt.trim(),
+          diasPorSemana: escopo?.diasPorSemana ?? null,
+          escopoLabel: escopo?.label ?? null,
+        },
+      });
     },
     onSuccess: (res) => setPrevia(res),
     onError: (e: any) => toast.error(e?.message ?? "Falha ao gerar a prescrição"),
@@ -321,8 +335,8 @@ export function PrescreverIaDialog({
   });
 
   const podeGerar = useMemo(
-    () => prompt.trim().length >= 3 && !gerarMut.isPending,
-    [prompt, gerarMut.isPending],
+    () => !gerarMut.isPending,
+    [gerarMut.isPending],
   );
 
   return (
@@ -354,11 +368,18 @@ export function PrescreverIaDialog({
         </DialogHeader>
 
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[
               { label: "Rotina alvo", value: programa?.titulo ?? "—" },
-              { label: "Modalidade", value: "Musculação" },
-              { label: "Caracteres", value: `${prompt.trim().length}/4000` },
+              { label: "Escopo", value: escopo?.label ?? "—" },
+              {
+                label: "Duração",
+                value: escopo?.semanas ? `${escopo.semanas} semana(s)` : "—",
+              },
+              {
+                label: "Dias/semana",
+                value: escopo?.diasPorSemana ? `${escopo.diasPorSemana}` : "—",
+              },
             ].map((k) => (
               <div
                 key={k.label}
@@ -373,6 +394,20 @@ export function PrescreverIaDialog({
               </div>
             ))}
           </div>
+
+          {escopo && (
+            <p className="rounded-lg border border-primary/25 bg-primary/[0.06] px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+              A IA já recebe automaticamente:{" "}
+              <strong className="text-foreground">
+                {escopo.label ?? "escopo selecionado"}
+              </strong>
+              {escopo.semanas ? ` · ${escopo.semanas} semana(s)` : ""}
+              {escopo.diasPorSemana ? ` · ${escopo.diasPorSemana} treino(s) por semana` : ""}
+              {escopo.dataInicio ? ` · início em ${escopo.dataInicio}` : ""}. Você não
+              precisa repetir isso no prompt — escreva apenas as preferências extras (ou
+              deixe em branco).
+            </p>
+          )}
 
           <Collapsible>
             <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs font-medium transition-colors duration-200 hover:bg-muted/40">
