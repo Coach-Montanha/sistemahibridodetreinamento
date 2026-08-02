@@ -265,9 +265,8 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             programa={iaPrograma}
             onOpenChange={(o: boolean) => {
               if (!o) {
-                const id = iaPrograma.id;
                 setIaPrograma(null);
-                navigate({ to: "/app/programas", search: { foco: id } as any });
+                navigate({ to: "/app/programas" });
               }
             }}
           />
