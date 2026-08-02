@@ -280,6 +280,9 @@ async function gerarSessao(
       formato: bloco.formato,
       quantidade,
       permitidos,
+      // Musculação é isolada: nunca cai no banco geral nem aceita
+      // movimentos de kettlebell / LPO / ginástico.
+      estrito: args.metodologia === "musculacao",
     });
     if (aviso) {
       args.avisos.push(
@@ -347,8 +350,24 @@ async function selecionarExercicios(
     formato: string;
     quantidade: number;
     permitidos: string[];
+    estrito?: boolean;
   },
 ): Promise<{ exercicios: any[]; aviso: string | null }> {
+  const MODALIDADES_PROIBIDAS = [
+    "kettlebell_sport",
+    "kettlebell_fitness",
+    "kettlebell",
+    "levantamento_peso",
+    "ginastico",
+    "hibrido",
+  ];
+  const foraDaMusculacao = (e: any): boolean => {
+    const mets = Array.isArray(e?.metodologias)
+      ? e.metodologias.map((v: any) => String(v).toLowerCase())
+      : [];
+    if (!mets.includes("musculacao")) return true;
+    return mets.some((m: string) => MODALIDADES_PROIBIDAS.includes(m));
+  };
   // Regra global: exercícios de mobilidade só podem aparecer no bloco de
   // Preparação de Movimento. Nos demais formatos, removemos qualquer item
   // marcado como Mobilidade (por metodologia OU equipamento).
@@ -376,6 +395,7 @@ async function selecionarExercicios(
       .or(`coach_id.eq.${args.coach_id},coach_id.is.null`);
     let pool = (curated ?? []) as any[];
     if (!permiteMobilidade) pool = pool.filter((e) => !isMobilidade(e));
+    if (args.estrito) pool = pool.filter((e) => !foraDaMusculacao(e));
     let aviso: string | null = null;
     if (pool.length === 0) {
       return {
@@ -406,6 +426,7 @@ async function selecionarExercicios(
 
   let candidatos: any[] = base ?? [];
   if (!permiteMobilidade) candidatos = candidatos.filter((e) => !isMobilidade(e));
+  if (args.estrito) candidatos = candidatos.filter((e) => !foraDaMusculacao(e));
   let aviso: string | null = null;
 
   // Filtro por equipamento (case-insensitive), se solicitado.
@@ -426,6 +447,12 @@ async function selecionarExercicios(
 
   // Se ainda vazio, cai pra qualquer exercício da conta.
   if (candidatos.length === 0) {
+    if (args.estrito) {
+      return {
+        exercicios: [],
+        aviso: `nenhum exercício exclusivo de Musculação${equipLabel ? " (" + equipLabel + ")" : ""} no banco — cadastre movimentos marcados como Musculação.`,
+      };
+    }
     const { data: fallback } = await supabase
       .from("exercises")
       .select("id, nome_pt, metodologias, equipamento")

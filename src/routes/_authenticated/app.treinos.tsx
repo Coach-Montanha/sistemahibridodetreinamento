@@ -1,8 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { Dumbbell, FolderKanban, PlusSquare, Sparkles, Wand2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Dumbbell, FolderKanban, PlusSquare, Wand2 } from "lucide-react";
 import { ProgramasPanel } from "./app.programas";
 import { GerarPanel } from "./app.gerar";
 import { SessionBuilder } from "@/components/session-builder/SessionBuilder";
@@ -48,29 +47,6 @@ function TreinosHub() {
           </p>
         </div>
       </header>
-
-      <section className="mb-6 flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
-            <Sparkles className="h-4.5 w-4.5" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold tracking-tight">Prescrever com IA</h2>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-              Descreva a divisão e o volume desejados e a IA monta os treinos dentro de
-              uma rotina — exclusivo da modalidade Musculação.
-            </p>
-          </div>
-        </div>
-        <Button
-          size="sm"
-          className="shrink-0 gap-2 sm:w-auto"
-          onClick={() => navigate({ search: { aba: "programas", ia: true }, replace: true })}
-        >
-          <Sparkles className="h-4 w-4" />
-          Ver rotinas de Musculação
-        </Button>
-      </section>
 
       <div
         role="tablist"
