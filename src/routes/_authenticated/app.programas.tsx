@@ -45,9 +45,8 @@ import {
 import { toast } from "sonner";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
-import { prepararSessoesParaImagem } from "@/lib/session-image";
-import { exportarSessoesEmMassa, exportarSessoesPDFA4 } from "@/lib/image-export";
 import { exportarSessoesPdfTabela } from "@/lib/pdf-treino";
+import { exportarSessoesImagemA4 } from "@/lib/a4-image-export";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import {
   ProgramImageDialog,
@@ -84,7 +83,7 @@ export function ProgramasPanel({
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [bulkImg, setBulkImg] = useState<"png" | "jpg" | null>(null);
   const [bulkPdf, setBulkPdf] = useState(false);
-  const [bulkPdfImg, setBulkPdfImg] = useState(false);
+  const [geradas, setGeradas] = useState<{ png?: number; jpg?: number }>({});
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
   const [layoutPrograma, setLayoutPrograma] = useState<any | null>(null);
   const [iaPrograma, setIaPrograma] = useState<any | null>(null);
@@ -216,6 +215,7 @@ export function ProgramasPanel({
   });
 
   function toggle(id: string) {
+    setGeradas({});
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -239,9 +239,9 @@ export function ProgramasPanel({
     setBulkImg(formato);
     try {
       const ids = Array.from(selected);
-      const preparadas = await prepararSessoesParaImagem(ids);
-      await exportarSessoesEmMassa(preparadas, formato, `treinos_${formato}.zip`);
-      toast.success(`${preparadas.length} imagem(ns) exportada(s)`);
+      const total = await exportarSessoesImagemA4(ids, formato, `treinos_${formato}.zip`);
+      setGeradas((prev) => ({ ...prev, [formato]: total }));
+      toast.success(`${total} imagem(ns) A4 exportada(s)`);
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao exportar imagens");
     } finally {
@@ -263,23 +263,6 @@ export function ProgramasPanel({
     } finally {
       setBulkImgLoading(false);
       setBulkPdf(false);
-    }
-  }
-
-  /** PDF com a arte da imagem do treino (uma sessão por página). */
-  async function exportarPdfImagem() {
-    if (selected.size === 0) return;
-    setBulkImgLoading(true);
-    setBulkPdfImg(true);
-    try {
-      const preparadas = await prepararSessoesParaImagem(Array.from(selected));
-      await exportarSessoesPDFA4(preparadas, "treinos-imagem-a4.pdf");
-      toast.success(`PDF (imagem) com ${preparadas.length} sessão(ões) gerado`);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao exportar PDF");
-    } finally {
-      setBulkImgLoading(false);
-      setBulkPdfImg(false);
     }
   }
 
@@ -467,6 +450,9 @@ export function ProgramasPanel({
                 <ImageDown className="h-3.5 w-3.5" />
               )}
               PNG
+              <span className="rounded-full bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground">
+                {geradas.png ?? selected.size}
+              </span>
             </Button>
             <Button
               size="sm"
@@ -481,6 +467,9 @@ export function ProgramasPanel({
                 <ImageDown className="h-3.5 w-3.5" />
               )}
               JPG
+              <span className="rounded-full bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground">
+                {geradas.jpg ?? selected.size}
+              </span>
             </Button>
             <Button
               size="sm"
@@ -495,20 +484,6 @@ export function ProgramasPanel({
                 <FileText className="h-3.5 w-3.5" />
               )}
               PDF (A4)
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={exportarPdfImagem}
-              disabled={bulkImgLoading}
-              className="h-8 gap-1.5"
-            >
-              {bulkPdfImg ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <ImageDown className="h-3.5 w-3.5" />
-              )}
-              PDF (imagem)
             </Button>
             <Button
               size="sm"
