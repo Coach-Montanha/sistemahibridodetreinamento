@@ -41,6 +41,7 @@ import {
   ImageDown,
   Loader2,
   Sparkles,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
@@ -52,6 +53,7 @@ import {
   ProgramImageDialog,
   useNovidadesPendentes,
 } from "@/components/program-image/ProgramImageDialog";
+import { ProgramaEditorDialog } from "@/components/programa/ProgramaEditorDialog";
 const PrescreverIaDialog = lazy(() =>
   import("@/components/programa-ia/PrescreverIaDialog").then((m) => ({
     default: m.PrescreverIaDialog,
@@ -86,6 +88,7 @@ export function ProgramasPanel({
   const [geradas, setGeradas] = useState<{ png?: number; jpg?: number }>({});
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
   const [layoutPrograma, setLayoutPrograma] = useState<any | null>(null);
+  const [editarId, setEditarId] = useState<string | null>(null);
   const [iaPrograma, setIaPrograma] = useState<any | null>(null);
 
   const programasKey = ["programas", coach?.id] as const;
@@ -347,6 +350,7 @@ export function ProgramasPanel({
                 onReorderSessoes={(weekId, ids) => reorderSessoes(p.id, weekId, ids)}
                 onReorderSemanas={(ids) => reorderSemanas(p.id, ids)}
                 onOpenLayout={() => setLayoutPrograma(p)}
+                onEdit={() => setEditarId(p.id)}
                 onOpenIa={() => setIaPrograma(p)}
                 destacarIa={destacarIa}
                 onDelete={() =>
@@ -361,6 +365,11 @@ export function ProgramasPanel({
       <ProgramImageDialog
         programa={layoutPrograma}
         onOpenChange={(o) => !o && setLayoutPrograma(null)}
+      />
+
+      <ProgramaEditorDialog
+        programaId={editarId}
+        onOpenChange={(o) => !o && setEditarId(null)}
       />
 
       {iaPrograma && (
@@ -513,6 +522,7 @@ function ProgramaCard({
   onReorderSemanas,
   onOpenLayout,
   onOpenIa,
+  onEdit,
   destacarIa,
   onDelete,
 }: {
@@ -526,6 +536,7 @@ function ProgramaCard({
   onReorderSemanas: (orderedIds: string[]) => void;
   onOpenLayout: () => void;
   onOpenIa: () => void;
+  onEdit: () => void;
   destacarIa?: boolean;
   onDelete: () => void;
 }) {
@@ -724,6 +735,19 @@ function ProgramaCard({
               </SortableList>
             )}
             <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+                Editar programa
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
