@@ -46,8 +46,8 @@ import { toast } from "sonner";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
 import { prepararSessoesParaImagem } from "@/lib/session-image";
-import { exportarSessoesEmMassa, exportarSessoesPDFA4 } from "@/lib/image-export";
 import { exportarSessoesPdfTabela } from "@/lib/pdf-treino";
+import { exportarSessoesImagemA4 } from "@/lib/a4-image-export";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import {
   ProgramImageDialog,
@@ -239,9 +239,9 @@ export function ProgramasPanel({
     setBulkImg(formato);
     try {
       const ids = Array.from(selected);
-      const preparadas = await prepararSessoesParaImagem(ids);
-      await exportarSessoesEmMassa(preparadas, formato, `treinos_${formato}.zip`);
-      toast.success(`${preparadas.length} imagem(ns) exportada(s)`);
+      const total = await exportarSessoesImagemA4(ids, formato, `treinos_${formato}.zip`);
+      setGeradas((prev) => ({ ...prev, [formato]: total }));
+      toast.success(`${total} imagem(ns) A4 exportada(s)`);
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao exportar imagens");
     } finally {
@@ -263,23 +263,6 @@ export function ProgramasPanel({
     } finally {
       setBulkImgLoading(false);
       setBulkPdf(false);
-    }
-  }
-
-  /** PDF com a arte da imagem do treino (uma sessão por página). */
-  async function exportarPdfImagem() {
-    if (selected.size === 0) return;
-    setBulkImgLoading(true);
-    setBulkPdfImg(true);
-    try {
-      const preparadas = await prepararSessoesParaImagem(Array.from(selected));
-      await exportarSessoesPDFA4(preparadas, "treinos-imagem-a4.pdf");
-      toast.success(`PDF (imagem) com ${preparadas.length} sessão(ões) gerado`);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao exportar PDF");
-    } finally {
-      setBulkImgLoading(false);
-      setBulkPdfImg(false);
     }
   }
 
