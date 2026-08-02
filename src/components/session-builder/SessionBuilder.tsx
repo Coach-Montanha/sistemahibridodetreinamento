@@ -296,21 +296,29 @@ export function SessionBuilder({
 
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-bold tracking-tight">
             {sessionId ? "Editar sessão" : "Nova sessão"}
           </h1>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate({ to: "/app/treinos", search: { aba: "programas" } })}
+            className="text-muted-foreground hover:text-foreground sm:hidden"
+          >
+            Voltar
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate({ to: "/app/treinos", search: { aba: "programas" } })}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          Voltar
-        </Button>
-      </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate({ to: "/app/treinos", search: { aba: "programas" } })}
+            className="hidden text-muted-foreground hover:text-foreground sm:flex"
+          >
+            Voltar
+          </Button>
         <div className="flex gap-2">
           {sessionId && (
             <DropdownMenu>
