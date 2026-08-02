@@ -48,23 +48,34 @@ export type RotinaContexto = {
   nomenclatura: "numerico" | "alfabetico";
   sessoes_existentes: number;
   objetivos: string | null;
+  dias_por_semana: number | null;
+  escopo_label: string | null;
 };
 
 export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): string {
   const exemplo =
     ctx.nomenclatura === "alfabetico" ? "Dia A, Dia B, Dia C" : "Dia 1, Dia 2, Dia 3";
+  const dias = ctx.dias_por_semana && ctx.dias_por_semana > 0 ? ctx.dias_por_semana : null;
   return [
     "CONTEXTO DA ROTINA (não repita, apenas use):",
     `- Nome: ${ctx.titulo}`,
     "- Modalidade: Musculação (fixa)",
     `- Duração: ${ctx.duracao_semanas} semana(s)`,
+    ctx.escopo_label ? `- Escopo da prescrição: ${ctx.escopo_label}` : null,
+    dias ? `- Dias de treino por semana: ${dias}` : null,
     `- Período: ${ctx.data_inicio ?? "não informado"} até ${ctx.data_fim ?? "não informado"}`,
     `- Nomenclatura dos dias: ${ctx.nomenclatura} (ex.: ${exemplo})`,
     `- Sessões já existentes: ${ctx.sessoes_existentes}`,
     ctx.objetivos ? `- Objetivos: ${ctx.objetivos}` : null,
     "",
+    dias
+      ? `OBRIGATÓRIO: gere exatamente ${dias} dia(s) de treino distintos, que formam a divisão semanal a ser repetida ao longo das ${ctx.duracao_semanas} semana(s).`
+      : "OBRIGATÓRIO: gere exatamente 1 dia de treino.",
+    "",
     "INSTRUÇÕES DO TREINADOR:",
-    instrucoes.trim(),
+    instrucoes.trim().length > 0
+      ? instrucoes.trim()
+      : "Sem instruções adicionais: monte uma divisão equilibrada de hipertrofia adequada ao escopo acima.",
   ]
     .filter(Boolean)
     .join("\n");
