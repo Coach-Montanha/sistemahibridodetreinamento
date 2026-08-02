@@ -13,7 +13,9 @@ import {
 
 const INPUT = z.object({
   programId: z.string().uuid(),
-  prompt: z.string().min(3).max(4000),
+  prompt: z.string().max(4000).default(""),
+  diasPorSemana: z.number().int().min(1).max(7).nullable().optional(),
+  escopoLabel: z.string().max(80).nullable().optional(),
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
@@ -52,6 +54,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       nomenclatura: detectarNomenclatura(titulos),
       sessoes_existentes: titulos.length,
       objetivos: programa.descricao ?? null,
+      dias_por_semana: data.diasPorSemana ?? null,
+      escopo_label: data.escopoLabel ?? null,
     };
 
     const apiKey = process.env.LOVABLE_API_KEY;

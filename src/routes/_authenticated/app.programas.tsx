@@ -668,24 +668,6 @@ function ProgramaCard({
               </SortableList>
             )}
             <div className="mt-5 flex flex-wrap justify-end gap-2">
-              {programa.metodologia === "musculacao" && (
-                <Button
-                  size="sm"
-                  title="Gerar treinos de musculação com IA a partir de um prompt"
-                  aria-label="Prescrever treinos com IA nesta rotina"
-                  className={`gap-2 transition-all duration-200 ${
-                    destacarIa ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
-                  }`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onOpenIa();
-                  }}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Prescrever com IA
-                </Button>
-              )}
               <Button
                 size="sm"
                 variant="outline"
