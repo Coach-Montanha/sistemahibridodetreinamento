@@ -28,6 +28,14 @@ const PrescreverIaDialog = lazy(() =>
   })),
 );
 
+const GerarTreinoKettlebellModal = lazy(() =>
+  import("@/components/programa-ia/GerarTreinoKettlebellModal").then((m) => ({
+    default: m.GerarTreinoKettlebellModal,
+  })),
+);
+
+import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
+
 const SEMANAS_POR_ESCOPO: Record<string, number> = {
   sessao: 1,
   semana: 1,
@@ -70,7 +78,10 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
     diasPorSemana: number;
     dataInicio: string;
   } | null>(null);
+  const [kbConfig, setKbConfig] = useState<KbSportPayload | null>(null);
+  const [kbModalOpen, setKbModalOpen] = useState(false);
   const isMusculacao = metodologia === "musculacao";
+  const isKbSport = metodologia === "kettlebell_sport";
 
   const prefs = useQuery({
     queryKey: ["generator-prefs", metodologia],
@@ -79,6 +90,10 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isKbSport) {
+      setKbModalOpen(true);
+      return;
+    }
     setLoading(true);
     setAvisos([]);
     try {
@@ -131,6 +146,40 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
     }
   }
 
+  /** Kettlebell Sport: cria a rotina e abre a prescrição por IA com a escola escolhida. */
+  async function gerarKbSport(kb: KbSportPayload) {
+    setLoading(true);
+    try {
+      if (!coach) throw new Error("Perfil de treinador não encontrado");
+      const semanas = SEMANAS_POR_ESCOPO[escopo] ?? 4;
+      const { data: prog, error } = await supabase
+        .from("programs")
+        .insert({
+          coach_id: coach.id,
+          metodologia: "kettlebell_sport",
+          titulo,
+          data_inicio: dataInicio,
+          duracao_semanas: semanas,
+        })
+        .select("id, titulo")
+        .single();
+      if (error || !prog) throw new Error(error?.message ?? "Falha ao criar rotina");
+      setKbConfig(kb);
+      setKbModalOpen(false);
+      setIaEscopo({
+        label: ESCOPO_LABEL[escopo] ?? escopo,
+        semanas,
+        diasPorSemana: escopo === "sessao" ? 1 : dias,
+        dataInicio,
+      });
+      setIaPrograma({ id: prog.id, titulo: prog.titulo ?? titulo });
+    } catch (err: any) {
+      toast.error(err?.message ?? "Falha ao gerar");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className={showHeader ? "mx-auto max-w-2xl p-6" : "mx-auto max-w-2xl"}>
       {showHeader && (
@@ -167,6 +216,16 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
               gerar, criamos a rotina e abrimos o <strong className="text-foreground">Prescrever
               com IA</strong>, onde você descreve a divisão desejada e revisa a prévia
               antes de salvar.
+            </p>
+          </div>
+        ) : isKbSport ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <p className="flex-1 leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">Motor por escola metodológica.</strong>{" "}
+              Ao gerar, você escolhe a linha (Fedorenko, Rudnev, Vorotyntsev, Denisov,
+              Vasilev, Gomonov ou automática), nível, disciplina e cargas iniciais — a IA
+              monta o ciclo seguindo estritamente essa filosofia.
             </p>
           </div>
         ) : metodologia === "kettlebell_fitness" ? (
@@ -266,7 +325,9 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
                 : "Gerando..."
               : isMusculacao
                 ? "Prescrever com IA"
-                : "Gerar treino"}
+                : isKbSport
+                  ? "Configurar e gerar"
+                  : "Gerar treino"}
           </Button>
         </form>
 
@@ -288,15 +349,32 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         )}
       </Card>
 
+      {kbModalOpen && (
+        <Suspense fallback={null}>
+          <GerarTreinoKettlebellModal
+            open={kbModalOpen}
+            onOpenChange={setKbModalOpen}
+            titulo={titulo}
+            escopoLabel={ESCOPO_LABEL[escopo] ?? escopo}
+            dataInicio={dataInicio}
+            diasPorSemana={escopo === "sessao" ? 1 : dias}
+            isGenerating={loading}
+            onGenerate={gerarKbSport}
+          />
+        </Suspense>
+      )}
+
       {iaPrograma && (
         <Suspense fallback={null}>
           <PrescreverIaDialog
             programa={iaPrograma}
             escopo={iaEscopo}
+            kb={kbConfig}
             onOpenChange={(o: boolean) => {
               if (!o) {
                 setIaPrograma(null);
                 setIaEscopo(null);
+                setKbConfig(null);
                 navigate({ to: "/app/programas" });
               }
             }}
