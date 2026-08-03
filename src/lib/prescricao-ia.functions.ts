@@ -10,12 +10,47 @@ import {
   normalizarPrescricao,
   type AiPrescription,
 } from "@/lib/prescricao-ia.server";
+import {
+  KB_SPORT_SYSTEM_PROMPT,
+  escolherEscola,
+  montarKbSportPrompt,
+  type EscolaMetodologica,
+} from "@/lib/kb-sport-ia.server";
+
+const CARGA = z
+  .object({
+    pesoKettlebellKg: z.number().nullable().default(null),
+    repsAtuais10min: z.number().nullable().default(null),
+  })
+  .optional();
+
+const KB = z
+  .object({
+    escolaMetodologica: z.enum([
+      "auto",
+      "fedorenko",
+      "rudnev",
+      "vorotyntsev",
+      "denisov",
+      "vasilev",
+      "gomonov",
+    ]),
+    nivelAtleta: z.enum(["iniciante", "intermediario", "avancado", "elite"]),
+    disciplina: z.enum(["biathlon", "long_cycle", "ambas"]),
+    pesoCorporalKg: z.number().nullable().default(null),
+    cargas: z
+      .object({ snatch: CARGA, jerk: CARGA, longCycle: CARGA })
+      .default({}),
+  })
+  .nullable()
+  .optional();
 
 const INPUT = z.object({
   programId: z.string().uuid(),
   prompt: z.string().max(4000).default(""),
   diasPorSemana: z.number().int().min(1).max(7).nullable().optional(),
   escopoLabel: z.string().max(80).nullable().optional(),
+  kb: KB,
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
@@ -36,10 +71,14 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
     if (!programa) throw new Error("Programa não encontrado ou sem permissão de acesso");
-    if (programa.metodologia !== "musculacao") {
+    const isKbSport = programa.metodologia === "kettlebell_sport";
+    if (programa.metodologia !== "musculacao" && !isKbSport) {
       throw new Error(
-        "Prescrever com IA está disponível apenas para a modalidade Musculação",
+        "Prescrever com IA está disponível apenas para Musculação e Kettlebell Sport",
       );
+    }
+    if (isKbSport && !data.kb) {
+      throw new Error("Configuração do Kettlebell Sport ausente");
     }
 
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(
@@ -61,14 +100,35 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("Serviço de IA indisponível no momento");
 
+    const kb = data.kb ?? null;
+    const linha: Exclude<EscolaMetodologica, "auto"> | null = kb
+      ? kb.escolaMetodologica === "auto"
+        ? escolherEscola(kb.nivelAtleta, kb.disciplina)
+        : kb.escolaMetodologica
+      : null;
+
+    const systemPrompt = isKbSport ? KB_SPORT_SYSTEM_PROMPT : SYSTEM_PROMPT;
+    const userPrompt =
+      isKbSport && kb && linha
+        ? montarKbSportPrompt({
+            kb: kb as any,
+            linha,
+            semanas: ctx.duracao_semanas,
+            diasPorSemana: ctx.dias_por_semana,
+            dataInicio: ctx.data_inicio,
+            escopoLabel: ctx.escopo_label,
+            instrucoes: data.prompt,
+          })
+        : montarUserPrompt(ctx, data.prompt);
+
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: montarUserPrompt(ctx, data.prompt) },
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
         ],
         response_format: { type: "json_object" },
       }),
