@@ -89,17 +89,23 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       }
     );
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      throw new Error('Unauthorized: Invalid token');
-    }
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('[Supabase Auth] getUser error:', userError);
+        throw new Error('Unauthorized: Invalid token');
+      }
 
-    return next({
-      context: {
-        supabase,
-        userId: user.id,
-        claims: {}, // getUser doesn't return raw claims, but we typically only need userId
-      },
-    });
+      return next({
+        context: {
+          supabase,
+          userId: user.id,
+          claims: {},
+        },
+      });
+    } catch (e) {
+      console.error('[Supabase Auth] Exception in middleware:', e);
+      throw e;
+    }
   },
 );
