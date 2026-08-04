@@ -101,13 +101,5 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
         claims: {}, // getUser doesn't return raw claims, but we typically only need userId
       },
     });
-
-    return next({
-      context: {
-        supabase,
-        userId: data.claims.sub,
-        claims: data.claims,
-      },
-    });
   },
 );
