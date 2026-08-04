@@ -16,6 +16,12 @@ import {
   montarKbSportPrompt,
   type EscolaMetodologica,
 } from "@/lib/kb-sport-ia.server";
+import {
+  WL_SYSTEM_PROMPT,
+  escolherEscolaWl,
+  montarWlPrompt,
+  type EscolaWeightlifting,
+} from "@/lib/weightlifting-ia.server";
 
 const CARGA = z
   .object({
@@ -45,12 +51,50 @@ const KB = z
   .nullable()
   .optional();
 
+const WL = z
+  .object({
+    escolaMetodologica: z.enum([
+      "auto",
+      "bulgara",
+      "russa_classica",
+      "chinesa",
+      "cubana",
+      "colombiana",
+      "pendlay",
+      "takano",
+    ]),
+    nivelAtleta: z.enum(["iniciante", "intermediario", "avancado", "elite"]),
+    pesoCorporalKg: z.number().nullable().default(null),
+    classificacaoOficial: z.string().max(80).nullable().default(null),
+    pontoFracoIdentificado: z
+      .enum(["pernas", "costas", "recepcao", "mobilidade_ombro"])
+      .nullable()
+      .default(null),
+    capacidadeRecuperacao: z.enum(["baixa", "media", "alta"]).default("media"),
+    suporteTotalDeclarado: z.boolean().default(false),
+    cargas: z
+      .object({
+        arranco: z.object({ cargaKg: z.number().nullable().default(null) }).optional(),
+        arremesso: z.object({ cargaKg: z.number().nullable().default(null) }).optional(),
+        agachamentoCostas: z
+          .object({ cargaKg: z.number().nullable().default(null) })
+          .optional(),
+        agachamentoFrontal: z
+          .object({ cargaKg: z.number().nullable().default(null) })
+          .optional(),
+      })
+      .default({}),
+  })
+  .nullable()
+  .optional();
+
 const INPUT = z.object({
   programId: z.string().uuid(),
   prompt: z.string().max(4000).default(""),
   diasPorSemana: z.number().int().min(1).max(7).nullable().optional(),
   escopoLabel: z.string().max(80).nullable().optional(),
   kb: KB,
+  wl: WL,
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
@@ -72,13 +116,17 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!programa) throw new Error("Programa não encontrado ou sem permissão de acesso");
     const isKbSport = programa.metodologia === "kettlebell_sport";
-    if (programa.metodologia !== "musculacao" && !isKbSport) {
+    const isWl = programa.metodologia === "levantamento_peso";
+    if (programa.metodologia !== "musculacao" && !isKbSport && !isWl) {
       throw new Error(
-        "Prescrever com IA está disponível apenas para Musculação e Kettlebell Sport",
+        "Prescrever com IA está disponível apenas para Musculação, Kettlebell Sport e Levantamento de Peso",
       );
     }
     if (isKbSport && !data.kb) {
       throw new Error("Configuração do Kettlebell Sport ausente");
+    }
+    if (isWl && !data.wl) {
+      throw new Error("Configuração do Levantamento de Peso ausente");
     }
 
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(
@@ -107,9 +155,36 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         : kb.escolaMetodologica
       : null;
 
-    const systemPrompt = isKbSport ? KB_SPORT_SYSTEM_PROMPT : SYSTEM_PROMPT;
+    const wl = data.wl ?? null;
+    const linhaWl: Exclude<EscolaWeightlifting, "auto"> | null = wl
+      ? wl.escolaMetodologica === "auto"
+        ? escolherEscolaWl({
+            nivel: wl.nivelAtleta,
+            pontoFraco: wl.pontoFracoIdentificado,
+            classificacao: wl.classificacaoOficial,
+            recuperacao: wl.capacidadeRecuperacao,
+            suporteTotal: wl.suporteTotalDeclarado,
+          })
+        : wl.escolaMetodologica
+      : null;
+
+    const systemPrompt = isKbSport
+      ? KB_SPORT_SYSTEM_PROMPT
+      : isWl
+        ? WL_SYSTEM_PROMPT
+        : SYSTEM_PROMPT;
     const userPrompt =
-      isKbSport && kb && linha
+      isWl && wl && linhaWl
+        ? montarWlPrompt({
+            wl: wl as any,
+            linha: linhaWl,
+            semanas: ctx.duracao_semanas,
+            diasPorSemana: ctx.dias_por_semana,
+            dataInicio: ctx.data_inicio,
+            escopoLabel: ctx.escopo_label,
+            instrucoes: data.prompt,
+          })
+        : isKbSport && kb && linha
         ? montarKbSportPrompt({
             kb: kb as any,
             linha,

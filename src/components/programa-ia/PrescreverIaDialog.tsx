@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { prescribeTrainingWithAi } from "@/lib/prescricao-ia.functions";
 import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
+import type { WlPayload } from "@/lib/weightlifting-ia.server";
 
 const PLACEHOLDER = `Ex.: divisão A/B/C/D para hipertrofia, 4 treinos por semana.
 Dia A peito e tríceps, Dia B costas e bíceps, Dia C pernas, Dia D ombros e core.
@@ -179,6 +180,7 @@ export function PrescreverIaDialog({
   programa,
   escopo,
   kb,
+  wl,
   onOpenChange,
 }: {
   programa: { id: string; titulo?: string | null } | null;
@@ -190,6 +192,8 @@ export function PrescreverIaDialog({
   } | null;
   /** Configuração do Kettlebell Sport (quando a rotina é dessa modalidade). */
   kb?: KbSportPayload | null;
+  /** Configuração do Levantamento de Peso (quando a rotina é dessa modalidade). */
+  wl?: WlPayload | null;
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
@@ -212,6 +216,7 @@ export function PrescreverIaDialog({
           diasPorSemana: escopo?.diasPorSemana ?? null,
           escopoLabel: escopo?.label ?? null,
           kb: kb ?? null,
+          wl: wl ?? null,
         },
       });
     },
@@ -271,7 +276,11 @@ export function PrescreverIaDialog({
           .insert({
             session_id: sess.id,
             ordem: 1,
-            formato: kb ? "kb_timed_sets" : "bodybuilding_sets",
+            formato: kb
+              ? "kb_timed_sets"
+              : wl
+                ? "forca_tecnica_pct"
+                : "bodybuilding_sets",
             titulo: dia.day_label || dia.description || "Bloco principal",
             config: gruposDoDia(dia),
           })
@@ -360,7 +369,7 @@ export function PrescreverIaDialog({
             </span>
             Prescrever com IA
             <Badge variant="secondary" className="ml-1 text-[10px] uppercase tracking-wide">
-              {kb ? "Kettlebell Sport" : "Musculação"}
+              {kb ? "Kettlebell Sport" : wl ? "Levantamento de Peso" : "Musculação"}
             </Badge>
           </DialogTitle>
           <DialogDescription className="text-xs">
