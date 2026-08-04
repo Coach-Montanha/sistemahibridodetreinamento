@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useState } from "react";
 import { toast } from "sonner";
@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Wand2, Settings2, AlertTriangle, ListChecks, Sparkles } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getGeneratorPrefs } from "@/lib/generator-prefs.functions";
 import { gerarTreino } from "@/lib/gerador.functions";

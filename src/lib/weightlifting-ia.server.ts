@@ -32,7 +32,7 @@ export type WlPayload = {
   };
 };
 
-export const ESCOLA_WL_LABEL: Record<Exclude<EscolaWeightlifting, "auto">, string> = {
+const ESCOLA_WL_LABEL: Record<Exclude<EscolaWeightlifting, "auto">, string> = {
   bulgara: "Búlgara",
   russa_classica: "Russa Clássica",
   chinesa: "Chinesa",

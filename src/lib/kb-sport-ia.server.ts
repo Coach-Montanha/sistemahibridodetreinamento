@@ -29,7 +29,7 @@ export type KbSportPayload = {
   };
 };
 
-export const ESCOLA_LABEL: Record<Exclude<EscolaMetodologica, "auto">, string> = {
+const ESCOLA_LABEL: Record<Exclude<EscolaMetodologica, "auto">, string> = {
   fedorenko: "Fedorenko / WKC",
   rudnev: "Rudnev",
   vorotyntsev: "Vorotyntsev",

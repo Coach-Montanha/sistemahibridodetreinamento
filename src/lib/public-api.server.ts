@@ -1,5 +1,5 @@
 // Helpers para os endpoints /api/public/* (leitura externa autenticada por chave).
-export const PUBLIC_API_CORS = {
+const PUBLIC_API_CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, x-api-key",
