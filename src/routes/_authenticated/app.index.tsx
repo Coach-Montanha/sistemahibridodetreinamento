@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, PlusSquare, Users } from "lucide-react";
+import { ClipboardList, Dumbbell, PlusSquare, Users } from "lucide-react";
 import { useCoach } from "@/hooks/use-coach";
 
 export const Route = createFileRoute("/_authenticated/app/")({
@@ -57,35 +57,48 @@ function Dashboard() {
         ))}
       </div>
 
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
-        <Card className="p-6">
+      <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="flex flex-col p-6">
           <PlusSquare className="h-6 w-6 text-primary" />
-          <h3 className="mt-4 text-lg font-semibold">Nova sessão</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h3 className="mt-4 text-lg font-semibold leading-none">Nova sessão</h3>
+          <p className="mt-2 text-sm text-muted-foreground flex-grow">
             Monte um treino por blocos com drag-and-drop.
           </p>
-          <Button asChild className="mt-4">
+          <Button asChild className="mt-6 w-full shadow-lg shadow-primary/20">
             <Link to="/app/sessoes/nova">Abrir construtor</Link>
           </Button>
         </Card>
-        <Card className="p-6">
-          <Dumbbell className="h-6 w-6 text-primary" />
-          <h3 className="mt-4 text-lg font-semibold">Banco de exercícios</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Cadastre exercícios com vídeo, imagem ou gif.
+
+        <Card className="flex flex-col p-6">
+          <ClipboardList className="h-6 w-6 text-primary" />
+          <h3 className="mt-4 text-lg font-semibold leading-none">Hub de Treinos</h3>
+          <p className="mt-2 text-sm text-muted-foreground flex-grow">
+            Visualize e organize suas sessões e programas.
           </p>
-          <Button asChild variant="outline" className="mt-4">
-            <Link to="/app/exercicios">Abrir</Link>
+          <Button asChild variant="outline" className="mt-6 w-full border-primary/20 hover:bg-primary/5">
+            <Link to="/app/treinos">Gerenciar treinos</Link>
           </Button>
         </Card>
-        <Card className="p-6">
-          <Users className="h-6 w-6 text-primary" />
-          <h3 className="mt-4 text-lg font-semibold">Alunos</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Gestão de alunos e atribuição de programas (em breve).
+
+        <Card className="flex flex-col p-6">
+          <Dumbbell className="h-6 w-6 text-primary" />
+          <h3 className="mt-4 text-lg font-semibold leading-none text-balance">Banco de exercícios</h3>
+          <p className="mt-2 text-sm text-muted-foreground flex-grow">
+            Cadastre exercícios com vídeo, imagem ou gif.
           </p>
-          <Button variant="outline" disabled className="mt-4">
-            Em breve
+          <Button asChild variant="outline" className="mt-6 w-full border-primary/20 hover:bg-primary/5">
+            <Link to="/app/exercicios">Abrir banco</Link>
+          </Button>
+        </Card>
+
+        <Card className="flex flex-col p-6 opacity-80 grayscale-[0.5]">
+          <Users className="h-6 w-6 text-primary" />
+          <h3 className="mt-4 text-lg font-semibold leading-none">Alunos</h3>
+          <p className="mt-2 text-sm text-muted-foreground flex-grow">
+            Gestão de alunos e atribuição de programas.
+          </p>
+          <Button asChild variant="ghost" className="mt-6 w-full cursor-not-allowed bg-muted/50 hover:bg-muted/50">
+            <Link to="/app/alunos">Em breve</Link>
           </Button>
         </Card>
       </div>
