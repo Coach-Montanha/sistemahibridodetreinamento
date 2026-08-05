@@ -752,6 +752,7 @@ function ExerciseDialog({
   const [saving, setSaving] = useState(false);
   const [duplicates, setDuplicates] = useState<any[] | null>(null);
 
+  const [mediaToDelete, setMediaToDelete] = useState<string[]>([]);
   const isEdit = !!editing;
   const isEditingGlobal = isEdit && !editing?.coach_id;
 
@@ -766,6 +767,7 @@ function ExerciseDialog({
     setInstr(editing?.instrucoes ?? "");
     setFile(null);
     setDuplicates(null);
+    setMediaToDelete([]);
   }, [open, editing]);
 
   function findDuplicatesFor(name: string): any[] {
