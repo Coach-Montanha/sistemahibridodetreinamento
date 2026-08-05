@@ -855,6 +855,8 @@ function ExerciseDialog({
           tipo,
           storage_path: path,
           url_publica: publicUrl,
+        }, { 
+          onConflict: 'exercise_id, storage_path' 
         });
 
         if (mediaErr) throw mediaErr;
