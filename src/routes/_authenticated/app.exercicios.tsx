@@ -436,9 +436,14 @@ function ExerciciosPage() {
                     {!selectionMode && ex.exercise_media?.[0] && (
                       <div className="relative mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border/50 bg-muted">
                         {ex.exercise_media[0].tipo === "video" ? (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <Dumbbell className="h-4 w-4 text-muted-foreground/50" />
-                          </div>
+                          <video 
+                            src={ex.exercise_media[0].url_publica} 
+                            className="h-full w-full object-cover"
+                            muted
+                            playsInline
+                            onMouseOver={(e) => e.currentTarget.play()}
+                            onMouseOut={(e) => e.currentTarget.pause()}
+                          />
                         ) : (
                           <img
                             src={ex.exercise_media[0].url_publica}
@@ -834,7 +839,7 @@ function ExerciseDialog({
             ? "gif"
             : "imagem";
 
-        const { error: mediaErr } = await supabase.from("exercise_media").insert({
+        const { error: mediaErr } = await supabase.from("exercise_media").upsert({
           exercise_id: exerciseId,
           tipo,
           storage_path: path,
@@ -961,6 +966,43 @@ function ExerciseDialog({
           </div>
           <div>
             <Label>Mídia (vídeo, imagem ou gif)</Label>
+            {isEdit && editing?.exercise_media?.length > 0 && (
+              <div className="mt-2 mb-3 flex flex-wrap gap-2">
+                {editing.exercise_media.map((m: any, idx: number) => (
+                  <div key={idx} className="relative h-20 w-20 overflow-hidden rounded-md border border-border bg-muted">
+                    {m.tipo === "video" ? (
+                      <video src={m.url_publica} className="h-full w-full object-cover" />
+                    ) : (
+                      <img src={m.url_publica} alt="" className="h-full w-full object-cover" />
+                    )}
+                    <div className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white uppercase">
+                      {m.tipo === "gif" ? "GIF" : m.tipo === "video" ? "MP4" : "IMG"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {file && (
+              <div className="mt-2 p-2 rounded-md bg-primary/5 border border-primary/20">
+                <p className="text-xs font-medium mb-1">Novo arquivo selecionado:</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted border border-border">
+                    {file.type.startsWith("video") ? (
+                      <video src={URL.createObjectURL(file)} className="h-full w-full object-cover" />
+                    ) : (
+                      <img src={URL.createObjectURL(file)} alt="" className="h-full w-full object-cover" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs truncate font-mono">{file.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFile(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="mt-1 flex items-center gap-2">
               <Input
                 type="file"
@@ -969,6 +1011,9 @@ function ExerciseDialog({
               />
               <Upload className="h-4 w-4 text-muted-foreground" />
             </div>
+            <p className="mt-1 text-[10px] text-muted-foreground italic">
+              Selecione um novo arquivo para substituir ou adicionar mídia.
+            </p>
           </div>
         </div>
         <DialogFooter>
