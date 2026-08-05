@@ -228,18 +228,27 @@ export function ApiPanel() {
             </p>
           </div>
           <div className="space-y-2">
-            {["/api/public/programs", "/api/public/programs/:id"].map((path) => (
+            {[
+              { path: "/api/public/programs", desc: "Listar programas" },
+              { path: "/api/public/programs/:id", desc: "Detalhes de um programa" },
+              { path: "/api/public/exercises", desc: "Banco de Exercícios (Biblioteca)" },
+            ].map(({ path, desc }) => (
               <div
                 key={path}
                 className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2"
               >
-                <Badge variant="outline" className="shrink-0 font-mono text-[10px]">
-                  GET
-                </Badge>
-                <code className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-                  {origin}
-                  {path}
-                </code>
+                <div className="flex flex-1 flex-col min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="shrink-0 font-mono text-[10px]">
+                      GET
+                    </Badge>
+                    <code className="min-w-0 truncate text-xs text-muted-foreground">
+                      {origin}
+                      {path}
+                    </code>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground/70 mt-0.5">{desc}</span>
+                </div>
                 <CopyButton value={`${origin}${path}`} id={path} />
               </div>
             ))}
