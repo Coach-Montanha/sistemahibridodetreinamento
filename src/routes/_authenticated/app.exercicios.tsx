@@ -748,6 +748,7 @@ function ExerciseDialog({
   const [equip, setEquip] = useState<Equipamento | "">("");
   const [unilateral, setUnilateral] = useState(false);
   const [instr, setInstr] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [duplicates, setDuplicates] = useState<any[] | null>(null);
@@ -765,6 +766,7 @@ function ExerciseDialog({
     setEquip(((editing?.equipamento ?? [])[0] as Equipamento) ?? "");
     setUnilateral(editing?.unilateral ?? false);
     setInstr(editing?.instrucoes ?? "");
+    setMediaUrl("");
     setFile(null);
     setDuplicates(null);
     setMediaToDelete([]);
@@ -830,6 +832,28 @@ function ExerciseDialog({
           .delete()
           .in("id", validMediaToDelete);
         if (delErr) throw delErr;
+      }
+
+      if (mediaUrl.trim() && exerciseId) {
+        const isYoutube = mediaUrl.includes("youtube.com") || mediaUrl.includes("youtu.be");
+        let finalUrl = mediaUrl;
+        
+        if (isYoutube) {
+          const videoId = mediaUrl.includes("v=") 
+            ? mediaUrl.split("v=")[1].split("&")[0]
+            : mediaUrl.split("/").pop();
+          finalUrl = `https://www.youtube.com/embed/${videoId}`;
+        }
+
+        const { error: mediaErr } = await supabase.from("exercise_media").upsert({
+          exercise_id: exerciseId,
+          tipo: isYoutube ? "video" : "imagem",
+          url_publica: finalUrl,
+          storage_path: `external/${Date.now()}`,
+        }, { 
+          onConflict: 'exercise_id, storage_path' 
+        });
+        if (mediaErr) throw mediaErr;
       }
 
       if (file && exerciseId) {
@@ -978,7 +1002,15 @@ function ExerciseDialog({
             <Textarea rows={3} value={instr} onChange={(e) => setInstr(e.target.value)} />
           </div>
           <div>
-            <Label>Mídia (vídeo, imagem ou gif)</Label>
+            <Label>Link Externo (YouTube ou Imagem)</Label>
+            <Input 
+              placeholder="Cole a URL do vídeo ou imagem..." 
+              value={mediaUrl} 
+              onChange={(e) => setMediaUrl(e.target.value)} 
+            />
+          </div>
+          <div>
+            <Label>Mídia (Upload de vídeo, imagem ou gif)</Label>
             {isEdit && editing?.exercise_media?.length > 0 && (
               <div className="mt-2 mb-3 flex flex-wrap gap-2">
                 {editing.exercise_media.map((m: any, idx: number) => {
@@ -989,7 +1021,9 @@ function ExerciseDialog({
                       key={m.id || idx} 
                       className={"relative h-20 w-20 overflow-hidden rounded-md border border-border bg-muted transition-opacity " + (isMarked ? "opacity-30 grayscale" : "")}
                     >
-                      {m.tipo === "video" ? (
+                      {m.url_publica?.includes("youtube.com/embed") ? (
+                        <iframe src={m.url_publica} className="h-full w-full pointer-events-none" />
+                      ) : m.tipo === "video" ? (
                         <video src={m.url_publica} className="h-full w-full object-cover" />
                       ) : (
                         <img src={m.url_publica} alt="" className="h-full w-full object-cover" />
