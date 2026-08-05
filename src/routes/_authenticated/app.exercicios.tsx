@@ -963,6 +963,22 @@ function ExerciseDialog({
           </div>
           <div>
             <Label>Mídia (vídeo, imagem ou gif)</Label>
+            {isEdit && editing?.exercise_media?.length > 0 && (
+              <div className="mt-2 mb-3 flex flex-wrap gap-2">
+                {editing.exercise_media.map((m: any, idx: number) => (
+                  <div key={idx} className="relative h-20 w-20 overflow-hidden rounded-md border border-border bg-muted">
+                    {m.tipo === "video" ? (
+                      <video src={m.url_publica} className="h-full w-full object-cover" />
+                    ) : (
+                      <img src={m.url_publica} alt="" className="h-full w-full object-cover" />
+                    )}
+                    <div className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white uppercase">
+                      {m.tipo === "gif" ? "GIF" : m.tipo === "video" ? "MP4" : "IMG"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="mt-1 flex items-center gap-2">
               <Input
                 type="file"
@@ -971,6 +987,9 @@ function ExerciseDialog({
               />
               <Upload className="h-4 w-4 text-muted-foreground" />
             </div>
+            <p className="mt-1 text-[10px] text-muted-foreground italic">
+              Selecione um novo arquivo para substituir ou adicionar mídia.
+            </p>
           </div>
         </div>
         <DialogFooter>
