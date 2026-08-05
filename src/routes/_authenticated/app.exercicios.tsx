@@ -823,11 +823,12 @@ function ExerciseDialog({
         clonedFromGlobal = isEditingGlobal;
       }
 
-      if (mediaToDelete.length > 0) {
+      const validMediaToDelete = mediaToDelete.filter(id => id && id !== "undefined");
+      if (validMediaToDelete.length > 0) {
         const { error: delErr } = await supabase
           .from("exercise_media")
           .delete()
-          .in("id", mediaToDelete);
+          .in("id", validMediaToDelete);
         if (delErr) throw delErr;
       }
 
@@ -979,10 +980,11 @@ function ExerciseDialog({
             {isEdit && editing?.exercise_media?.length > 0 && (
               <div className="mt-2 mb-3 flex flex-wrap gap-2">
                 {editing.exercise_media.map((m: any, idx: number) => {
+                  if (!m?.id) return null;
                   const isMarked = mediaToDelete.includes(m.id);
                   return (
                     <div 
-                      key={idx} 
+                      key={m.id || idx} 
                       className={"relative h-20 w-20 overflow-hidden rounded-md border border-border bg-muted transition-opacity " + (isMarked ? "opacity-30 grayscale" : "")}
                     >
                       {m.tipo === "video" ? (
@@ -994,7 +996,10 @@ function ExerciseDialog({
                       {!isMarked && (
                         <button
                           type="button"
-                          onClick={() => setMediaToDelete(prev => [...prev, m.id])}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMediaToDelete(prev => [...prev, m.id]);
+                          }}
                           className="absolute -top-1 -right-1 z-10 rounded-full bg-destructive p-1 text-white shadow-sm hover:bg-destructive/90"
                         >
                           <X className="h-3 w-3" />
@@ -1004,7 +1009,10 @@ function ExerciseDialog({
                       {isMarked && (
                         <button
                           type="button"
-                          onClick={() => setMediaToDelete(prev => prev.filter(id => id !== m.id))}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMediaToDelete(prev => prev.filter(id => id !== m.id));
+                          }}
                           className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 text-[10px] font-bold text-white"
                         >
                           DESFAZER
