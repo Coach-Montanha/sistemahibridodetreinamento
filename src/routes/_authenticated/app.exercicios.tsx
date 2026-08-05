@@ -823,6 +823,14 @@ function ExerciseDialog({
         clonedFromGlobal = isEditingGlobal;
       }
 
+      if (mediaToDelete.length > 0) {
+        const { error: delErr } = await supabase
+          .from("exercise_media")
+          .delete()
+          .in("id", mediaToDelete);
+        if (delErr) throw delErr;
+      }
+
       if (file && exerciseId) {
         const path = `${coachId}/${exerciseId}/${Date.now()}-${file.name}`;
         const { error: upErr } = await supabase.storage
