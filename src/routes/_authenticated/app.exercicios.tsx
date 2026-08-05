@@ -834,11 +834,13 @@ function ExerciseDialog({
             ? "gif"
             : "imagem";
 
-        const { error: mediaErr } = await supabase.from("exercise_media").insert({
+        const { error: mediaErr } = await supabase.from("exercise_media").upsert({
           exercise_id: exerciseId,
           tipo,
           storage_path: path,
           url_publica: publicUrl,
+        }, { 
+          onConflict: 'exercise_id, storage_path' 
         });
 
         if (mediaErr) throw mediaErr;
