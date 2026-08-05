@@ -982,6 +982,27 @@ function ExerciseDialog({
                 ))}
               </div>
             )}
+            {file && (
+              <div className="mt-2 p-2 rounded-md bg-primary/5 border border-primary/20">
+                <p className="text-xs font-medium mb-1">Novo arquivo selecionado:</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted border border-border">
+                    {file.type.startsWith("video") ? (
+                      <video src={URL.createObjectURL(file)} className="h-full w-full object-cover" />
+                    ) : (
+                      <img src={URL.createObjectURL(file)} alt="" className="h-full w-full object-cover" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs truncate font-mono">{file.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFile(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="mt-1 flex items-center gap-2">
               <Input
                 type="file"
