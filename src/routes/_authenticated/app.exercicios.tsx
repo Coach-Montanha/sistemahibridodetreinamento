@@ -803,17 +803,27 @@ function ExerciseDialog({
         const { error: upErr } = await supabase.storage
           .from("exercise-media")
           .upload(path, file, { upsert: false });
+        
         if (upErr) throw upErr;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("exercise-media")
+          .getPublicUrl(path);
+
         const tipo = file.type.startsWith("video")
           ? "video"
           : file.type.includes("gif")
             ? "gif"
             : "imagem";
-        await supabase.from("exercise_media").insert({
+
+        const { error: mediaErr } = await supabase.from("exercise_media").insert({
           exercise_id: exerciseId,
           tipo,
           storage_path: path,
+          url_publica: publicUrl,
         });
+
+        if (mediaErr) throw mediaErr;
       }
 
       toast.success(
