@@ -93,7 +93,7 @@ function ExerciciosPage() {
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises", q, metFilter, equipFilter, untaggedOnly],
     queryFn: async () => {
-      let query = supabase.from("exercises").select("*").order("nome_pt");
+      let query = supabase.from("exercises").select("*, exercise_media(tipo, url_publica)").order("nome_pt");
       if (q) query = query.ilike("nome_pt", `%${q}%`);
       if (metFilter !== "todos") query = query.contains("metodologias", [metFilter]);
       if (equipFilter !== "todos") query = query.contains("equipamento", [equipFilter]);
@@ -432,7 +432,25 @@ function ExerciciosPage() {
                       : "hover:border-primary/30")
                   }
                 >
-                  <div className="flex min-w-0 items-start gap-3">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    {!selectionMode && ex.exercise_media?.[0] && (
+                      <div className="relative mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border/50 bg-muted">
+                        {ex.exercise_media[0].tipo === "video" ? (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Dumbbell className="h-4 w-4 text-muted-foreground/50" />
+                          </div>
+                        ) : (
+                          <img
+                            src={ex.exercise_media[0].url_publica}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        )}
+                        <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-0.5 py-px text-[8px] font-bold text-white uppercase">
+                          {ex.exercise_media[0].tipo === "gif" ? "GIF" : ex.exercise_media[0].tipo === "video" ? "MP4" : "IMG"}
+                        </div>
+                      </div>
+                    )}
                     {selectionMode && (
                       <Checkbox
                         checked={isSel}
@@ -803,17 +821,27 @@ function ExerciseDialog({
         const { error: upErr } = await supabase.storage
           .from("exercise-media")
           .upload(path, file, { upsert: false });
+        
         if (upErr) throw upErr;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("exercise-media")
+          .getPublicUrl(path);
+
         const tipo = file.type.startsWith("video")
           ? "video"
           : file.type.includes("gif")
             ? "gif"
             : "imagem";
-        await supabase.from("exercise_media").insert({
+
+        const { error: mediaErr } = await supabase.from("exercise_media").insert({
           exercise_id: exerciseId,
           tipo,
           storage_path: path,
+          url_publica: publicUrl,
         });
+
+        if (mediaErr) throw mediaErr;
       }
 
       toast.success(
