@@ -752,6 +752,7 @@ function ExerciseDialog({
   const [saving, setSaving] = useState(false);
   const [duplicates, setDuplicates] = useState<any[] | null>(null);
 
+  const [mediaToDelete, setMediaToDelete] = useState<string[]>([]);
   const isEdit = !!editing;
   const isEditingGlobal = isEdit && !editing?.coach_id;
 
@@ -766,6 +767,7 @@ function ExerciseDialog({
     setInstr(editing?.instrucoes ?? "");
     setFile(null);
     setDuplicates(null);
+    setMediaToDelete([]);
   }, [open, editing]);
 
   function findDuplicatesFor(name: string): any[] {
@@ -819,6 +821,14 @@ function ExerciseDialog({
         if (error) throw error;
         exerciseId = data.id;
         clonedFromGlobal = isEditingGlobal;
+      }
+
+      if (mediaToDelete.length > 0) {
+        const { error: delErr } = await supabase
+          .from("exercise_media")
+          .delete()
+          .in("id", mediaToDelete);
+        if (delErr) throw delErr;
       }
 
       if (file && exerciseId) {
@@ -968,18 +978,45 @@ function ExerciseDialog({
             <Label>Mídia (vídeo, imagem ou gif)</Label>
             {isEdit && editing?.exercise_media?.length > 0 && (
               <div className="mt-2 mb-3 flex flex-wrap gap-2">
-                {editing.exercise_media.map((m: any, idx: number) => (
-                  <div key={idx} className="relative h-20 w-20 overflow-hidden rounded-md border border-border bg-muted">
-                    {m.tipo === "video" ? (
-                      <video src={m.url_publica} className="h-full w-full object-cover" />
-                    ) : (
-                      <img src={m.url_publica} alt="" className="h-full w-full object-cover" />
-                    )}
-                    <div className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white uppercase">
-                      {m.tipo === "gif" ? "GIF" : m.tipo === "video" ? "MP4" : "IMG"}
+                {editing.exercise_media.map((m: any, idx: number) => {
+                  const isMarked = mediaToDelete.includes(m.id);
+                  return (
+                    <div 
+                      key={idx} 
+                      className={"relative h-20 w-20 overflow-hidden rounded-md border border-border bg-muted transition-opacity " + (isMarked ? "opacity-30 grayscale" : "")}
+                    >
+                      {m.tipo === "video" ? (
+                        <video src={m.url_publica} className="h-full w-full object-cover" />
+                      ) : (
+                        <img src={m.url_publica} alt="" className="h-full w-full object-cover" />
+                      )}
+                      
+                      {!isMarked && (
+                        <button
+                          type="button"
+                          onClick={() => setMediaToDelete(prev => [...prev, m.id])}
+                          className="absolute -top-1 -right-1 z-10 rounded-full bg-destructive p-1 text-white shadow-sm hover:bg-destructive/90"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                      
+                      {isMarked && (
+                        <button
+                          type="button"
+                          onClick={() => setMediaToDelete(prev => prev.filter(id => id !== m.id))}
+                          className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 text-[10px] font-bold text-white"
+                        >
+                          DESFAZER
+                        </button>
+                      )}
+
+                      <div className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white uppercase">
+                        {m.tipo === "gif" ? "GIF" : m.tipo === "video" ? "MP4" : "IMG"}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             {file && (
