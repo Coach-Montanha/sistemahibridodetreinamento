@@ -26,7 +26,18 @@ export const Route = createFileRoute("/api/public/exercises")({
 
           let query = supabaseAdmin
             .from("exercises")
-            .select("id, nome_pt, nome_en, descricao, metodologias, equipamento, video_url, imagem_url, gif_url")
+            .select(`
+              id, 
+              nome_pt, 
+              nome_en, 
+              instrucoes, 
+              metodologias, 
+              equipamento,
+              exercise_media (
+                tipo,
+                url_publica
+              )
+            `)
             .order("nome_pt");
 
           if (q) query = query.ilike("nome_pt", `%${q}%`);
@@ -37,19 +48,27 @@ export const Route = createFileRoute("/api/public/exercises")({
           if (error) throw error;
 
           return json({
-            data: (data ?? []).map((ex) => ({
-              id: ex.id,
-              name: ex.nome_pt,
-              name_en: ex.nome_en,
-              description: ex.descricao,
-              methodologies: ex.metodologias,
-              equipment: ex.equipamento,
-              media: {
-                video: ex.video_url,
-                image: ex.imagem_url,
-                gif: ex.gif_url,
-              },
-            })),
+            data: (data ?? []).map((ex) => {
+              // Mapeia mídias da tabela relacionada
+              const media = (ex.exercise_media as any[]) || [];
+              const video = media.find(m => m.tipo === 'video')?.url_publica;
+              const image = media.find(m => m.tipo === 'imagem')?.url_publica;
+              const gif = media.find(m => m.tipo === 'gif')?.url_publica;
+
+              return {
+                id: ex.id,
+                name: ex.nome_pt,
+                name_en: ex.nome_en,
+                description: ex.instrucoes,
+                methodologies: ex.metodologias,
+                equipment: ex.equipamento,
+                media: {
+                  video: video || null,
+                  image: image || null,
+                  gif: gif || null,
+                },
+              };
+            }),
           });
         } catch (error) {
           return errorResponse(error);
