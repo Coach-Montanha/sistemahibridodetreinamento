@@ -436,9 +436,14 @@ function ExerciciosPage() {
                     {!selectionMode && ex.exercise_media?.[0] && (
                       <div className="relative mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border/50 bg-muted">
                         {ex.exercise_media[0].tipo === "video" ? (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <Dumbbell className="h-4 w-4 text-muted-foreground/50" />
-                          </div>
+                          <video 
+                            src={ex.exercise_media[0].url_publica} 
+                            className="h-full w-full object-cover"
+                            muted
+                            playsInline
+                            onMouseOver={(e) => e.currentTarget.play()}
+                            onMouseOut={(e) => e.currentTarget.pause()}
+                          />
                         ) : (
                           <img
                             src={ex.exercise_media[0].url_publica}
