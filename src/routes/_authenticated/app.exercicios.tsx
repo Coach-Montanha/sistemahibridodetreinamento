@@ -823,11 +823,12 @@ function ExerciseDialog({
         clonedFromGlobal = isEditingGlobal;
       }
 
-      if (mediaToDelete.length > 0) {
+      const validMediaToDelete = mediaToDelete.filter(id => id && id !== "undefined");
+      if (validMediaToDelete.length > 0) {
         const { error: delErr } = await supabase
           .from("exercise_media")
           .delete()
-          .in("id", mediaToDelete);
+          .in("id", validMediaToDelete);
         if (delErr) throw delErr;
       }
 
