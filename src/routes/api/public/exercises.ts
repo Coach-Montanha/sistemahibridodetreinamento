@@ -32,11 +32,7 @@ export const Route = createFileRoute("/api/public/exercises")({
               nome_en, 
               instrucoes, 
               metodologias, 
-              equipamento,
-              exercise_media (
-                tipo,
-                url_publica
-              )
+              equipamento
             `)
             .order("nome_pt");
 
@@ -49,12 +45,6 @@ export const Route = createFileRoute("/api/public/exercises")({
 
           return json({
             data: (data ?? []).map((ex) => {
-              // Mapeia mídias da tabela relacionada
-              const media = (ex.exercise_media as any[]) || [];
-              const video = media.find(m => m.tipo === 'video')?.url_publica;
-              const image = media.find(m => m.tipo === 'imagem')?.url_publica;
-              const gif = media.find(m => m.tipo === 'gif')?.url_publica;
-
               return {
                 id: ex.id,
                 name: ex.nome_pt,
@@ -62,11 +52,6 @@ export const Route = createFileRoute("/api/public/exercises")({
                 description: ex.instrucoes,
                 methodologies: ex.metodologias,
                 equipment: ex.equipamento,
-                media: {
-                  video: video || null,
-                  image: image || null,
-                  gif: gif || null,
-                },
               };
             }),
           });

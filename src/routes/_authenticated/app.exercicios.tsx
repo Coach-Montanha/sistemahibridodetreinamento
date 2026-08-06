@@ -30,7 +30,6 @@ import {
   Search,
   Trash2,
   Pencil,
-  Upload,
   GitMerge,
   Dumbbell,
   AlertTriangle,
@@ -93,7 +92,7 @@ function ExerciciosPage() {
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises", q, metFilter, equipFilter, untaggedOnly],
     queryFn: async () => {
-      let query = supabase.from("exercises").select("*, exercise_media(tipo, url_publica)").order("nome_pt");
+      let query = supabase.from("exercises").select("*").order("nome_pt");
       if (q) query = query.ilike("nome_pt", `%${q}%`);
       if (metFilter !== "todos") query = query.contains("metodologias", [metFilter]);
       if (equipFilter !== "todos") query = query.contains("equipamento", [equipFilter]);
@@ -203,7 +202,7 @@ function ExerciciosPage() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">Banco de Exercícios</h1>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Cadastre exercícios com mídia para usar no construtor de sessão.
+            Cadastre exercícios para usar no construtor de sessão.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-2">
@@ -433,29 +432,6 @@ function ExerciciosPage() {
                   }
                 >
                   <div className="flex min-w-0 flex-1 items-start gap-3">
-                    {!selectionMode && ex.exercise_media?.[0] && (
-                      <div className="relative mt-0.5 h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border/50 bg-muted">
-                        {ex.exercise_media[0].tipo === "video" ? (
-                          <video 
-                            src={ex.exercise_media[0].url_publica} 
-                            className="h-full w-full object-cover"
-                            muted
-                            playsInline
-                            onMouseOver={(e) => e.currentTarget.play()}
-                            onMouseOut={(e) => e.currentTarget.pause()}
-                          />
-                        ) : (
-                          <img
-                            src={ex.exercise_media[0].url_publica}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        )}
-                        <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-0.5 py-px text-[8px] font-bold text-white uppercase">
-                          {ex.exercise_media[0].tipo === "gif" ? "GIF" : ex.exercise_media[0].tipo === "video" ? "MP4" : "IMG"}
-                        </div>
-                      </div>
-                    )}
                     {selectionMode && (
                       <Checkbox
                         checked={isSel}
@@ -748,12 +724,9 @@ function ExerciseDialog({
   const [equip, setEquip] = useState<Equipamento | "">("");
   const [unilateral, setUnilateral] = useState(false);
   const [instr, setInstr] = useState("");
-  const [mediaUrl, setMediaUrl] = useState("");
-  const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [duplicates, setDuplicates] = useState<any[] | null>(null);
 
-  const [mediaToDelete, setMediaToDelete] = useState<string[]>([]);
   const isEdit = !!editing;
   const isEditingGlobal = isEdit && !editing?.coach_id;
 
@@ -766,10 +739,7 @@ function ExerciseDialog({
     setEquip(((editing?.equipamento ?? [])[0] as Equipamento) ?? "");
     setUnilateral(editing?.unilateral ?? false);
     setInstr(editing?.instrucoes ?? "");
-    setMediaUrl("");
-    setFile(null);
     setDuplicates(null);
-    setMediaToDelete([]);
   }, [open, editing]);
 
   function findDuplicatesFor(name: string): any[] {
@@ -825,66 +795,6 @@ function ExerciseDialog({
         clonedFromGlobal = isEditingGlobal;
       }
 
-      const validMediaToDelete = mediaToDelete.filter(id => id && id !== "undefined");
-      if (validMediaToDelete.length > 0) {
-        const { error: delErr } = await supabase
-          .from("exercise_media")
-          .delete()
-          .in("id", validMediaToDelete);
-        if (delErr) throw delErr;
-      }
-
-      if (mediaUrl.trim() && exerciseId) {
-        const isYoutube = mediaUrl.includes("youtube.com") || mediaUrl.includes("youtu.be");
-        let finalUrl = mediaUrl;
-        
-        if (isYoutube) {
-          const videoId = mediaUrl.includes("v=") 
-            ? mediaUrl.split("v=")[1].split("&")[0]
-            : mediaUrl.split("/").pop();
-          finalUrl = `https://www.youtube.com/embed/${videoId}`;
-        }
-
-        const { error: mediaErr } = await supabase.from("exercise_media").upsert({
-          exercise_id: exerciseId,
-          tipo: isYoutube ? "video" : "imagem",
-          url_publica: finalUrl,
-          storage_path: `external/${Date.now()}`,
-        }, { 
-          onConflict: 'exercise_id, storage_path' 
-        });
-        if (mediaErr) throw mediaErr;
-      }
-
-      if (file && exerciseId) {
-        const path = `${coachId}/${exerciseId}/${Date.now()}-${file.name}`;
-        const { error: upErr } = await supabase.storage
-          .from("exercise-media")
-          .upload(path, file, { upsert: false });
-        
-        if (upErr) throw upErr;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("exercise-media")
-          .getPublicUrl(path);
-
-        const tipo = file.type.startsWith("video")
-          ? "video"
-          : file.type.includes("gif")
-            ? "gif"
-            : "imagem";
-
-        const { error: mediaErr } = await supabase.from("exercise_media").upsert({
-          exercise_id: exerciseId,
-          tipo,
-          storage_path: path,
-          url_publica: publicUrl,
-        }, { 
-          onConflict: 'exercise_id, storage_path' 
-        });
-
-        if (mediaErr) throw mediaErr;
-      }
 
       toast.success(
         clonedFromGlobal
@@ -1000,101 +910,6 @@ function ExerciseDialog({
           <div>
             <Label>Instruções</Label>
             <Textarea rows={3} value={instr} onChange={(e) => setInstr(e.target.value)} />
-          </div>
-          <div>
-            <Label>Link Externo (YouTube ou Imagem)</Label>
-            <Input 
-              placeholder="Cole a URL do vídeo ou imagem..." 
-              value={mediaUrl} 
-              onChange={(e) => setMediaUrl(e.target.value)} 
-            />
-          </div>
-          <div>
-            <Label>Mídia (Upload de vídeo, imagem ou gif)</Label>
-            {isEdit && editing?.exercise_media?.length > 0 && (
-              <div className="mt-2 mb-3 flex flex-wrap gap-2">
-                {editing.exercise_media.map((m: any, idx: number) => {
-                  if (!m?.id) return null;
-                  const isMarked = mediaToDelete.includes(m.id);
-                  return (
-                    <div 
-                      key={m.id || idx} 
-                      className={"relative h-20 w-20 overflow-hidden rounded-md border border-border bg-muted transition-opacity " + (isMarked ? "opacity-30 grayscale" : "")}
-                    >
-                      {m.url_publica?.includes("youtube.com/embed") ? (
-                        <iframe src={m.url_publica} className="h-full w-full pointer-events-none" />
-                      ) : m.tipo === "video" ? (
-                        <video src={m.url_publica} className="h-full w-full object-cover" />
-                      ) : (
-                        <img src={m.url_publica} alt="" className="h-full w-full object-cover" />
-                      )}
-                      
-                      {!isMarked && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMediaToDelete(prev => [...prev, m.id]);
-                          }}
-                          className="absolute -top-1 -right-1 z-10 rounded-full bg-destructive p-1 text-white shadow-sm hover:bg-destructive/90"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
-                      
-                      {isMarked && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMediaToDelete(prev => prev.filter(id => id !== m.id));
-                          }}
-                          className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 text-[10px] font-bold text-white"
-                        >
-                          DESFAZER
-                        </button>
-                      )}
-
-                      <div className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white uppercase">
-                        {m.tipo === "gif" ? "GIF" : m.tipo === "video" ? "MP4" : "IMG"}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            {file && (
-              <div className="mt-2 p-2 rounded-md bg-primary/5 border border-primary/20">
-                <p className="text-xs font-medium mb-1">Novo arquivo selecionado:</p>
-                <div className="flex items-center gap-2">
-                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted border border-border">
-                    {file.type.startsWith("video") ? (
-                      <video src={URL.createObjectURL(file)} className="h-full w-full object-cover" />
-                    ) : (
-                      <img src={URL.createObjectURL(file)} alt="" className="h-full w-full object-cover" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs truncate font-mono">{file.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFile(null)}>
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            )}
-            <div className="mt-1 flex items-center gap-2">
-              <Input
-                type="file"
-                accept="video/*,image/*"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              />
-              <Upload className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="mt-1 text-[10px] text-muted-foreground italic">
-              Selecione um novo arquivo para substituir ou adicionar mídia.
-            </p>
           </div>
         </div>
         <DialogFooter>
