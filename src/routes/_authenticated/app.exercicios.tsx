@@ -744,7 +744,12 @@ function ExerciseDialog({
     setEquip(((editing?.equipamento ?? [])[0] as Equipamento) ?? "");
     setUnilateral(editing?.unilateral ?? false);
     setInstr(editing?.instrucoes ?? "");
-    setMedia(editing?.exercise_media ?? []);
+    setMedia(
+      (editing?.exercise_media ?? []).map((m: any) => ({
+        ...m,
+        tipo: m.storage_path?.startsWith("youtube-") ? "youtube" : m.tipo,
+      }))
+    );
     setDuplicates(null);
   }, [open, editing]);
 
