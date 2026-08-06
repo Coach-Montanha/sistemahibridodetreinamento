@@ -275,6 +275,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             })()}
             <Link
               to="/app/configuracoes"
+              search={{ section: "geracao" }}
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
               {prefs.data?.origem === "custom" ? "Ajustar" : "Personalizar"}
