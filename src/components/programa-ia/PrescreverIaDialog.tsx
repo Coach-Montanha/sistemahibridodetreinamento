@@ -58,7 +58,7 @@ const EXEMPLOS = [
 
 const LIMITACOES = [
   "Exclusivo da modalidade Musculação.",
-  "A IA não usa o banco de exercícios da plataforma: os movimentos vêm prontos, só de musculação.",
+  "A IA monta a prescrição com exercícios sugeridos de musculação.",
   "Suporta exercícios individuais e combinados (bi-set, tri-set).",
   "Até 4.000 caracteres por prompt.",
   "A IA gera uma prévia — nada é salvo até você confirmar.",
