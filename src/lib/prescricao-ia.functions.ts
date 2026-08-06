@@ -172,9 +172,10 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     if (!programa) throw new Error("Programa não encontrado ou sem permissão de acesso");
     const isKbSport = programa.metodologia === "kettlebell_sport";
     const isWl = programa.metodologia === "levantamento_peso";
-    if (programa.metodologia !== "musculacao" && !isKbSport && !isWl) {
+    const isTf = programa.metodologia === "treinamento_funcional";
+    if (programa.metodologia !== "musculacao" && !isKbSport && !isWl && !isTf) {
       throw new Error(
-        "Prescrever com IA está disponível apenas para Musculação, Kettlebell Sport e Levantamento de Peso",
+        "Prescrever com IA está disponível apenas para Musculação, Kettlebell Sport, Levantamento de Peso e Treinamento Funcional",
       );
     }
     if (isKbSport && !data.kb) {
@@ -182,6 +183,9 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     }
     if (isWl && !data.wl) {
       throw new Error("Configuração do Levantamento de Peso ausente");
+    }
+    if (isTf && !data.tf) {
+      throw new Error("Configuração do Treinamento Funcional ausente");
     }
 
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(
@@ -227,9 +231,21 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       ? KB_SPORT_SYSTEM_PROMPT
       : isWl
         ? WL_SYSTEM_PROMPT
-        : SYSTEM_PROMPT;
+        : isTf
+          ? TF_SYSTEM_PROMPT
+          : SYSTEM_PROMPT;
     const userPrompt =
-      isWl && wl && linhaWl
+      isTf && tf && linhaTf
+        ? montarFuncionalPrompt({
+            tf: tf as any,
+            linha: linhaTf,
+            semanas: ctx.duracao_semanas,
+            diasPorSemana: ctx.dias_por_semana,
+            dataInicio: ctx.data_inicio,
+            escopoLabel: ctx.escopo_label,
+            instrucoes: data.prompt,
+          })
+        : isWl && wl && linhaWl
         ? montarWlPrompt({
             wl: wl as any,
             linha: linhaWl,
