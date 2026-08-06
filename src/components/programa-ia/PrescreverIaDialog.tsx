@@ -32,6 +32,7 @@ import { prescribeTrainingWithAi } from "@/lib/prescricao-ia.functions";
 import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
+import type { TfPayload } from "@/lib/funcional-ia.server";
 
 const PLACEHOLDER = `Ex.: divisão A/B/C/D para hipertrofia, 4 treinos por semana.
 Dia A peito e tríceps, Dia B costas e bíceps, Dia C pernas, Dia D ombros e core.
@@ -194,6 +195,8 @@ export function PrescreverIaDialog({
   kb?: KbSportPayload | null;
   /** Configuração do Levantamento de Peso (quando a rotina é dessa modalidade). */
   wl?: WlPayload | null;
+  /** Configuração do Treinamento Funcional (quando a rotina é dessa modalidade). */
+  tf?: TfPayload | null;
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
