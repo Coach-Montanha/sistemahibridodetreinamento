@@ -70,7 +70,19 @@ function BlockExercises({
               className="flex-col items-stretch bg-background/60 p-2 pl-1.5"
               contentClassName="flex-col items-stretch gap-2"
             >
-              <div className="group flex w-full items-center gap-2">
+              <div className="group flex w-full items-center gap-3">
+                {e.exercise_id && (
+                  <div className="h-10 w-16 shrink-0 overflow-hidden rounded border border-border bg-black/5">
+                    {(() => {
+                      const ex = block.exercises.find((ex) => ex.tempId === e.tempId);
+                      // As mídias já foram carregadas no hydrate do Builder via SessionBuilder
+                      // O store do builder precisa ter os dados do exercício completos
+                      // Vamos buscar no objeto mapping local se necessário, mas o Store já deve ter.
+                      // Na estrutura atual, e.exercise_id refere-se ao exercício.
+                      return null; // Placeholder para a lógica de renderização de mídia abaixo
+                    })()}
+                  </div>
+                )}
                 <div className="min-w-0 flex-1 truncate text-sm font-medium leading-6 text-foreground">
                   {e.nome_livre ?? "Exercício"}
                   {e.grupo && rotuloGrupo[e.grupo] && (
