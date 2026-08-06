@@ -95,6 +95,7 @@ const WL = z
   .optional();
 
 const INPUT = z.object({
+  // (schema TF definido abaixo)
   programId: z.string().uuid(),
   prompt: z.string().max(4000).default(""),
   diasPorSemana: z.number().int().min(1).max(7).nullable().optional(),
