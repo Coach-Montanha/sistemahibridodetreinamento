@@ -22,6 +22,12 @@ import {
   montarWlPrompt,
   type EscolaWeightlifting,
 } from "@/lib/weightlifting-ia.server";
+import {
+  TF_SYSTEM_PROMPT,
+  escolherEscolaFuncional,
+  montarFuncionalPrompt,
+  type EscolaFuncional,
+} from "@/lib/funcional-ia.server";
 
 const CARGA = z
   .object({
@@ -95,6 +101,7 @@ const INPUT = z.object({
   escopoLabel: z.string().max(80).nullable().optional(),
   kb: KB,
   wl: WL,
+  tf: TF,
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
