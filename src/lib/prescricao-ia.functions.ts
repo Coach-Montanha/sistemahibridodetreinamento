@@ -227,6 +227,18 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         : wl.escolaMetodologica
       : null;
 
+    const tf = data.tf ?? null;
+    const linhaTf: Exclude<EscolaFuncional, "auto"> | null = tf
+      ? tf.escolaMetodologica === "auto"
+        ? escolherEscolaFuncional({
+            lesoes: tf.lesoes as any,
+            objetivo: tf.objetivo,
+            nivel: tf.nivelAtleta,
+            sedentarismoProlongado: tf.sedentarismoProlongado,
+          })
+        : tf.escolaMetodologica
+      : null;
+
     const systemPrompt = isKbSport
       ? KB_SPORT_SYSTEM_PROMPT
       : isWl
