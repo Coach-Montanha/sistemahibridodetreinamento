@@ -230,6 +230,16 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
               antes de salvar.
             </p>
           </div>
+        ) : isFuncional ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <p className="flex-1 leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">Motor por linha metodológica.</strong>{" "}
+              Ao gerar, você informa objetivo, equipamento e lesões/limitações, e escolhe
+              a linha (FMS/SFMA, Joint-by-Joint, EXOS, DNS, CrossFit, Original Strength)
+              ou deixa o sistema decidir — a segurança clínica tem prioridade.
+            </p>
+          </div>
         ) : isWeightlifting ? (
           <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
             <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
