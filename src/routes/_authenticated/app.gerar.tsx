@@ -35,6 +35,7 @@ const GerarTreinoModal = lazy(() =>
 
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
+import type { TfPayload } from "@/lib/funcional-ia.server";
 
 const SEMANAS_POR_ESCOPO: Record<string, number> = {
   sessao: 1,
@@ -80,11 +81,13 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   } | null>(null);
   const [kbConfig, setKbConfig] = useState<KbSportPayload | null>(null);
   const [wlConfig, setWlConfig] = useState<WlPayload | null>(null);
+  const [tfConfig, setTfConfig] = useState<TfPayload | null>(null);
   const [kbModalOpen, setKbModalOpen] = useState(false);
   const isMusculacao = metodologia === "musculacao";
   const isKbSport = metodologia === "kettlebell_sport";
   const isWeightlifting = metodologia === "levantamento_peso";
-  const usaModalIa = isKbSport || isWeightlifting;
+  const isFuncional = metodologia === "treinamento_funcional";
+  const usaModalIa = isKbSport || isWeightlifting || isFuncional;
 
   const prefs = useQuery({
     queryKey: ["generator-prefs", metodologia],
@@ -150,7 +153,11 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   }
 
   /** Cria a rotina e abre a prescrição por IA com a escola metodológica escolhida. */
-  async function gerarComEscola(cfg: { kb?: KbSportPayload; wl?: WlPayload }) {
+  async function gerarComEscola(cfg: {
+    kb?: KbSportPayload;
+    wl?: WlPayload;
+    tf?: TfPayload;
+  }) {
     setLoading(true);
     try {
       if (!coach) throw new Error("Perfil de treinador não encontrado");
@@ -169,6 +176,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       if (error || !prog) throw new Error(error?.message ?? "Falha ao criar rotina");
       setKbConfig(cfg.kb ?? null);
       setWlConfig(cfg.wl ?? null);
+      setTfConfig(cfg.tf ?? null);
       setKbModalOpen(false);
       setIaEscopo({
         label: ESCOPO_LABEL[escopo] ?? escopo,
@@ -369,7 +377,13 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
           <GerarTreinoModal
             open={kbModalOpen}
             onOpenChange={setKbModalOpen}
-            modalidade={isKbSport ? "kettlebell_sport" : "levantamento_peso"}
+            modalidade={
+              isKbSport
+                ? "kettlebell_sport"
+                : isFuncional
+                  ? "treinamento_funcional"
+                  : "levantamento_peso"
+            }
             titulo={titulo}
             escopoLabel={ESCOPO_LABEL[escopo] ?? escopo}
             dataInicio={dataInicio}
@@ -377,6 +391,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             isGenerating={loading}
             onGenerateKb={(kb) => gerarComEscola({ kb })}
             onGenerateWl={(wl) => gerarComEscola({ wl })}
+            onGenerateTf={(tf) => gerarComEscola({ tf })}
           />
         </Suspense>
       )}
@@ -388,12 +403,14 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             escopo={iaEscopo}
             kb={kbConfig}
             wl={wlConfig}
+            tf={tfConfig}
             onOpenChange={(o: boolean) => {
               if (!o) {
                 setIaPrograma(null);
                 setIaEscopo(null);
                 setKbConfig(null);
                 setWlConfig(null);
+                setTfConfig(null);
                 navigate({ to: "/app/programas" });
               }
             }}
