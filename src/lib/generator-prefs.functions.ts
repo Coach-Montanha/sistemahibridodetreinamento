@@ -8,6 +8,7 @@ const METODOLOGIA = z.enum([
   "kettlebell_fitness",
   "levantamento_peso",
   "musculacao",
+  "treinamento_funcional",
 ]);
 
 const FORMATO = z.enum([
