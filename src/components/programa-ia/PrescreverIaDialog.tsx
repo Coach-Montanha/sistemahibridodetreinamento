@@ -221,6 +221,7 @@ export function PrescreverIaDialog({
           escopoLabel: escopo?.label ?? null,
           kb: kb ?? null,
           wl: wl ?? null,
+          tf: tf ?? null,
         },
       });
     },
