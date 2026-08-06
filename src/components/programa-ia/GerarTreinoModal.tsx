@@ -275,6 +275,7 @@ export function GerarTreinoModal({
     isKb && escolaKb === "denisov" && (nivel === "iniciante" || nivel === "intermediario");
   const avisoWl =
     !isKb &&
+    !isTf &&
     escolaWl === "bulgara" &&
     !(
       (nivel === "elite" || nivel === "avancado") &&
@@ -336,7 +337,11 @@ export function GerarTreinoModal({
           <DialogTitle className="flex items-center gap-2 text-base">
             <Wand2 className="h-5 w-5 text-primary" />
             Configurar geração —{" "}
-            {isKb ? "Kettlebell Sport" : "Levantamento de Peso"}
+            {isTf
+              ? "Treinamento Funcional"
+              : isKb
+                ? "Kettlebell Sport"
+                : "Levantamento de Peso"}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {titulo} · {escopoLabel} · {diasPorSemana} sessão(ões)/semana · início em{" "}
@@ -350,9 +355,11 @@ export function GerarTreinoModal({
             <Select
               value={escolaAtual}
               onValueChange={(v) =>
-                isKb
-                  ? setEscolaKb(v as EscolaMetodologica)
-                  : setEscolaWl(v as EscolaWeightlifting)
+                isTf
+                  ? setEscolaTf(v as EscolaFuncional)
+                  : isKb
+                    ? setEscolaKb(v as EscolaMetodologica)
+                    : setEscolaWl(v as EscolaWeightlifting)
               }
             >
               <SelectTrigger>
@@ -386,7 +393,26 @@ export function GerarTreinoModal({
               </Select>
             </div>
 
-            {isKb ? (
+            {isTf ? (
+              <div className="space-y-1.5">
+                <Label>Objetivo principal</Label>
+                <Select
+                  value={objetivoTf}
+                  onValueChange={(v) => setObjetivoTf(v as ObjetivoFuncional)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OBJETIVOS_TF.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : isKb ? (
               <div className="space-y-1.5">
                 <Label>Disciplina</Label>
                 <Select
@@ -427,7 +453,150 @@ export function GerarTreinoModal({
             )}
           </div>
 
-          {!isKb && (
+          {isTf && (
+            <>
+              <div className="space-y-1.5">
+                <Label>Equipamento disponível</Label>
+                <Select
+                  value={equipamentoTf}
+                  onValueChange={(v) => setEquipamentoTf(v as EquipamentoFuncional)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EQUIPAMENTOS_TF.map((e) => (
+                      <SelectItem key={e.value} value={e.value}>
+                        {e.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+                <div className="pr-3">
+                  <p className="text-sm font-medium">Sedentarismo prolongado</p>
+                  <p className="text-xs text-muted-foreground">
+                    Retorno após longo período sem treinar.
+                  </p>
+                </div>
+                <Switch checked={sedentarismo} onCheckedChange={setSedentarismo} />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Lesões e limitações</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={lesoes.length >= 6}
+                    onClick={() =>
+                      setLesoes((l) => [
+                        ...l,
+                        { regiao: "lombar", fase: "cronica_controlada", observacaoLivre: null },
+                      ])
+                    }
+                  >
+                    Adicionar
+                  </Button>
+                </div>
+                {lesoes.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Nenhuma limitação informada — a prescrição assume liberação total.
+                  </p>
+                ) : (
+                  lesoes.map((l, i) => (
+                    <div
+                      key={i}
+                      className="space-y-2 rounded-lg border border-border bg-muted/30 p-3"
+                    >
+                      <div className="grid grid-cols-2 gap-3">
+                        <Select
+                          value={l.regiao}
+                          onValueChange={(v) =>
+                            setLesoes((arr) =>
+                              arr.map((x, j) =>
+                                j === i ? { ...x, regiao: v as RegiaoLesao } : x,
+                              ),
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {REGIOES_TF.map((r) => (
+                              <SelectItem key={r.value} value={r.value}>
+                                {r.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={l.fase}
+                          onValueChange={(v) =>
+                            setLesoes((arr) =>
+                              arr.map((x, j) =>
+                                j === i ? { ...x, fase: v as FaseLesao } : x,
+                              ),
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {FASES_TF.map((f) => (
+                              <SelectItem key={f.value} value={f.value}>
+                                {f.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Input
+                        placeholder="Observação (opcional)"
+                        maxLength={300}
+                        value={l.observacaoLivre ?? ""}
+                        onChange={(e) =>
+                          setLesoes((arr) =>
+                            arr.map((x, j) =>
+                              j === i
+                                ? { ...x, observacaoLivre: e.target.value || null }
+                                : x,
+                            ),
+                          )
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setLesoes((arr) => arr.filter((_, j) => j !== i))}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {lesoes.some((l) => l.fase === "aguda") && (
+                <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs leading-relaxed text-warning-foreground">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    Há lesão em fase aguda: a prescrição será conservadora e recomendará
+                    avaliação profissional presencial antes de progredir carga.
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+
+          {!isKb && !isTf && (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Classificação oficial — opcional</Label>
@@ -459,7 +628,7 @@ export function GerarTreinoModal({
             </div>
           )}
 
-          {!isKb && (
+          {!isKb && !isTf && (
             <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
               <div className="pr-3">
                 <p className="text-sm font-medium">Suporte total declarado</p>
@@ -495,6 +664,7 @@ export function GerarTreinoModal({
             />
           </div>
 
+          {!isTf && (
           <div className="space-y-3">
             <Label className="text-sm">Cargas iniciais</Label>
             {isKb ? (
@@ -534,6 +704,7 @@ export function GerarTreinoModal({
               </>
             )}
           </div>
+          )}
         </div>
 
         <DialogFooter>
