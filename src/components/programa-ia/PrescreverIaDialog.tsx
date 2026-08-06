@@ -182,6 +182,7 @@ export function PrescreverIaDialog({
   escopo,
   kb,
   wl,
+  tf,
   onOpenChange,
 }: {
   programa: { id: string; titulo?: string | null } | null;
