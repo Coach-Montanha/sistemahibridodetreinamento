@@ -222,6 +222,7 @@ export function GerarTreinoModal({
   diasPorSemana,
   onGenerateKb,
   onGenerateWl,
+  onGenerateTf,
   isGenerating = false,
 }: {
   open: boolean;
@@ -233,9 +234,11 @@ export function GerarTreinoModal({
   diasPorSemana: number;
   onGenerateKb: (payload: KbSportPayload) => void;
   onGenerateWl: (payload: WlPayload) => void;
+  onGenerateTf?: (payload: TfPayload) => void;
   isGenerating?: boolean;
 }) {
   const isKb = modalidade === "kettlebell_sport";
+  const isTf = modalidade === "treinamento_funcional";
 
   const [escolaKb, setEscolaKb] = useState<EscolaMetodologica>("auto");
   const [escolaWl, setEscolaWl] = useState<EscolaWeightlifting>("auto");
@@ -257,8 +260,15 @@ export function GerarTreinoModal({
   const [agachaCostas, setAgachaCostas] = useState<number | null>(null);
   const [agachaFrontal, setAgachaFrontal] = useState<number | null>(null);
 
-  const escolas = isKb ? ESCOLAS_KB : ESCOLAS_WL;
-  const escolaAtual: string = isKb ? escolaKb : escolaWl;
+  const [escolaTf, setEscolaTf] = useState<EscolaFuncional>("auto");
+  const [objetivoTf, setObjetivoTf] = useState<ObjetivoFuncional>("condicionamento_geral");
+  const [equipamentoTf, setEquipamentoTf] =
+    useState<EquipamentoFuncional>("academia_completa");
+  const [sedentarismo, setSedentarismo] = useState(false);
+  const [lesoes, setLesoes] = useState<LesaoLimitacao[]>([]);
+
+  const escolas = isTf ? ESCOLAS_TF : isKb ? ESCOLAS_KB : ESCOLAS_WL;
+  const escolaAtual: string = isTf ? escolaTf : isKb ? escolaKb : escolaWl;
   const descricaoEscola = escolas.find((e) => e.value === escolaAtual)?.descricao;
 
   const avisoKb =
@@ -273,6 +283,17 @@ export function GerarTreinoModal({
     );
 
   function handleSubmit() {
+    if (isTf) {
+      onGenerateTf?.({
+        escolaMetodologica: escolaTf,
+        nivelAtleta: nivel,
+        objetivo: objetivoTf,
+        equipamento: equipamentoTf,
+        sedentarismoProlongado: sedentarismo,
+        lesoes,
+      });
+      return;
+    }
     if (isKb) {
       const cargas: KbSportPayload["cargas"] = {};
       if (disciplina === "biathlon" || disciplina === "ambas") {
