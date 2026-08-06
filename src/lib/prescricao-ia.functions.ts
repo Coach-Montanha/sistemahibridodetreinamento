@@ -22,6 +22,12 @@ import {
   montarWlPrompt,
   type EscolaWeightlifting,
 } from "@/lib/weightlifting-ia.server";
+import {
+  TF_SYSTEM_PROMPT,
+  escolherEscolaFuncional,
+  montarFuncionalPrompt,
+  type EscolaFuncional,
+} from "@/lib/funcional-ia.server";
 
 const CARGA = z
   .object({
@@ -88,6 +94,54 @@ const WL = z
   .nullable()
   .optional();
 
+const TF = z
+  .object({
+    escolaMetodologica: z.enum([
+      "auto",
+      "fms_sfma",
+      "boyle",
+      "exos",
+      "dns",
+      "crossfit",
+      "original_strength",
+    ]),
+    nivelAtleta: z.enum(["iniciante", "intermediario", "avancado", "elite"]),
+    objetivo: z.enum([
+      "condicionamento_geral",
+      "performance_esportiva",
+      "reabilitacao_retorno",
+      "emagrecimento",
+      "hipertrofia_funcional",
+    ]),
+    equipamento: z.enum([
+      "peso_corporal",
+      "academia_completa",
+      "kettlebell_halteres",
+      "outdoor",
+    ]),
+    sedentarismoProlongado: z.boolean().default(false),
+    lesoes: z
+      .array(
+        z.object({
+          regiao: z.enum([
+            "lombar",
+            "joelho",
+            "ombro",
+            "quadril",
+            "tornozelo",
+            "core",
+            "outro",
+          ]),
+          fase: z.enum(["aguda", "em_recuperacao", "cronica_controlada"]),
+          observacaoLivre: z.string().max(300).nullable().default(null),
+        }),
+      )
+      .max(6)
+      .default([]),
+  })
+  .nullable()
+  .optional();
+
 const INPUT = z.object({
   programId: z.string().uuid(),
   prompt: z.string().max(4000).default(""),
@@ -95,6 +149,7 @@ const INPUT = z.object({
   escopoLabel: z.string().max(80).nullable().optional(),
   kb: KB,
   wl: WL,
+  tf: TF,
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
@@ -117,9 +172,10 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     if (!programa) throw new Error("Programa não encontrado ou sem permissão de acesso");
     const isKbSport = programa.metodologia === "kettlebell_sport";
     const isWl = programa.metodologia === "levantamento_peso";
-    if (programa.metodologia !== "musculacao" && !isKbSport && !isWl) {
+    const isTf = programa.metodologia === "treinamento_funcional";
+    if (programa.metodologia !== "musculacao" && !isKbSport && !isWl && !isTf) {
       throw new Error(
-        "Prescrever com IA está disponível apenas para Musculação, Kettlebell Sport e Levantamento de Peso",
+        "Prescrever com IA está disponível apenas para Musculação, Kettlebell Sport, Levantamento de Peso e Treinamento Funcional",
       );
     }
     if (isKbSport && !data.kb) {
@@ -127,6 +183,9 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     }
     if (isWl && !data.wl) {
       throw new Error("Configuração do Levantamento de Peso ausente");
+    }
+    if (isTf && !data.tf) {
+      throw new Error("Configuração do Treinamento Funcional ausente");
     }
 
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(
@@ -168,13 +227,37 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         : wl.escolaMetodologica
       : null;
 
+    const tf = data.tf ?? null;
+    const linhaTf: Exclude<EscolaFuncional, "auto"> | null = tf
+      ? tf.escolaMetodologica === "auto"
+        ? escolherEscolaFuncional({
+            lesoes: tf.lesoes as any,
+            objetivo: tf.objetivo,
+            nivel: tf.nivelAtleta,
+            sedentarismoProlongado: tf.sedentarismoProlongado,
+          })
+        : tf.escolaMetodologica
+      : null;
+
     const systemPrompt = isKbSport
       ? KB_SPORT_SYSTEM_PROMPT
       : isWl
         ? WL_SYSTEM_PROMPT
-        : SYSTEM_PROMPT;
+        : isTf
+          ? TF_SYSTEM_PROMPT
+          : SYSTEM_PROMPT;
     const userPrompt =
-      isWl && wl && linhaWl
+      isTf && tf && linhaTf
+        ? montarFuncionalPrompt({
+            tf: tf as any,
+            linha: linhaTf,
+            semanas: ctx.duracao_semanas,
+            diasPorSemana: ctx.dias_por_semana,
+            dataInicio: ctx.data_inicio,
+            escopoLabel: ctx.escopo_label,
+            instrucoes: data.prompt,
+          })
+        : isWl && wl && linhaWl
         ? montarWlPrompt({
             wl: wl as any,
             linha: linhaWl,

@@ -991,6 +991,7 @@ export type Database = {
         | "kettlebell_fitness"
         | "levantamento_peso"
         | "musculacao"
+        | "treinamento_funcional"
       session_status: "rascunho" | "publicada" | "arquivada"
       student_access_status: "convidado" | "ativo" | "inativo" | "expirado"
       user_role: "super_admin" | "coach" | "assistente" | "aluno"
@@ -1143,6 +1144,7 @@ export const Constants = {
         "kettlebell_fitness",
         "levantamento_peso",
         "musculacao",
+        "treinamento_funcional",
       ],
       session_status: ["rascunho", "publicada", "arquivada"],
       student_access_status: ["convidado", "ativo", "inativo", "expirado"],

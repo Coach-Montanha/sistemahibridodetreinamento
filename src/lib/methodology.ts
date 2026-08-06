@@ -3,7 +3,8 @@ export type Methodology =
   | "kettlebell_sport"
   | "kettlebell_fitness"
   | "levantamento_peso"
-  | "musculacao";
+  | "musculacao"
+  | "treinamento_funcional";
 
 export const METHODOLOGY_LABEL: Record<Methodology, string> = {
   hibrido: "Treinamento Híbrido",
@@ -11,6 +12,7 @@ export const METHODOLOGY_LABEL: Record<Methodology, string> = {
   kettlebell_fitness: "Kettlebell Fitness",
   levantamento_peso: "Levantamento de Peso",
   musculacao: "Musculação",
+  treinamento_funcional: "Treinamento Funcional",
 };
 
 export type BlockFormat =
