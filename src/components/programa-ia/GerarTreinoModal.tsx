@@ -32,9 +32,62 @@ import type {
   PontoFraco,
   WlPayload,
 } from "@/lib/weightlifting-ia.server";
+import type {
+  EquipamentoFuncional,
+  EscolaFuncional,
+  FaseLesao,
+  LesaoLimitacao,
+  ObjetivoFuncional,
+  RegiaoLesao,
+  TfPayload,
+} from "@/lib/funcional-ia.server";
 
-export type ModalidadeIa = "kettlebell_sport" | "levantamento_peso";
-export type { KbSportPayload, WlPayload };
+export type ModalidadeIa =
+  | "kettlebell_sport"
+  | "levantamento_peso"
+  | "treinamento_funcional";
+export type { KbSportPayload, WlPayload, TfPayload };
+
+const ESCOLAS_TF: { value: EscolaFuncional; label: string; descricao: string }[] = [
+  { value: "auto", label: "Deixar sistema escolher", descricao: "Seleção automática pelo perfil e limitações" },
+  { value: "fms_sfma", label: "FMS/SFMA (Gray Cook)", descricao: "Triagem e corretivos antes de carga" },
+  { value: "boyle", label: "Joint-by-Joint (Boyle)", descricao: "Unilaterais e performance esportiva" },
+  { value: "exos", label: "EXOS / Core Performance", descricao: "Sistema integrado com blocos fixos" },
+  { value: "dns", label: "DNS (Escola de Praga)", descricao: "Estabilização central e respiração" },
+  { value: "crossfit", label: "CrossFit", descricao: "Condicionamento geral variado e intenso" },
+  { value: "original_strength", label: "Original Strength", descricao: "Reset neuromotor e base de movimento" },
+];
+
+const OBJETIVOS_TF: { value: ObjetivoFuncional; label: string }[] = [
+  { value: "condicionamento_geral", label: "Condicionamento geral" },
+  { value: "performance_esportiva", label: "Performance esportiva" },
+  { value: "reabilitacao_retorno", label: "Reabilitação / retorno" },
+  { value: "emagrecimento", label: "Emagrecimento" },
+  { value: "hipertrofia_funcional", label: "Hipertrofia funcional" },
+];
+
+const EQUIPAMENTOS_TF: { value: EquipamentoFuncional; label: string }[] = [
+  { value: "peso_corporal", label: "Apenas peso corporal" },
+  { value: "academia_completa", label: "Academia completa" },
+  { value: "kettlebell_halteres", label: "Kettlebells e halteres" },
+  { value: "outdoor", label: "Outdoor" },
+];
+
+const REGIOES_TF: { value: RegiaoLesao; label: string }[] = [
+  { value: "lombar", label: "Lombar" },
+  { value: "joelho", label: "Joelho" },
+  { value: "ombro", label: "Ombro" },
+  { value: "quadril", label: "Quadril" },
+  { value: "tornozelo", label: "Tornozelo" },
+  { value: "core", label: "Core" },
+  { value: "outro", label: "Outro" },
+];
+
+const FASES_TF: { value: FaseLesao; label: string }[] = [
+  { value: "aguda", label: "Aguda (dor ativa)" },
+  { value: "em_recuperacao", label: "Em recuperação" },
+  { value: "cronica_controlada", label: "Crônica controlada" },
+];
 
 const ESCOLAS_KB: { value: EscolaMetodologica; label: string; descricao: string }[] = [
   { value: "auto", label: "Deixar sistema escolher", descricao: "Seleção automática pelo perfil do atleta" },
