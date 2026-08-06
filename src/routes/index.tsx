@@ -13,7 +13,7 @@ import { Mountain } from "lucide-react";
 
 const searchSchema = z.object({ modo: z.enum(["login", "cadastro"]).optional() });
 
-export const Route = createFileRoute("/auth")({
+export const Route = createFileRoute("/")({
   validateSearch: searchSchema,
   component: AuthPage,
 });
