@@ -57,6 +57,7 @@ import {
   type Methodology,
 } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
+import { ExerciseMediaUpload, type MediaItem } from "@/components/ExerciseMediaUpload";
 
 export const Route = createFileRoute("/_authenticated/app/exercicios")({
   component: ExerciciosPage,
@@ -92,7 +93,10 @@ function ExerciciosPage() {
   const { data: exercises = [] } = useQuery({
     queryKey: ["exercises", q, metFilter, equipFilter, untaggedOnly],
     queryFn: async () => {
-      let query = supabase.from("exercises").select("*").order("nome_pt");
+      let query = supabase
+        .from("exercises")
+        .select("*, exercise_media(*)")
+        .order("nome_pt");
       if (q) query = query.ilike("nome_pt", `%${q}%`);
       if (metFilter !== "todos") query = query.contains("metodologias", [metFilter]);
       if (equipFilter !== "todos") query = query.contains("equipamento", [equipFilter]);
@@ -724,6 +728,7 @@ function ExerciseDialog({
   const [equip, setEquip] = useState<Equipamento | "">("");
   const [unilateral, setUnilateral] = useState(false);
   const [instr, setInstr] = useState("");
+  const [media, setMedia] = useState<MediaItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [duplicates, setDuplicates] = useState<any[] | null>(null);
 
@@ -739,6 +744,12 @@ function ExerciseDialog({
     setEquip(((editing?.equipamento ?? [])[0] as Equipamento) ?? "");
     setUnilateral(editing?.unilateral ?? false);
     setInstr(editing?.instrucoes ?? "");
+    setMedia(
+      (editing?.exercise_media ?? []).map((m: any) => ({
+        ...m,
+        tipo: m.storage_path?.startsWith("youtube-") ? "youtube" : m.tipo,
+      }))
+    );
     setDuplicates(null);
   }, [open, editing]);
 
@@ -793,6 +804,25 @@ function ExerciseDialog({
         if (error) throw error;
         exerciseId = data.id;
         clonedFromGlobal = isEditingGlobal;
+      }
+
+      // Persistir mídias
+      if (exerciseId) {
+        // Primeiro remove as mídias atuais do banco para este exercício (vínculos)
+        // No storage as mídias já foram gerenciadas pelo componente ExerciseMediaUpload
+        await supabase.from("exercise_media").delete().eq("exercise_id", exerciseId);
+        
+        if (media.length > 0) {
+          const { error: mediaError } = await supabase.from("exercise_media").insert(
+            media.map((m) => ({
+              exercise_id: exerciseId,
+              storage_path: m.storage_path,
+              url_publica: m.url_publica,
+              tipo: m.tipo === "youtube" ? "video" : m.tipo, // Map youtube to video kind since db enum is restricted
+            }))
+          );
+          if (mediaError) throw mediaError;
+        }
       }
 
 
@@ -910,6 +940,14 @@ function ExerciseDialog({
           <div>
             <Label>Instruções</Label>
             <Textarea rows={3} value={instr} onChange={(e) => setInstr(e.target.value)} />
+          </div>
+          <div className="pt-2">
+            <Label className="mb-2 block">Mídia (Fotos, Vídeos, YouTube)</Label>
+            <ExerciseMediaUpload 
+              exerciseId={editing?.id}
+              initialMedia={media}
+              onMediaChange={setMedia}
+            />
           </div>
         </div>
         <DialogFooter>

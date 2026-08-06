@@ -20,14 +20,14 @@ import { Plus } from "lucide-react";
 export function ExercisePicker({
   onPick,
 }: {
-  onPick: (ex: { id: string; nome_pt: string }) => void;
+  onPick: (ex: any) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const { data = [] } = useQuery({
     queryKey: ["exercise-picker", q],
     queryFn: async () => {
-      let query = supabase.from("exercises").select("id, nome_pt").order("nome_pt").limit(30);
+      let query = supabase.from("exercises").select("*, exercise_media(*)").order("nome_pt").limit(30);
       if (q) query = query.ilike("nome_pt", `%${q}%`);
       const { data, error } = await query;
       if (error) throw error;

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,21 @@ import { ExercisePicker } from "./ExercisePicker";
 import { useBuilder, type BuilderBlock } from "@/lib/session-builder-store";
 import { SetsEditor } from "./SetsEditor";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
+import { 
+  Play, 
+  Video, 
+  Image as ImageIcon, 
+  Youtube as YoutubeIcon, 
+  ExternalLink,
+  ChevronRight,
+  ChevronLeft
+} from "lucide-react";
+import {
+  Dialog as UIDialog,
+  DialogContent as UIDialogContent,
+  DialogHeader as UIDialogHeader,
+  DialogTitle as UIDialogTitle,
+} from "@/components/ui/dialog";
 
 const GRUPOS = ["A", "B", "C", "D"] as const;
 const NOME_COMBINACAO: Record<number, string> = { 2: "Bi-set", 3: "Tri-set" };
@@ -35,6 +50,8 @@ function BlockExercises({
   const removeExercise = useBuilder((s) => s.removeExercise);
   const updateExercise = useBuilder((s) => s.updateExercise);
   const reorderExercises = useBuilder((s) => s.reorderExercises);
+  const [previewMedia, setPreviewMedia] = useState<any[] | null>(null);
+  
   void modo;
   const lista = slot
     ? block.exercises.filter((e) => (e.slot ?? "aquecimento") === slot)
@@ -70,7 +87,38 @@ function BlockExercises({
               className="flex-col items-stretch bg-background/60 p-2 pl-1.5"
               contentClassName="flex-col items-stretch gap-2"
             >
-              <div className="group flex w-full items-center gap-2">
+              <div className="group flex w-full items-center gap-3">
+                {e.exercise_id && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const media = (e as any).exercise?.exercise_media;
+                      if (media?.length) setPreviewMedia(media);
+                    }}
+                    className="group/thumb relative h-10 w-16 shrink-0 overflow-hidden rounded border border-border bg-black/5 transition-colors hover:border-primary/50"
+                  >
+                    {(() => {
+                      const media = (e as any).exercise?.exercise_media?.[0];
+                      if (!media) return <ImageIcon className="h-4 w-4 text-muted-foreground/40" />;
+                      const isYoutube = media.storage_path?.startsWith("youtube-");
+                      if (isYoutube || media.tipo === "video") {
+                        return (
+                          <>
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/thumb:bg-black/40">
+                              <Play className="h-3 w-3 fill-white text-white" />
+                            </div>
+                            {isYoutube ? (
+                              <div className="h-full w-full bg-muted/20" />
+                            ) : (
+                              <video src={media.url_publica} className="h-full w-full object-cover" />
+                            )}
+                          </>
+                        );
+                      }
+                      return <img src={media.url_publica} className="h-full w-full object-cover" />;
+                    })()}
+                  </button>
+                )}
                 <div className="min-w-0 flex-1 truncate text-sm font-medium leading-6 text-foreground">
                   {e.nome_livre ?? "Exercício"}
                   {e.grupo && rotuloGrupo[e.grupo] && (
@@ -148,10 +196,89 @@ function BlockExercises({
             exercise_id: ex.id,
             nome_livre: ex.nome_pt,
             slot: slot ?? null,
-          })
+            exercise: ex, // Guardamos o objeto completo para ter acesso às mídias
+          } as any)
         }
       />
+
+      <MediaPreviewDialog 
+        open={!!previewMedia} 
+        onOpenChange={(v) => !v && setPreviewMedia(null)} 
+        media={previewMedia ?? []} 
+      />
     </div>
+  );
+}
+
+function MediaPreviewDialog({ 
+  open, 
+  onOpenChange, 
+  media 
+}: { 
+  open: boolean; 
+  onOpenChange: (v: boolean) => void; 
+  media: any[] 
+}) {
+  const [index, setIndex] = useState(0);
+  const current = media[index];
+  
+  if (!current) return null;
+  const isYoutube = current.storage_path?.startsWith("youtube-");
+
+  return (
+    <UIDialog open={open} onOpenChange={onOpenChange}>
+      <UIDialogContent className="max-w-3xl border-none bg-black/95 p-0 text-white shadow-2xl overflow-hidden">
+        <UIDialogHeader className="absolute left-0 top-0 z-10 w-full bg-gradient-to-b from-black/80 to-transparent p-4">
+          <UIDialogTitle className="text-sm font-medium text-white/90">
+            Mídia do Exercício {media.length > 1 && `(${index + 1}/${media.length})`}
+          </UIDialogTitle>
+        </UIDialogHeader>
+        
+        <div className="relative aspect-video w-full bg-black">
+          {isYoutube ? (
+            <iframe
+              src={current.url_publica}
+              className="h-full w-full"
+              allowFullScreen
+            />
+          ) : current.tipo === "video" ? (
+            <video
+              src={current.url_publica}
+              controls
+              autoPlay
+              className="h-full w-full object-contain"
+            />
+          ) : (
+            <img
+              src={current.url_publica}
+              alt="Mídia"
+              className="h-full w-full object-contain"
+            />
+          )}
+
+          {media.length > 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute left-2 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full bg-black/40 text-white hover:bg-black/60"
+                onClick={() => setIndex((i) => (i === 0 ? media.length - 1 : i - 1))}
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full bg-black/40 text-white hover:bg-black/60"
+                onClick={() => setIndex((i) => (i === media.length - 1 ? 0 : i + 1))}
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </>
+          )}
+        </div>
+      </UIDialogContent>
+    </UIDialog>
   );
 }
 

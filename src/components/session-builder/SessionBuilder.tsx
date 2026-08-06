@@ -113,7 +113,7 @@ export function SessionBuilder({
       if (!session) return;
       const { data: blocks } = await supabase
         .from("session_blocks")
-        .select("*, session_block_exercises(*, exercises(*))")
+        .select("*, session_block_exercises(*, exercises(*, exercise_media(*)))")
         .eq("session_id", sessionId)
         .order("ordem");
       state.hydrate({
@@ -134,6 +134,7 @@ export function SessionBuilder({
               tempId: e.id,
               exercise_id: e.exercise_id,
               nome_livre: e.nome_livre ?? e.exercises?.nome_pt ?? null,
+              exercise: e.exercises, // Inclui o objeto do exercício com mídias para o builder
               ordem: e.ordem,
               reps: e.reps,
               series: e.series,
