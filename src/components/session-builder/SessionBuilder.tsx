@@ -113,7 +113,7 @@ export function SessionBuilder({
       if (!session) return;
       const { data: blocks } = await supabase
         .from("session_blocks")
-        .select("*, session_block_exercises(*, exercises(*))")
+        .select("*, session_block_exercises(*, exercises(*, exercise_media(*)))")
         .eq("session_id", sessionId)
         .order("ordem");
       state.hydrate({

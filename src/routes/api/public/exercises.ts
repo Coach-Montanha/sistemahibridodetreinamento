@@ -32,7 +32,8 @@ export const Route = createFileRoute("/api/public/exercises")({
               nome_en, 
               instrucoes, 
               metodologias, 
-              equipamento
+              equipamento,
+              exercise_media(*)
             `)
             .order("nome_pt");
 
@@ -52,6 +53,10 @@ export const Route = createFileRoute("/api/public/exercises")({
                 description: ex.instrucoes,
                 methodologies: ex.metodologias,
                 equipment: ex.equipamento,
+                media: (ex.exercise_media ?? []).map((m: any) => ({
+                  url: m.url_publica,
+                  type: m.storage_path?.startsWith("youtube-") ? "youtube" : m.tipo,
+                })),
               };
             }),
           });

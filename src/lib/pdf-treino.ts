@@ -70,7 +70,7 @@ export async function prepararTreinoPdf(sessionIds: string[]): Promise<TreinoPdf
   const { data: blocks } = await supabase
     .from("session_blocks")
     .select(
-      "id, session_id, ordem, titulo, formato, session_block_exercises(ordem, reps, series, carga_kg, descanso_seg, observacoes, lado, nome_livre, exercises(*))",
+      "id, session_id, ordem, titulo, formato, session_block_exercises(ordem, reps, series, carga_kg, descanso_seg, observacoes, lado, nome_livre, exercises(*, exercise_media(*)))",
     )
     .in("session_id", ordenadas.map((s: any) => s.id))
     .order("ordem");
