@@ -12,18 +12,16 @@ import {
   Youtube, 
   Loader2,
   Trash2,
-  RefreshCcw,
-  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 
-export type MediaType = "image" | "video" | "youtube";
+export type MediaType = "video" | "imagem" | "gif" | "youtube";
 
 export interface MediaItem {
   id?: string;
   storage_path: string;
-  media_url: string;
-  media_type: MediaType;
+  url_publica: string;
+  tipo: MediaType;
 }
 
 interface ExerciseMediaUploadProps {
@@ -61,7 +59,7 @@ export function ExerciseMediaUpload({
 
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      const type: MediaType = file.type.startsWith("video/") ? "video" : "image";
+      const type: MediaType = file.type.startsWith("video/") ? "video" : "imagem";
 
       const { error: uploadError } = await supabase.storage
         .from("exercise-media")
@@ -78,8 +76,8 @@ export function ExerciseMediaUpload({
 
       const newItem: MediaItem = {
         storage_path: fileName,
-        media_url: data.signedUrl,
-        media_type: type
+        url_publica: data.signedUrl,
+        tipo: type
       };
 
       const updatedMedia = [...media, newItem];
@@ -109,8 +107,8 @@ export function ExerciseMediaUpload({
       
       const newItem: MediaItem = {
         storage_path: `youtube-${videoId}`,
-        media_url: embedUrl,
-        media_type: "youtube"
+        url_publica: embedUrl,
+        tipo: "youtube"
       };
 
       const updatedMedia = [...media, newItem];
@@ -127,7 +125,7 @@ export function ExerciseMediaUpload({
     const item = media[index];
     
     // Se for arquivo do storage, tenta remover do storage também
-    if (item.media_type !== "youtube") {
+    if (item.tipo !== "youtube") {
       try {
         await supabase.storage.from("exercise-media").remove([item.storage_path]);
       } catch (err) {
@@ -198,21 +196,21 @@ export function ExerciseMediaUpload({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {media.map((item, index) => (
             <div key={index} className="group relative overflow-hidden rounded-lg border border-border bg-card aspect-video">
-              {item.media_type === "youtube" ? (
+              {item.tipo === "youtube" ? (
                 <iframe
-                  src={item.media_url}
+                  src={item.url_publica}
                   className="h-full w-full"
                   allowFullScreen
                 />
-              ) : item.media_type === "video" ? (
+              ) : item.tipo === "video" ? (
                 <video 
-                  src={item.media_url} 
+                  src={item.url_publica} 
                   controls 
                   className="h-full w-full object-contain bg-black"
                 />
               ) : (
                 <img 
-                  src={item.media_url} 
+                  src={item.url_publica} 
                   alt="Mídia do exercício" 
                   loading="lazy"
                   className="h-full w-full object-cover"

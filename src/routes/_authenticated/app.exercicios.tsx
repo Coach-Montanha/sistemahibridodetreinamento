@@ -812,8 +812,8 @@ function ExerciseDialog({
             media.map((m) => ({
               exercise_id: exerciseId,
               storage_path: m.storage_path,
-              media_url: m.media_url,
-              media_type: m.media_type,
+              url_publica: m.url_publica,
+              tipo: m.tipo === "youtube" ? "video" : m.tipo, // Map youtube to video kind since db enum is restricted
             }))
           );
           if (mediaError) throw mediaError;
