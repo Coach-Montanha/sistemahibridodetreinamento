@@ -412,11 +412,13 @@ export function GerarTreinoModal({
           <DialogTitle className="flex items-center gap-2 text-base">
             <Wand2 className="h-5 w-5 text-primary" />
             Configurar geração —{" "}
-            {isTf
-              ? "Treinamento Funcional"
-              : isKb
-                ? "Kettlebell Sport"
-                : "Levantamento de Peso"}
+            {isCo
+              ? "Corrida"
+              : isTf
+                ? "Treinamento Funcional"
+                : isKb
+                  ? "Kettlebell Sport"
+                  : "Levantamento de Peso"}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {titulo} · {escopoLabel} · {diasPorSemana} sessão(ões)/semana · início em{" "}
@@ -430,11 +432,13 @@ export function GerarTreinoModal({
             <Select
               value={escolaAtual}
               onValueChange={(v) =>
-                isTf
-                  ? setEscolaTf(v as EscolaFuncional)
-                  : isKb
-                    ? setEscolaKb(v as EscolaMetodologica)
-                    : setEscolaWl(v as EscolaWeightlifting)
+                isCo
+                  ? setEscolaCo(v as EscolaCorrida)
+                  : isTf
+                    ? setEscolaTf(v as EscolaFuncional)
+                    : isKb
+                      ? setEscolaKb(v as EscolaMetodologica)
+                      : setEscolaWl(v as EscolaWeightlifting)
               }
             >
               <SelectTrigger>
@@ -468,7 +472,26 @@ export function GerarTreinoModal({
               </Select>
             </div>
 
-            {isTf ? (
+            {isCo ? (
+              <div className="space-y-1.5">
+                <Label>Distância-alvo</Label>
+                <Select
+                  value={distanciaCo}
+                  onValueChange={(v) => setDistanciaCo(v as DistanciaAlvo)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DISTANCIAS_CO.map((d) => (
+                      <SelectItem key={d.value} value={d.value}>
+                        {d.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : isTf ? (
               <div className="space-y-1.5">
                 <Label>Objetivo principal</Label>
                 <Select
