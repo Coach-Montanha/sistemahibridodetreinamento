@@ -50,6 +50,7 @@ export type RotinaContexto = {
   objetivos: string | null;
   dias_por_semana: number | null;
   escopo_label: string | null;
+  resumo_anterior?: string | null;
 };
 
 export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): string {
@@ -66,6 +67,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     `- Período: ${ctx.data_inicio ?? "não informado"} até ${ctx.data_fim ?? "não informado"}`,
     `- Nomenclatura dos dias: ${ctx.nomenclatura} (ex.: ${exemplo})`,
     `- Sessões já existentes: ${ctx.sessoes_existentes}`,
+    ctx.resumo_anterior ? `- CONTEXTO DA PROGRAMAÇÃO ATUAL (O que já foi feito):\n${ctx.resumo_anterior}` : null,
     ctx.objetivos ? `- Objetivos: ${ctx.objetivos}` : null,
     "",
     dias
