@@ -393,8 +393,7 @@ export function PrescreverIaDialog({
             {programa?.titulo
               ? `Gerando para "${programa.titulo}".`
               : "Gere uma prescrição estruturada."}{" "}
-            Motor dedicado de musculação: a IA já considera período, objetivos e
-            nomenclatura dos dias da rotina — descreva a divisão e o volume desejados.
+            Motor dedicado de musculação: a IA já analisa o histórico da rotina (se houver) para propor a continuidade didática. Descreva a próxima fase ou evolução desejada.
           </DialogDescription>
         </DialogHeader>
 
