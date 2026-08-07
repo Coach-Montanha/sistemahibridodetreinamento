@@ -28,6 +28,12 @@ import {
   montarFuncionalPrompt,
   type EscolaFuncional,
 } from "@/lib/funcional-ia.server";
+import {
+  CO_SYSTEM_PROMPT,
+  escolherEscolaCorrida,
+  montarCorridaPrompt,
+  type EscolaCorrida,
+} from "@/lib/corrida-ia.server";
 
 const CARGA = z
   .object({
@@ -150,6 +156,7 @@ const INPUT = z.object({
   kb: KB,
   wl: WL,
   tf: TF,
+  co: CO,
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
