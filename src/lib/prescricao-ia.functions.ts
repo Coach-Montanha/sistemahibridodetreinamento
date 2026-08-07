@@ -227,9 +227,9 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const isWl = programa.metodologia === "levantamento_peso";
     const isTf = programa.metodologia === "treinamento_funcional";
     const isCo = programa.metodologia === "corrida";
-    if (programa.metodologia !== "musculacao" && !isKbSport && !isWl && !isTf && !isCo) {
+    if (programa.metodologia !== "musculacao" && programa.metodologia !== "hibrido" && !isKbSport && !isWl && !isTf && !isCo) {
       throw new Error(
-        "Prescrever com IA está disponível apenas para Musculação, Kettlebell Sport, Levantamento de Peso, Treinamento Funcional e Corrida",
+        "Prescrever com IA está disponível apenas para Musculação, Híbrido, Kettlebell Sport, Levantamento de Peso, Treinamento Funcional e Corrida",
       );
     }
     if (isKbSport && !data.kb) {
