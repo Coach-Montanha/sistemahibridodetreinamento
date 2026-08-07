@@ -36,6 +36,7 @@ const GerarTreinoModal = lazy(() =>
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
 import type { TfPayload } from "@/lib/funcional-ia.server";
+import type { CorridaPayload } from "@/lib/corrida-ia.server";
 
 const SEMANAS_POR_ESCOPO: Record<string, number> = {
   sessao: 1,
@@ -82,12 +83,14 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const [kbConfig, setKbConfig] = useState<KbSportPayload | null>(null);
   const [wlConfig, setWlConfig] = useState<WlPayload | null>(null);
   const [tfConfig, setTfConfig] = useState<TfPayload | null>(null);
+  const [coConfig, setCoConfig] = useState<CorridaPayload | null>(null);
   const [kbModalOpen, setKbModalOpen] = useState(false);
   const isMusculacao = metodologia === "musculacao";
   const isKbSport = metodologia === "kettlebell_sport";
   const isWeightlifting = metodologia === "levantamento_peso";
   const isFuncional = metodologia === "treinamento_funcional";
-  const usaModalIa = isKbSport || isWeightlifting || isFuncional;
+  const isCorrida = metodologia === "corrida";
+  const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida;
 
   const prefs = useQuery({
     queryKey: ["generator-prefs", metodologia],
@@ -157,6 +160,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
     kb?: KbSportPayload;
     wl?: WlPayload;
     tf?: TfPayload;
+    co?: CorridaPayload;
   }) {
     setLoading(true);
     try {
@@ -177,6 +181,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       setKbConfig(cfg.kb ?? null);
       setWlConfig(cfg.wl ?? null);
       setTfConfig(cfg.tf ?? null);
+      setCoConfig(cfg.co ?? null);
       setKbModalOpen(false);
       setIaEscopo({
         label: ESCOPO_LABEL[escopo] ?? escopo,
@@ -228,6 +233,17 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
               gerar, criamos a rotina e abrimos o <strong className="text-foreground">Prescrever
               com IA</strong>, onde você descreve a divisão desejada e revisa a prévia
               antes de salvar.
+            </p>
+          </div>
+        ) : isCorrida ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <p className="flex-1 leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">Motor por linha metodológica.</strong>{" "}
+              Ao gerar, você informa distância-alvo, volume semanal, marca recente e
+              lesões, e escolhe a linha (Daniels/VDOT, Lydiard, Canova, Hansons,
+              Pfitzinger, Horwill, Koop) ou deixa o sistema decidir pela distância e base
+              aeróbica.
             </p>
           </div>
         ) : isFuncional ? (
@@ -390,9 +406,11 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             modalidade={
               isKbSport
                 ? "kettlebell_sport"
-                : isFuncional
-                  ? "treinamento_funcional"
-                  : "levantamento_peso"
+                : isCorrida
+                  ? "corrida"
+                  : isFuncional
+                    ? "treinamento_funcional"
+                    : "levantamento_peso"
             }
             titulo={titulo}
             escopoLabel={ESCOPO_LABEL[escopo] ?? escopo}
@@ -402,6 +420,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             onGenerateKb={(kb) => gerarComEscola({ kb })}
             onGenerateWl={(wl) => gerarComEscola({ wl })}
             onGenerateTf={(tf) => gerarComEscola({ tf })}
+            onGenerateCo={(co) => gerarComEscola({ co })}
           />
         </Suspense>
       )}
@@ -414,6 +433,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             kb={kbConfig}
             wl={wlConfig}
             tf={tfConfig}
+            co={coConfig}
             onOpenChange={(o: boolean) => {
               if (!o) {
                 setIaPrograma(null);
@@ -421,6 +441,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
                 setKbConfig(null);
                 setWlConfig(null);
                 setTfConfig(null);
+                setCoConfig(null);
                 navigate({ to: "/app/programas" });
               }
             }}
