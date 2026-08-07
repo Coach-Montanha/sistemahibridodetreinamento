@@ -380,7 +380,15 @@ export function PrescreverIaDialog({
             </span>
             Prescrever com IA
             <Badge variant="secondary" className="ml-1 text-[10px] uppercase tracking-wide">
-              {kb ? "Kettlebell Sport" : wl ? "Levantamento de Peso" : "Musculação"}
+              {kb
+                ? "Kettlebell Sport"
+                : wl
+                  ? "Levantamento de Peso"
+                  : tf
+                    ? "Treinamento Funcional"
+                    : co
+                      ? "Corrida"
+                      : "Musculação"}
             </Badge>
           </DialogTitle>
           <DialogDescription className="text-xs">
