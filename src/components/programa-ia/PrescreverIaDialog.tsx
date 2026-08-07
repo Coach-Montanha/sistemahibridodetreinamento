@@ -289,7 +289,9 @@ export function PrescreverIaDialog({
               ? "kb_timed_sets"
               : wl
                 ? "forca_tecnica_pct"
-                : "bodybuilding_sets",
+                : co
+                  ? "livre"
+                  : "bodybuilding_sets",
             titulo: dia.day_label || dia.description || "Bloco principal",
             config: gruposDoDia(dia),
           })
