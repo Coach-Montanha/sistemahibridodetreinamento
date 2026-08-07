@@ -257,6 +257,7 @@ export function GerarTreinoModal({
   onGenerateKb,
   onGenerateWl,
   onGenerateTf,
+  onGenerateCo,
   isGenerating = false,
 }: {
   open: boolean;
@@ -269,10 +270,13 @@ export function GerarTreinoModal({
   onGenerateKb: (payload: KbSportPayload) => void;
   onGenerateWl: (payload: WlPayload) => void;
   onGenerateTf?: (payload: TfPayload) => void;
+  onGenerateCo?: (payload: CorridaPayload) => void;
   isGenerating?: boolean;
 }) {
   const isKb = modalidade === "kettlebell_sport";
   const isTf = modalidade === "treinamento_funcional";
+  const isCo = modalidade === "corrida";
+  const isWlMod = !isKb && !isTf && !isCo;
 
   const [escolaKb, setEscolaKb] = useState<EscolaMetodologica>("auto");
   const [escolaWl, setEscolaWl] = useState<EscolaWeightlifting>("auto");
@@ -301,15 +305,36 @@ export function GerarTreinoModal({
   const [sedentarismo, setSedentarismo] = useState(false);
   const [lesoes, setLesoes] = useState<LesaoLimitacao[]>([]);
 
-  const escolas = isTf ? ESCOLAS_TF : isKb ? ESCOLAS_KB : ESCOLAS_WL;
-  const escolaAtual: string = isTf ? escolaTf : isKb ? escolaKb : escolaWl;
+  const [escolaCo, setEscolaCo] = useState<EscolaCorrida>("auto");
+  const [distanciaCo, setDistanciaCo] = useState<DistanciaAlvo>("10k");
+  const [volumeKm, setVolumeKm] = useState<number | null>(null);
+  const [freqAtual, setFreqAtual] = useState<number | null>(null);
+  const [marcaDist, setMarcaDist] = useState<DistanciaAlvo | "nenhuma">("nenhuma");
+  const [marcaTempo, setMarcaTempo] = useState("");
+  const [dataProva, setDataProva] = useState("");
+  const [terreno, setTerreno] = useState<TerrenoAlvo | "nao_informado">("nao_informado");
+  const [altaFrequencia, setAltaFrequencia] = useState(false);
+
+  const escolas = isCo
+    ? ESCOLAS_CO
+    : isTf
+      ? ESCOLAS_TF
+      : isKb
+        ? ESCOLAS_KB
+        : ESCOLAS_WL;
+  const escolaAtual: string = isCo
+    ? escolaCo
+    : isTf
+      ? escolaTf
+      : isKb
+        ? escolaKb
+        : escolaWl;
   const descricaoEscola = escolas.find((e) => e.value === escolaAtual)?.descricao;
 
   const avisoKb =
     isKb && escolaKb === "denisov" && (nivel === "iniciante" || nivel === "intermediario");
   const avisoWl =
-    !isKb &&
-    !isTf &&
+    isWlMod &&
     escolaWl === "bulgara" &&
     !(
       (nivel === "elite" || nivel === "avancado") &&
@@ -318,6 +343,22 @@ export function GerarTreinoModal({
     );
 
   function handleSubmit() {
+    if (isCo) {
+      onGenerateCo?.({
+        escolaMetodologica: escolaCo,
+        nivelAtleta: nivel,
+        distanciaAlvo: distanciaCo,
+        volumeSemanalKm: volumeKm,
+        frequenciaSemanalAtual: freqAtual,
+        marcaRecenteDistancia: marcaDist === "nenhuma" ? null : marcaDist,
+        marcaRecenteTempo: marcaTempo.trim() || null,
+        dataProvaAlvo: dataProva || null,
+        terreno: terreno === "nao_informado" ? null : terreno,
+        preferenciaAltaFrequencia: altaFrequencia,
+        lesoes,
+      });
+      return;
+    }
     if (isTf) {
       onGenerateTf?.({
         escolaMetodologica: escolaTf,
