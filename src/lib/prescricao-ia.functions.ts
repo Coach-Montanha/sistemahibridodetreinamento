@@ -268,6 +268,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     const ctx = {
       titulo: programa.titulo ?? "Programa",
+      metodologia: programa.metodologia,
       duracao_semanas: programa.duracao_semanas ?? 1,
       data_inicio: programa.data_inicio ?? null,
       data_fim: calcularDataFim(programa.data_inicio ?? null, programa.duracao_semanas ?? 1),
