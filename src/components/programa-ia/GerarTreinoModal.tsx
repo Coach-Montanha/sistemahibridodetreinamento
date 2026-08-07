@@ -41,12 +41,46 @@ import type {
   RegiaoLesao,
   TfPayload,
 } from "@/lib/funcional-ia.server";
+import type {
+  CorridaPayload,
+  DistanciaAlvo,
+  EscolaCorrida,
+  TerrenoAlvo,
+} from "@/lib/corrida-ia.server";
 
 export type ModalidadeIa =
   | "kettlebell_sport"
   | "levantamento_peso"
-  | "treinamento_funcional";
-export type { KbSportPayload, WlPayload, TfPayload };
+  | "treinamento_funcional"
+  | "corrida";
+export type { KbSportPayload, WlPayload, TfPayload, CorridaPayload };
+
+const ESCOLAS_CO: { value: EscolaCorrida; label: string; descricao: string }[] = [
+  { value: "auto", label: "Deixar sistema escolher", descricao: "Seleção pela distância-alvo, nível, volume e lesões" },
+  { value: "daniels", label: "Daniels / VDOT", descricao: "Cinco ritmos calculados a partir de uma marca recente" },
+  { value: "lydiard", label: "Lydiard", descricao: "Base aeróbica e periodização clássica em fases" },
+  { value: "canova", label: "Canova", descricao: "Extensão do ritmo de prova — 21k/42k avançado/elite" },
+  { value: "hansons", label: "Hansons", descricao: "Fadiga cumulativa, 6 dias/semana, long run curto" },
+  { value: "pfitzinger", label: "Pfitzinger", descricao: "Limiar + long run tradicional (32-37 km)" },
+  { value: "horwill", label: "Horwill / 5 ritmos", descricao: "Multi-Tier para 5k, 10k e meio-fundo" },
+  { value: "koop", label: "Koop / Ultra", descricao: "Ultramaratona: fitness, especificidade e nutrição" },
+];
+
+const DISTANCIAS_CO: { value: DistanciaAlvo; label: string }[] = [
+  { value: "corrida_rua", label: "Corrida de rua (geral)" },
+  { value: "5k", label: "5 km" },
+  { value: "10k", label: "10 km" },
+  { value: "21k", label: "Meia maratona (21 km)" },
+  { value: "42k", label: "Maratona (42 km)" },
+  { value: "ultramaratona", label: "Ultramaratona" },
+];
+
+const TERRENOS_CO: { value: TerrenoAlvo; label: string }[] = [
+  { value: "estrada", label: "Estrada / asfalto" },
+  { value: "trilha", label: "Trilha" },
+  { value: "montanha", label: "Montanha" },
+  { value: "pista", label: "Pista de atletismo" },
+];
 
 const ESCOLAS_TF: { value: EscolaFuncional; label: string; descricao: string }[] = [
   { value: "auto", label: "Deixar sistema escolher", descricao: "Seleção automática pelo perfil e limitações" },
@@ -223,6 +257,7 @@ export function GerarTreinoModal({
   onGenerateKb,
   onGenerateWl,
   onGenerateTf,
+  onGenerateCo,
   isGenerating = false,
 }: {
   open: boolean;
@@ -235,10 +270,13 @@ export function GerarTreinoModal({
   onGenerateKb: (payload: KbSportPayload) => void;
   onGenerateWl: (payload: WlPayload) => void;
   onGenerateTf?: (payload: TfPayload) => void;
+  onGenerateCo?: (payload: CorridaPayload) => void;
   isGenerating?: boolean;
 }) {
   const isKb = modalidade === "kettlebell_sport";
   const isTf = modalidade === "treinamento_funcional";
+  const isCo = modalidade === "corrida";
+  const isWlMod = !isKb && !isTf && !isCo;
 
   const [escolaKb, setEscolaKb] = useState<EscolaMetodologica>("auto");
   const [escolaWl, setEscolaWl] = useState<EscolaWeightlifting>("auto");
@@ -267,15 +305,36 @@ export function GerarTreinoModal({
   const [sedentarismo, setSedentarismo] = useState(false);
   const [lesoes, setLesoes] = useState<LesaoLimitacao[]>([]);
 
-  const escolas = isTf ? ESCOLAS_TF : isKb ? ESCOLAS_KB : ESCOLAS_WL;
-  const escolaAtual: string = isTf ? escolaTf : isKb ? escolaKb : escolaWl;
+  const [escolaCo, setEscolaCo] = useState<EscolaCorrida>("auto");
+  const [distanciaCo, setDistanciaCo] = useState<DistanciaAlvo>("10k");
+  const [volumeKm, setVolumeKm] = useState<number | null>(null);
+  const [freqAtual, setFreqAtual] = useState<number | null>(null);
+  const [marcaDist, setMarcaDist] = useState<DistanciaAlvo | "nenhuma">("nenhuma");
+  const [marcaTempo, setMarcaTempo] = useState("");
+  const [dataProva, setDataProva] = useState("");
+  const [terreno, setTerreno] = useState<TerrenoAlvo | "nao_informado">("nao_informado");
+  const [altaFrequencia, setAltaFrequencia] = useState(false);
+
+  const escolas = isCo
+    ? ESCOLAS_CO
+    : isTf
+      ? ESCOLAS_TF
+      : isKb
+        ? ESCOLAS_KB
+        : ESCOLAS_WL;
+  const escolaAtual: string = isCo
+    ? escolaCo
+    : isTf
+      ? escolaTf
+      : isKb
+        ? escolaKb
+        : escolaWl;
   const descricaoEscola = escolas.find((e) => e.value === escolaAtual)?.descricao;
 
   const avisoKb =
     isKb && escolaKb === "denisov" && (nivel === "iniciante" || nivel === "intermediario");
   const avisoWl =
-    !isKb &&
-    !isTf &&
+    isWlMod &&
     escolaWl === "bulgara" &&
     !(
       (nivel === "elite" || nivel === "avancado") &&
@@ -284,6 +343,22 @@ export function GerarTreinoModal({
     );
 
   function handleSubmit() {
+    if (isCo) {
+      onGenerateCo?.({
+        escolaMetodologica: escolaCo,
+        nivelAtleta: nivel,
+        distanciaAlvo: distanciaCo,
+        volumeSemanalKm: volumeKm,
+        frequenciaSemanalAtual: freqAtual,
+        marcaRecenteDistancia: marcaDist === "nenhuma" ? null : marcaDist,
+        marcaRecenteTempo: marcaTempo.trim() || null,
+        dataProvaAlvo: dataProva || null,
+        terreno: terreno === "nao_informado" ? null : terreno,
+        preferenciaAltaFrequencia: altaFrequencia,
+        lesoes,
+      });
+      return;
+    }
     if (isTf) {
       onGenerateTf?.({
         escolaMetodologica: escolaTf,
@@ -337,11 +412,13 @@ export function GerarTreinoModal({
           <DialogTitle className="flex items-center gap-2 text-base">
             <Wand2 className="h-5 w-5 text-primary" />
             Configurar geração —{" "}
-            {isTf
-              ? "Treinamento Funcional"
-              : isKb
-                ? "Kettlebell Sport"
-                : "Levantamento de Peso"}
+            {isCo
+              ? "Corrida"
+              : isTf
+                ? "Treinamento Funcional"
+                : isKb
+                  ? "Kettlebell Sport"
+                  : "Levantamento de Peso"}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {titulo} · {escopoLabel} · {diasPorSemana} sessão(ões)/semana · início em{" "}
@@ -355,11 +432,13 @@ export function GerarTreinoModal({
             <Select
               value={escolaAtual}
               onValueChange={(v) =>
-                isTf
-                  ? setEscolaTf(v as EscolaFuncional)
-                  : isKb
-                    ? setEscolaKb(v as EscolaMetodologica)
-                    : setEscolaWl(v as EscolaWeightlifting)
+                isCo
+                  ? setEscolaCo(v as EscolaCorrida)
+                  : isTf
+                    ? setEscolaTf(v as EscolaFuncional)
+                    : isKb
+                      ? setEscolaKb(v as EscolaMetodologica)
+                      : setEscolaWl(v as EscolaWeightlifting)
               }
             >
               <SelectTrigger>
@@ -393,7 +472,26 @@ export function GerarTreinoModal({
               </Select>
             </div>
 
-            {isTf ? (
+            {isCo ? (
+              <div className="space-y-1.5">
+                <Label>Distância-alvo</Label>
+                <Select
+                  value={distanciaCo}
+                  onValueChange={(v) => setDistanciaCo(v as DistanciaAlvo)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DISTANCIAS_CO.map((d) => (
+                      <SelectItem key={d.value} value={d.value}>
+                        {d.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : isTf ? (
               <div className="space-y-1.5">
                 <Label>Objetivo principal</Label>
                 <Select
@@ -453,8 +551,113 @@ export function GerarTreinoModal({
             )}
           </div>
 
-          {isTf && (
+          {isCo && (
             <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Volume semanal atual (km)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="Ex: 35"
+                    value={volumeKm ?? ""}
+                    onChange={(e) =>
+                      setVolumeKm(e.target.value ? Number(e.target.value) : null)
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Frequência atual (dias/sem)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={7}
+                    placeholder="Ex: 4"
+                    value={freqAtual ?? ""}
+                    onChange={(e) =>
+                      setFreqAtual(e.target.value ? Number(e.target.value) : null)
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Marca recente — distância</Label>
+                  <Select
+                    value={marcaDist}
+                    onValueChange={(v) => setMarcaDist(v as DistanciaAlvo | "nenhuma")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nenhuma">Não informar</SelectItem>
+                      {DISTANCIAS_CO.filter((d) => d.value !== "corrida_rua").map((d) => (
+                        <SelectItem key={d.value} value={d.value}>
+                          {d.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Marca recente — tempo</Label>
+                  <Input
+                    placeholder="Ex: 00:48:30"
+                    maxLength={20}
+                    disabled={marcaDist === "nenhuma"}
+                    value={marcaTempo}
+                    onChange={(e) => setMarcaTempo(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Data da prova-alvo — opcional</Label>
+                  <Input
+                    type="date"
+                    value={dataProva}
+                    onChange={(e) => setDataProva(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Terreno</Label>
+                  <Select
+                    value={terreno}
+                    onValueChange={(v) => setTerreno(v as TerrenoAlvo | "nao_informado")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nao_informado">Não informado</SelectItem>
+                      {TERRENOS_CO.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+                <div className="pr-3">
+                  <p className="text-sm font-medium">Prefere alta frequência semanal</p>
+                  <p className="text-xs text-muted-foreground">
+                    Tolera 6 dias/semana — habilita o modelo de fadiga cumulativa (Hansons).
+                  </p>
+                </div>
+                <Switch checked={altaFrequencia} onCheckedChange={setAltaFrequencia} />
+              </div>
+            </>
+          )}
+
+          {(isTf || isCo) && (
+            <>
+              {isTf && (
               <div className="space-y-1.5">
                 <Label>Equipamento disponível</Label>
                 <Select
@@ -473,7 +676,9 @@ export function GerarTreinoModal({
                   </SelectContent>
                 </Select>
               </div>
+              )}
 
+              {isTf && (
               <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
                 <div className="pr-3">
                   <p className="text-sm font-medium">Sedentarismo prolongado</p>
@@ -483,6 +688,7 @@ export function GerarTreinoModal({
                 </div>
                 <Switch checked={sedentarismo} onCheckedChange={setSedentarismo} />
               </div>
+              )}
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -596,7 +802,7 @@ export function GerarTreinoModal({
             </>
           )}
 
-          {!isKb && !isTf && (
+          {isWlMod && (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Classificação oficial — opcional</Label>
@@ -628,7 +834,7 @@ export function GerarTreinoModal({
             </div>
           )}
 
-          {!isKb && !isTf && (
+          {isWlMod && (
             <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
               <div className="pr-3">
                 <p className="text-sm font-medium">Suporte total declarado</p>
@@ -664,7 +870,7 @@ export function GerarTreinoModal({
             />
           </div>
 
-          {!isTf && (
+          {!isTf && !isCo && (
           <div className="space-y-3">
             <Label className="text-sm">Cargas iniciais</Label>
             {isKb ? (

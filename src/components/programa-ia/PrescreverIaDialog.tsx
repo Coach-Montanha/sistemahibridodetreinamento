@@ -183,6 +183,7 @@ export function PrescreverIaDialog({
   kb,
   wl,
   tf,
+  co,
   onOpenChange,
 }: {
   programa: { id: string; titulo?: string | null } | null;
@@ -198,6 +199,8 @@ export function PrescreverIaDialog({
   wl?: WlPayload | null;
   /** Configuração do Treinamento Funcional (quando a rotina é dessa modalidade). */
   tf?: TfPayload | null;
+  /** Configuração da Corrida (quando a rotina é dessa modalidade). */
+  co?: import("@/lib/corrida-ia.server").CorridaPayload | null;
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
@@ -222,6 +225,7 @@ export function PrescreverIaDialog({
           kb: kb ?? null,
           wl: wl ?? null,
           tf: tf ?? null,
+          co: co ?? null,
         },
       });
     },
@@ -285,7 +289,9 @@ export function PrescreverIaDialog({
               ? "kb_timed_sets"
               : wl
                 ? "forca_tecnica_pct"
-                : "bodybuilding_sets",
+                : co
+                  ? "livre"
+                  : "bodybuilding_sets",
             titulo: dia.day_label || dia.description || "Bloco principal",
             config: gruposDoDia(dia),
           })
@@ -374,7 +380,15 @@ export function PrescreverIaDialog({
             </span>
             Prescrever com IA
             <Badge variant="secondary" className="ml-1 text-[10px] uppercase tracking-wide">
-              {kb ? "Kettlebell Sport" : wl ? "Levantamento de Peso" : "Musculação"}
+              {kb
+                ? "Kettlebell Sport"
+                : wl
+                  ? "Levantamento de Peso"
+                  : tf
+                    ? "Treinamento Funcional"
+                    : co
+                      ? "Corrida"
+                      : "Musculação"}
             </Badge>
           </DialogTitle>
           <DialogDescription className="text-xs">

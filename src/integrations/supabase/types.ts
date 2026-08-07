@@ -992,6 +992,7 @@ export type Database = {
         | "levantamento_peso"
         | "musculacao"
         | "treinamento_funcional"
+        | "corrida"
       session_status: "rascunho" | "publicada" | "arquivada"
       student_access_status: "convidado" | "ativo" | "inativo" | "expirado"
       user_role: "super_admin" | "coach" | "assistente" | "aluno"
@@ -1145,6 +1146,7 @@ export const Constants = {
         "levantamento_peso",
         "musculacao",
         "treinamento_funcional",
+        "corrida",
       ],
       session_status: ["rascunho", "publicada", "arquivada"],
       student_access_status: ["convidado", "ativo", "inativo", "expirado"],

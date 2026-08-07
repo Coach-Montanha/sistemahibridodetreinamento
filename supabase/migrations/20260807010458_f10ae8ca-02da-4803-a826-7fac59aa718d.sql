@@ -1,0 +1,1 @@
+ALTER TYPE public.methodology_key ADD VALUE IF NOT EXISTS 'corrida';

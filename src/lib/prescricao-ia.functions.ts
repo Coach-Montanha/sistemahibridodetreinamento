@@ -28,6 +28,12 @@ import {
   montarFuncionalPrompt,
   type EscolaFuncional,
 } from "@/lib/funcional-ia.server";
+import {
+  CO_SYSTEM_PROMPT,
+  escolherEscolaCorrida,
+  montarCorridaPrompt,
+  type EscolaCorrida,
+} from "@/lib/corrida-ia.server";
 
 const CARGA = z
   .object({
@@ -142,6 +148,52 @@ const TF = z
   .nullable()
   .optional();
 
+const CO = z
+  .object({
+    escolaMetodologica: z.enum([
+      "auto",
+      "daniels",
+      "lydiard",
+      "canova",
+      "hansons",
+      "pfitzinger",
+      "horwill",
+      "koop",
+    ]),
+    nivelAtleta: z.enum(["iniciante", "intermediario", "avancado", "elite"]),
+    distanciaAlvo: z.enum(["corrida_rua", "5k", "10k", "21k", "42k", "ultramaratona"]),
+    volumeSemanalKm: z.number().nullable().default(null),
+    frequenciaSemanalAtual: z.number().nullable().default(null),
+    marcaRecenteDistancia: z
+      .enum(["corrida_rua", "5k", "10k", "21k", "42k", "ultramaratona"])
+      .nullable()
+      .default(null),
+    marcaRecenteTempo: z.string().max(20).nullable().default(null),
+    dataProvaAlvo: z.string().max(20).nullable().default(null),
+    terreno: z.enum(["estrada", "trilha", "montanha", "pista"]).nullable().default(null),
+    preferenciaAltaFrequencia: z.boolean().default(false),
+    lesoes: z
+      .array(
+        z.object({
+          regiao: z.enum([
+            "lombar",
+            "joelho",
+            "ombro",
+            "quadril",
+            "tornozelo",
+            "core",
+            "outro",
+          ]),
+          fase: z.enum(["aguda", "em_recuperacao", "cronica_controlada"]),
+          observacaoLivre: z.string().max(300).nullable().default(null),
+        }),
+      )
+      .max(6)
+      .default([]),
+  })
+  .nullable()
+  .optional();
+
 const INPUT = z.object({
   programId: z.string().uuid(),
   prompt: z.string().max(4000).default(""),
@@ -150,6 +202,7 @@ const INPUT = z.object({
   kb: KB,
   wl: WL,
   tf: TF,
+  co: CO,
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
@@ -173,9 +226,10 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const isKbSport = programa.metodologia === "kettlebell_sport";
     const isWl = programa.metodologia === "levantamento_peso";
     const isTf = programa.metodologia === "treinamento_funcional";
-    if (programa.metodologia !== "musculacao" && !isKbSport && !isWl && !isTf) {
+    const isCo = programa.metodologia === "corrida";
+    if (programa.metodologia !== "musculacao" && !isKbSport && !isWl && !isTf && !isCo) {
       throw new Error(
-        "Prescrever com IA está disponível apenas para Musculação, Kettlebell Sport, Levantamento de Peso e Treinamento Funcional",
+        "Prescrever com IA está disponível apenas para Musculação, Kettlebell Sport, Levantamento de Peso, Treinamento Funcional e Corrida",
       );
     }
     if (isKbSport && !data.kb) {
@@ -186,6 +240,9 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     }
     if (isTf && !data.tf) {
       throw new Error("Configuração do Treinamento Funcional ausente");
+    }
+    if (isCo && !data.co) {
+      throw new Error("Configuração da Corrida ausente");
     }
 
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(
@@ -239,15 +296,40 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         : tf.escolaMetodologica
       : null;
 
+    const co = data.co ?? null;
+    const linhaCo: Exclude<EscolaCorrida, "auto"> | null = co
+      ? co.escolaMetodologica === "auto"
+        ? escolherEscolaCorrida({
+            lesoes: co.lesoes as any,
+            nivel: co.nivelAtleta,
+            distanciaAlvo: co.distanciaAlvo,
+            volumeSemanalKm: co.volumeSemanalKm,
+            preferenciaAltaFrequencia: co.preferenciaAltaFrequencia,
+          })
+        : co.escolaMetodologica
+      : null;
+
     const systemPrompt = isKbSport
       ? KB_SPORT_SYSTEM_PROMPT
       : isWl
         ? WL_SYSTEM_PROMPT
         : isTf
           ? TF_SYSTEM_PROMPT
-          : SYSTEM_PROMPT;
+          : isCo
+            ? CO_SYSTEM_PROMPT
+            : SYSTEM_PROMPT;
     const userPrompt =
-      isTf && tf && linhaTf
+      isCo && co && linhaCo
+        ? montarCorridaPrompt({
+            co: co as any,
+            linha: linhaCo,
+            semanas: ctx.duracao_semanas,
+            diasPorSemana: ctx.dias_por_semana,
+            dataInicio: ctx.data_inicio,
+            escopoLabel: ctx.escopo_label,
+            instrucoes: data.prompt,
+          })
+        : isTf && tf && linhaTf
         ? montarFuncionalPrompt({
             tf: tf as any,
             linha: linhaTf,
