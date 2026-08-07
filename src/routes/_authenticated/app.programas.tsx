@@ -89,7 +89,7 @@ export function ProgramasPanel({
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
   const [layoutPrograma, setLayoutPrograma] = useState<any | null>(null);
   const [editarId, setEditarId] = useState<string | null>(null);
-  const [iaPrograma, setIaPrograma] = useState<any | null>(null);
+  const [iaPrograma, setIaPrograma] = useState<{ p: any; isContinuation: boolean } | null>(null);
 
   const programasKey = ["programas", coach?.id] as const;
 
@@ -351,8 +351,9 @@ export function ProgramasPanel({
                 onReorderSemanas={(ids) => reorderSemanas(p.id, ids)}
                 onOpenLayout={() => setLayoutPrograma(p)}
                 onEdit={() => setEditarId(p.id)}
-                onOpenIa={() => setIaPrograma(p)}
+                onOpenIa={() => setIaPrograma({ p, isContinuation: false })}
                 destacarIa={destacarIa}
+                onOpenContinuar={() => setIaPrograma({ p, isContinuation: true })}
                 onDelete={() =>
                   setToDelete({ id: p.id, titulo: p.titulo ?? "programa" })
                 }
@@ -375,7 +376,8 @@ export function ProgramasPanel({
       {iaPrograma && (
         <Suspense fallback={null}>
           <PrescreverIaDialog
-            programa={iaPrograma}
+            programa={iaPrograma.p}
+            escopo={iaPrograma.isContinuation ? { label: "Continuação de Programação" } : null}
             onOpenChange={(o) => !o && setIaPrograma(null)}
           />
         </Suspense>
