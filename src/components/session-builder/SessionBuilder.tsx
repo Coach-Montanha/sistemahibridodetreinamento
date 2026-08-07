@@ -342,7 +342,14 @@ export function SessionBuilder({
 
                   if (sess?.program_weeks?.programs) {
                     const prog = sess.program_weeks.programs;
-                    setIaPrograma({ p: { id: sess.program_weeks.program_id, titulo: prog.titulo }, isContinuation: true });
+                    setIaPrograma({
+                      p: {
+                        id: sess.program_weeks.program_id,
+                        titulo: prog.titulo,
+                        metodologia: prog.metodologia
+                      },
+                      isContinuation: true
+                    });
                   }
                 }}
               >
