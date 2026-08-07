@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense, lazy } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   DndContext,
@@ -21,7 +21,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Save, Download, ImageDown } from "lucide-react";
+import { Plus, Save, Download, ImageDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useBuilder } from "@/lib/session-builder-store";
@@ -97,6 +97,13 @@ export function SessionBuilder({
   const sensors = useSortableSensors();
   const { presets } = useFormatRegistry();
   const [imgOpen, setImgOpen] = useState(false);
+  const [iaPrograma, setIaPrograma] = useState<{ p: any; isContinuation: boolean } | null>(null);
+
+  const PrescreverIaDialog = lazy(() =>
+    import("@/components/programa-ia/PrescreverIaDialog").then((m) => ({
+      default: m.PrescreverIaDialog,
+    })),
+  );
 
   useEffect(() => {
     if (!sessionId) {
@@ -321,32 +328,55 @@ export function SessionBuilder({
             Voltar
           </Button>
           {sessionId && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" /> Exportar
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  onClick={() =>
-                    exportarSessaoPDF(sessionId).catch((e) => toast.error(e.message))
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                onClick={async () => {
+                  const { data: sess } = await supabase
+                    .from("sessions")
+                    .select("program_week_id, program_weeks(program_id, programs(titulo, metodologia))")
+                    .eq("id", sessionId)
+                    .single();
+
+                  if (sess?.program_weeks?.programs) {
+                    const prog = sess.program_weeks.programs;
+                    setIaPrograma({ p: { id: sess.program_weeks.program_id, titulo: prog.titulo }, isContinuation: true });
                   }
-                >
-                  PDF com marca
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    exportarSessaoExcel(sessionId).catch((e) => toast.error(e.message))
-                  }
-                >
-                  Excel
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setImgOpen(true)}>
-                  <ImageDown className="mr-2 h-4 w-4" /> Imagem (PNG/JPG)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                }}
+              >
+                <Sparkles className="h-4 w-4" />
+                Continuar com IA
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Download className="mr-2 h-4 w-4" /> Exportar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      exportarSessaoPDF(sessionId).catch((e) => toast.error(e.message))
+                    }
+                  >
+                    PDF com marca
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      exportarSessaoExcel(sessionId).catch((e) => toast.error(e.message))
+                    }
+                  >
+                    Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setImgOpen(true)}>
+                    <ImageDown className="mr-2 h-4 w-4" /> Imagem (PNG/JPG)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           )}
           <Button variant="outline" onClick={() => save(false)}>
             <Save className="mr-2 h-4 w-4" /> Salvar rascunho
@@ -432,6 +462,16 @@ export function SessionBuilder({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {iaPrograma && (
+        <Suspense fallback={null}>
+          <PrescreverIaDialog
+            programa={iaPrograma.p}
+            escopo={iaPrograma.isContinuation ? { label: "Continuação de Programação" } : null}
+            onOpenChange={(o) => !o && setIaPrograma(null)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

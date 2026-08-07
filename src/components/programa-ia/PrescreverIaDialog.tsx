@@ -393,7 +393,7 @@ export function PrescreverIaDialog({
             {programa?.titulo
               ? `Gerando para "${programa.titulo}".`
               : "Gere uma prescrição estruturada."}{" "}
-            Motor dedicado de musculação: a IA já analisa o histórico da rotina (se houver) para propor a continuidade didática. Descreva a próxima fase ou evolução desejada.
+            Motor de IA: a IA já analisa o histórico da rotina (se houver) para propor a continuidade didática. Descreva a próxima fase ou evolução desejada.
           </DialogDescription>
         </DialogHeader>
 
