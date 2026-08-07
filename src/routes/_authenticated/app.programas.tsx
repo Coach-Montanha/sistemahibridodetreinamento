@@ -526,6 +526,7 @@ function ProgramaCard({
   onOpenIa,
   onEdit,
   destacarIa,
+  onOpenContinuar,
   onDelete,
 }: {
   programa: any;
@@ -538,6 +539,7 @@ function ProgramaCard({
   onReorderSemanas: (orderedIds: string[]) => void;
   onOpenLayout: () => void;
   onOpenIa: () => void;
+  onOpenContinuar: () => void;
   onEdit: () => void;
   destacarIa?: boolean;
   onDelete: () => void;
@@ -744,7 +746,7 @@ function ProgramaCard({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    onOpenIa();
+                    onOpenContinuar();
                   }}
                 >
                   <Sparkles className="h-4 w-4" />
