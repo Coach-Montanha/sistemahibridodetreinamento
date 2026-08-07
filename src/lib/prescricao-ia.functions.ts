@@ -216,7 +216,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const { data: programa, error } = await supabase
       .from("programs")
       .select(
-        "id, titulo, metodologia, descricao, data_inicio, duracao_semanas, program_weeks(sessions(titulo))",
+        "id, titulo, metodologia, descricao, data_inicio, duracao_semanas, program_weeks(numero_semana, sessions(titulo, session_blocks(titulo, session_block_exercises(nome_livre, series, reps, carga_kg))))",
       )
       .eq("id", data.programId)
       .maybeSingle();
@@ -248,6 +248,23 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(
       (w: any) => (w.sessions ?? []).map((s: any) => s.titulo ?? null),
     );
+    
+    // Constrói resumo do que já foi feito para dar contexto de progressão à IA
+    const resumoAnterior = ((programa as any).program_weeks ?? [])
+      .sort((a: any, b: any) => a.numero_semana - b.numero_semana)
+      .map((w: any) => {
+        const treinos = (w.sessions ?? [])
+          .map((s: any) => {
+            const ex = (s.session_blocks ?? [])
+              .flatMap((b: any) => (b.session_block_exercises ?? []))
+              .map((e: any) => `${e.nome_livre} (${e.series}x${e.reps}${e.carga_kg ? ` ${e.carga_kg}kg` : ""})`)
+              .join(", ");
+            return `  - ${s.titulo}: ${ex}`;
+          })
+          .join("\n");
+        return `Semana ${w.numero_semana}:\n${treinos}`;
+      })
+      .join("\n\n");
 
     const ctx = {
       titulo: programa.titulo ?? "Programa",
@@ -259,6 +276,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       objetivos: programa.descricao ?? null,
       dias_por_semana: data.diasPorSemana ?? null,
       escopo_label: data.escopoLabel ?? null,
+      resumo_anterior: resumoAnterior || null,
     };
 
     const apiKey = process.env.LOVABLE_API_KEY;
