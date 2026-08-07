@@ -34,10 +34,8 @@ import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
 import type { TfPayload } from "@/lib/funcional-ia.server";
 
-const PLACEHOLDER = `Ex.: divisão A/B/C/D para hipertrofia, 4 treinos por semana.
-Dia A peito e tríceps, Dia B costas e bíceps, Dia C pernas, Dia D ombros e core.
-4 séries de 8 a 12 repetições nos compostos e 3x12 nos isoladores, 90s de descanso.
-Priorizar barra e halteres; incluir progressão de carga semanal.`;
+const PLACEHOLDER = `Ex.: Próxima fase focada em força máxima, mantendo a divisão A/B anterior mas reduzindo as repetições para 4-6 e aumentando o descanso.
+Priorizar exercícios básicos; manter o agachamento e o supino como primeiros movimentos da sessão.`;
 
 const EXEMPLOS = [
   {
@@ -395,8 +393,7 @@ export function PrescreverIaDialog({
             {programa?.titulo
               ? `Gerando para "${programa.titulo}".`
               : "Gere uma prescrição estruturada."}{" "}
-            Motor dedicado de musculação: a IA já considera período, objetivos e
-            nomenclatura dos dias da rotina — descreva a divisão e o volume desejados.
+            Motor dedicado de musculação: a IA já analisa o histórico da rotina (se houver) para propor a continuidade didática. Descreva a próxima fase ou evolução desejada.
           </DialogDescription>
         </DialogHeader>
 
@@ -429,16 +426,20 @@ export function PrescreverIaDialog({
           </div>
 
           {escopo && (
-            <p className="rounded-lg border border-primary/25 bg-primary/[0.06] px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-              A IA já recebe automaticamente:{" "}
+            <p className="rounded-lg border-primary/25 bg-primary/[0.06] p-3 text-xs leading-relaxed text-muted-foreground">
+              <span className="mb-1 block font-semibold text-primary">Contexto Automático</span>
+              A IA já recebe:{" "}
               <strong className="text-foreground">
                 {escopo.label ?? "escopo selecionado"}
               </strong>
-              {escopo.semanas ? ` · ${escopo.semanas} semana(s)` : ""}
-              {escopo.diasPorSemana ? ` · ${escopo.diasPorSemana} treino(s) por semana` : ""}
-              {escopo.dataInicio ? ` · início em ${escopo.dataInicio}` : ""}. Você não
-              precisa repetir isso no prompt — escreva apenas as preferências extras (ou
-              deixe em branco).
+              {escopo.semanas ? ` · ${escopo.semanas} sem` : ""}
+              {escopo.diasPorSemana ? ` · ${escopo.diasPorSemana} treinos/sem` : ""}
+              {escopo.dataInicio ? ` · início ${escopo.dataInicio}` : ""}.
+              {escopo.label?.toLowerCase().includes("continuação") && (
+                <span className="mt-1 block border-t border-primary/10 pt-1 italic">
+                  O histórico das sessões anteriores foi enviado para garantir a progressão didática.
+                </span>
+              )}
             </p>
           )}
 
