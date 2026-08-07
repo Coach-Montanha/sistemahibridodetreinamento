@@ -739,7 +739,7 @@ function ProgramaCard({
               </SortableList>
             )}
             <div className="mt-5 flex flex-wrap justify-end gap-2">
-              {["musculacao", "kettlebell_sport", "weightlifting", "funcional", "corrida"].includes(
+              {["musculacao", "hibrido", "kettlebell_sport", "weightlifting", "funcional", "corrida"].includes(
                 programa.metodologia,
               ) && (
                 <Button

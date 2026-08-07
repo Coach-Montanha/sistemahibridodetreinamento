@@ -43,6 +43,7 @@ Regras: 4 a 8 exercícios por dia; 'load' e 'observations' podem ser vazios; 'da
 
 export type RotinaContexto = {
   titulo: string;
+  metodologia: string;
   duracao_semanas: number;
   data_inicio: string | null;
   data_fim: string | null;
@@ -61,7 +62,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
   return [
     "CONTEXTO DA ROTINA (não repita, apenas use):",
     `- Nome: ${ctx.titulo}`,
-    "- Modalidade: Musculação (fixa)",
+    `- Modalidade: ${ctx.metodologia}`,
     `- Duração: ${ctx.duracao_semanas} semana(s)`,
     ctx.escopo_label ? `- Escopo da prescrição: ${ctx.escopo_label}` : null,
     dias ? `- Dias de treino por semana: ${dias}` : null,

@@ -184,7 +184,7 @@ export function PrescreverIaDialog({
   co,
   onOpenChange,
 }: {
-  programa: { id: string; titulo?: string | null } | null;
+  programa: { id: string; titulo?: string | null; metodologia?: string | null } | null;
   escopo?: {
     label?: string | null;
     semanas?: number | null;
@@ -386,14 +386,16 @@ export function PrescreverIaDialog({
                     ? "Treinamento Funcional"
                     : co
                       ? "Corrida"
-                      : "Musculação"}
+                      : programa?.metodologia === "hibrido"
+                        ? "Híbrido"
+                        : "Musculação"}
             </Badge>
           </DialogTitle>
           <DialogDescription className="text-xs">
             {programa?.titulo
               ? `Gerando para "${programa.titulo}".`
               : "Gere uma prescrição estruturada."}{" "}
-            Motor dedicado de musculação: a IA já analisa o histórico da rotina (se houver) para propor a continuidade didática. Descreva a próxima fase ou evolução desejada.
+            Motor de IA: a IA já analisa o histórico da rotina (se houver) para propor a continuidade didática. Descreva a próxima fase ou evolução desejada.
           </DialogDescription>
         </DialogHeader>
 
