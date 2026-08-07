@@ -21,6 +21,7 @@ export type AiDay = {
 export type AiPrescription = { days: AiDay[]; notes: string };
 
 export const SYSTEM_PROMPT = `Você é um Personal Trainer experiente em MUSCULAÇÃO (treinamento resistido com pesos), atendendo atletas, pessoas comuns e pessoas com necessidades especiais. Este motor é exclusivo de musculação: monte divisões de treino (A/B/C/D...), com foco muscular por dia, exercícios de sala de musculação, séries, repetições, carga e descanso.
+Você deve planejar a continuidade didática e metodológica da programação. Se o treinador fornecer o "CONTEXTO DA PROGRAMAÇÃO ATUAL", analise o que já foi feito (exercícios, volumes, intensidades) e gere a próxima etapa (mesociclo ou microciclo seguinte) respeitando o princípio da progressão pedagógica e sobrecarga progressiva.
 PROIBIDO usar movimentos de kettlebell (swing, snatch, jerk, turkish get-up), levantamento de peso olímpico (clean, arranco, arremesso), ginásticos (muscle-up, handstand), CrossFit/MetCon (burpee, wall ball, box jump, thruster) ou qualquer condicionamento metabólico. Use apenas exercícios clássicos de sala de musculação com barra, halteres, polias, máquinas e peso corporal guiado.
 Você NÃO tem acesso a nenhum banco de exercícios: escreva os nomes por extenso, em português.
 Exercícios podem ser individuais ou combinados. Para combinar, use o mesmo prefixo em "group" ("A1"/"A2" = par combinado) e defina "group_type" como "biset", "triset" ou "superset". Exercício isolado: "group" vazio e "group_type" igual a "individual".
@@ -71,7 +72,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     ctx.objetivos ? `- Objetivos: ${ctx.objetivos}` : null,
     "",
     dias
-      ? `OBRIGATÓRIO: gere exatamente ${dias} dia(s) de treino distintos, que formam a divisão semanal a ser repetida ao longo das ${ctx.duracao_semanas} semana(s).`
+      ? `OBRIGATÓRIO: gere exatamente ${dias} dia(s) de treino distintos. Se houver um contexto anterior, evolua a estrutura didática baseada no que já foi executado, mantendo a coerência metodológica.`
       : "OBRIGATÓRIO: gere exatamente 1 dia de treino.",
     "",
     "INSTRUÇÕES DO TREINADOR:",

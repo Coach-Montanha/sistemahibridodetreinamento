@@ -34,10 +34,8 @@ import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
 import type { TfPayload } from "@/lib/funcional-ia.server";
 
-const PLACEHOLDER = `Ex.: divisão A/B/C/D para hipertrofia, 4 treinos por semana.
-Dia A peito e tríceps, Dia B costas e bíceps, Dia C pernas, Dia D ombros e core.
-4 séries de 8 a 12 repetições nos compostos e 3x12 nos isoladores, 90s de descanso.
-Priorizar barra e halteres; incluir progressão de carga semanal.`;
+const PLACEHOLDER = `Ex.: Próxima fase focada em força máxima, mantendo a divisão A/B anterior mas reduzindo as repetições para 4-6 e aumentando o descanso.
+Priorizar exercícios básicos; manter o agachamento e o supino como primeiros movimentos da sessão.`;
 
 const EXEMPLOS = [
   {
