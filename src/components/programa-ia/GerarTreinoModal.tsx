@@ -41,12 +41,46 @@ import type {
   RegiaoLesao,
   TfPayload,
 } from "@/lib/funcional-ia.server";
+import type {
+  CorridaPayload,
+  DistanciaAlvo,
+  EscolaCorrida,
+  TerrenoAlvo,
+} from "@/lib/corrida-ia.server";
 
 export type ModalidadeIa =
   | "kettlebell_sport"
   | "levantamento_peso"
-  | "treinamento_funcional";
-export type { KbSportPayload, WlPayload, TfPayload };
+  | "treinamento_funcional"
+  | "corrida";
+export type { KbSportPayload, WlPayload, TfPayload, CorridaPayload };
+
+const ESCOLAS_CO: { value: EscolaCorrida; label: string; descricao: string }[] = [
+  { value: "auto", label: "Deixar sistema escolher", descricao: "Seleção pela distância-alvo, nível, volume e lesões" },
+  { value: "daniels", label: "Daniels / VDOT", descricao: "Cinco ritmos calculados a partir de uma marca recente" },
+  { value: "lydiard", label: "Lydiard", descricao: "Base aeróbica e periodização clássica em fases" },
+  { value: "canova", label: "Canova", descricao: "Extensão do ritmo de prova — 21k/42k avançado/elite" },
+  { value: "hansons", label: "Hansons", descricao: "Fadiga cumulativa, 6 dias/semana, long run curto" },
+  { value: "pfitzinger", label: "Pfitzinger", descricao: "Limiar + long run tradicional (32-37 km)" },
+  { value: "horwill", label: "Horwill / 5 ritmos", descricao: "Multi-Tier para 5k, 10k e meio-fundo" },
+  { value: "koop", label: "Koop / Ultra", descricao: "Ultramaratona: fitness, especificidade e nutrição" },
+];
+
+const DISTANCIAS_CO: { value: DistanciaAlvo; label: string }[] = [
+  { value: "corrida_rua", label: "Corrida de rua (geral)" },
+  { value: "5k", label: "5 km" },
+  { value: "10k", label: "10 km" },
+  { value: "21k", label: "Meia maratona (21 km)" },
+  { value: "42k", label: "Maratona (42 km)" },
+  { value: "ultramaratona", label: "Ultramaratona" },
+];
+
+const TERRENOS_CO: { value: TerrenoAlvo; label: string }[] = [
+  { value: "estrada", label: "Estrada / asfalto" },
+  { value: "trilha", label: "Trilha" },
+  { value: "montanha", label: "Montanha" },
+  { value: "pista", label: "Pista de atletismo" },
+];
 
 const ESCOLAS_TF: { value: EscolaFuncional; label: string; descricao: string }[] = [
   { value: "auto", label: "Deixar sistema escolher", descricao: "Seleção automática pelo perfil e limitações" },
