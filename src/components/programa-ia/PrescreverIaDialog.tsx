@@ -184,7 +184,7 @@ export function PrescreverIaDialog({
   co,
   onOpenChange,
 }: {
-  programa: { id: string; titulo?: string | null } | null;
+  programa: { id: string; titulo?: string | null; metodologia?: string | null } | null;
   escopo?: {
     label?: string | null;
     semanas?: number | null;
@@ -386,7 +386,9 @@ export function PrescreverIaDialog({
                     ? "Treinamento Funcional"
                     : co
                       ? "Corrida"
-                      : "Musculação"}
+                      : programa?.metodologia === "hibrido"
+                        ? "Híbrido"
+                        : "Musculação"}
             </Badge>
           </DialogTitle>
           <DialogDescription className="text-xs">
