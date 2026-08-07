@@ -9,6 +9,7 @@ const METODOLOGIA = z.enum([
   "levantamento_peso",
   "musculacao",
   "treinamento_funcional",
+  "corrida",
 ]);
 
 const FORMATO = z.enum([
