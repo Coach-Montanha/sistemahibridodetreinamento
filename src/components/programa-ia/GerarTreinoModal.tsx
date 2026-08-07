@@ -551,8 +551,113 @@ export function GerarTreinoModal({
             )}
           </div>
 
-          {isTf && (
+          {isCo && (
             <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Volume semanal atual (km)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="Ex: 35"
+                    value={volumeKm ?? ""}
+                    onChange={(e) =>
+                      setVolumeKm(e.target.value ? Number(e.target.value) : null)
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Frequência atual (dias/sem)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={7}
+                    placeholder="Ex: 4"
+                    value={freqAtual ?? ""}
+                    onChange={(e) =>
+                      setFreqAtual(e.target.value ? Number(e.target.value) : null)
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Marca recente — distância</Label>
+                  <Select
+                    value={marcaDist}
+                    onValueChange={(v) => setMarcaDist(v as DistanciaAlvo | "nenhuma")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nenhuma">Não informar</SelectItem>
+                      {DISTANCIAS_CO.filter((d) => d.value !== "corrida_rua").map((d) => (
+                        <SelectItem key={d.value} value={d.value}>
+                          {d.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Marca recente — tempo</Label>
+                  <Input
+                    placeholder="Ex: 00:48:30"
+                    maxLength={20}
+                    disabled={marcaDist === "nenhuma"}
+                    value={marcaTempo}
+                    onChange={(e) => setMarcaTempo(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Data da prova-alvo — opcional</Label>
+                  <Input
+                    type="date"
+                    value={dataProva}
+                    onChange={(e) => setDataProva(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Terreno</Label>
+                  <Select
+                    value={terreno}
+                    onValueChange={(v) => setTerreno(v as TerrenoAlvo | "nao_informado")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nao_informado">Não informado</SelectItem>
+                      {TERRENOS_CO.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+                <div className="pr-3">
+                  <p className="text-sm font-medium">Prefere alta frequência semanal</p>
+                  <p className="text-xs text-muted-foreground">
+                    Tolera 6 dias/semana — habilita o modelo de fadiga cumulativa (Hansons).
+                  </p>
+                </div>
+                <Switch checked={altaFrequencia} onCheckedChange={setAltaFrequencia} />
+              </div>
+            </>
+          )}
+
+          {(isTf || isCo) && (
+            <>
+              {isTf && (
               <div className="space-y-1.5">
                 <Label>Equipamento disponível</Label>
                 <Select
@@ -571,7 +676,9 @@ export function GerarTreinoModal({
                   </SelectContent>
                 </Select>
               </div>
+              )}
 
+              {isTf && (
               <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
                 <div className="pr-3">
                   <p className="text-sm font-medium">Sedentarismo prolongado</p>
@@ -581,6 +688,7 @@ export function GerarTreinoModal({
                 </div>
                 <Switch checked={sedentarismo} onCheckedChange={setSedentarismo} />
               </div>
+              )}
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
