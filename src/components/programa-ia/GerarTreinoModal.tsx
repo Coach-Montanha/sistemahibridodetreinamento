@@ -802,7 +802,7 @@ export function GerarTreinoModal({
             </>
           )}
 
-          {!isKb && !isTf && (
+          {isWlMod && (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Classificação oficial — opcional</Label>
@@ -834,7 +834,7 @@ export function GerarTreinoModal({
             </div>
           )}
 
-          {!isKb && !isTf && (
+          {isWlMod && (
             <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
               <div className="pr-3">
                 <p className="text-sm font-medium">Suporte total declarado</p>
@@ -870,7 +870,7 @@ export function GerarTreinoModal({
             />
           </div>
 
-          {!isTf && (
+          {!isTf && !isCo && (
           <div className="space-y-3">
             <Label className="text-sm">Cargas iniciais</Label>
             {isKb ? (
