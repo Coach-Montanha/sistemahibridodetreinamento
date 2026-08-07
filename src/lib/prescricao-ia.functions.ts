@@ -148,8 +148,53 @@ const TF = z
   .nullable()
   .optional();
 
+const CO = z
+  .object({
+    escolaMetodologica: z.enum([
+      "auto",
+      "daniels",
+      "lydiard",
+      "canova",
+      "hansons",
+      "pfitzinger",
+      "horwill",
+      "koop",
+    ]),
+    nivelAtleta: z.enum(["iniciante", "intermediario", "avancado", "elite"]),
+    distanciaAlvo: z.enum(["corrida_rua", "5k", "10k", "21k", "42k", "ultramaratona"]),
+    volumeSemanalKm: z.number().nullable().default(null),
+    frequenciaSemanalAtual: z.number().nullable().default(null),
+    marcaRecenteDistancia: z
+      .enum(["corrida_rua", "5k", "10k", "21k", "42k", "ultramaratona"])
+      .nullable()
+      .default(null),
+    marcaRecenteTempo: z.string().max(20).nullable().default(null),
+    dataProvaAlvo: z.string().max(20).nullable().default(null),
+    terreno: z.enum(["estrada", "trilha", "montanha", "pista"]).nullable().default(null),
+    preferenciaAltaFrequencia: z.boolean().default(false),
+    lesoes: z
+      .array(
+        z.object({
+          regiao: z.enum([
+            "lombar",
+            "joelho",
+            "ombro",
+            "quadril",
+            "tornozelo",
+            "core",
+            "outro",
+          ]),
+          fase: z.enum(["aguda", "em_recuperacao", "cronica_controlada"]),
+          observacaoLivre: z.string().max(300).nullable().default(null),
+        }),
+      )
+      .max(6)
+      .default([]),
+  })
+  .nullable()
+  .optional();
+
 const INPUT = z.object({
-const _placeholder = 0;
   programId: z.string().uuid(),
   prompt: z.string().max(4000).default(""),
   diasPorSemana: z.number().int().min(1).max(7).nullable().optional(),
