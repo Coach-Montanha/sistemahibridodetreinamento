@@ -28,13 +28,24 @@ function formatarLinhaExercicio(e: any): string {
   const lado = e.lado
     ? ` (${e.lado === "direito" ? "D" : e.lado === "esquerdo" ? "E" : String(e.lado).toUpperCase()})`
     : "";
+  
+  const partes: string[] = [];
+  if (e.pct_1rm != null) {
+    partes.push(`${e.pct_1rm}%`);
+  } else if (e.carga_kg != null) {
+    partes.push(`${e.carga_kg}KG`);
+  }
+
   const reps =
     e.reps != null && String(e.reps).trim() !== ""
       ? String(e.reps).toUpperCase()
       : e.series != null
-        ? `${e.series}x`
+        ? `${e.series}X`
         : "";
-  return `${reps ? reps + " " : ""}${nome}${lado}`.trim();
+  
+  if (reps) partes.push(reps);
+
+  return `${partes.join(" ")} ${nome}${lado}`.trim();
 }
 
 function tituloBloco(b: any): string {
