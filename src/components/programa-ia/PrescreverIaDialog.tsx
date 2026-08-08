@@ -79,12 +79,43 @@ function parseSetsReps(v: string): { series: number | null; reps: string | null 
   return { series: null, reps: t.length ? t : null };
 }
 
-/** "60kg" -> 60 ; "leve" -> null (vira observação) */
-function parseCarga(v: string): number | null {
-  const m = v.replace(",", ".").match(/(\d+(?:\.\d+)?)/);
-  if (!m) return null;
-  const n = Number(m[1]);
-  return Number.isFinite(n) ? n : null;
+type CargaClassificada =
+  | { tipo: "kg"; valor: number }
+  | { tipo: "pct_1rm"; valor: number }
+  | { tipo: "texto"; valor: string };
+
+/** Classifica o texto de "load" da IA: kg, %1RM, ou texto livre (ritmo/pace/outro). */
+function classificarCarga(v: string): CargaClassificada | null {
+  const raw = v.trim();
+  if (!raw) return null;
+
+  // Ritmo de corrida: "4:30/km", "4:30 min/km", "Ritmo T (limiar)" — nunca é peso.
+  if (/:\d{2}/.test(raw) || /\/\s*km/i.test(raw) || /ritmo/i.test(raw)) {
+    return { tipo: "texto", valor: raw };
+  }
+
+  // Percentual de 1RM: "80% 1RM", "80%"
+  const pct = raw.match(/(\d+(?:[.,]\d+)?)\s*%/);
+  if (pct) {
+    const n = Number(pct[1].replace(",", "."));
+    return Number.isFinite(n) ? { tipo: "pct_1rm", valor: n } : { tipo: "texto", valor: raw };
+  }
+
+  // Peso em kg: "60kg", "2x24kg", "100 kg"
+  const kg = raw.match(/(\d+(?:[.,]\d+)?)\s*kg/i);
+  if (kg) {
+    const n = Number(kg[1].replace(",", "."));
+    return Number.isFinite(n) ? { tipo: "kg", valor: n } : { tipo: "texto", valor: raw };
+  }
+
+  // Número solto sem unidade (ex.: "60") — assume kg por compatibilidade com o comportamento atual.
+  const solto = raw.match(/^(\d+(?:[.,]\d+)?)$/);
+  if (solto) {
+    const n = Number(solto[1].replace(",", "."));
+    return Number.isFinite(n) ? { tipo: "kg", valor: n } : { tipo: "texto", valor: raw };
+  }
+
+  return { tipo: "texto", valor: raw };
 }
 
 function juntarObs(...partes: (string | null | undefined)[]) {
@@ -300,24 +331,23 @@ export function PrescreverIaDialog({
         if (dia.exercises.length) {
           const rows = dia.exercises.map((e, i) => {
             const { series, reps } = parseSetsReps(e.sets_reps);
-            const carga = parseCarga(e.load);
+            const cls = e.load ? classificarCarga(e.load) : null;
             return {
               session_block_id: bloco.id,
               nome_livre: e.name,
               ordem: i + 1,
               series,
               reps,
-              carga_kg: carga,
+              carga_kg: cls?.tipo === "kg" ? cls.valor : null,
+              pct_1rm: cls?.tipo === "pct_1rm" ? cls.valor : null,
               descanso_seg: e.rest_seconds,
               observacoes: juntarObs(
                 e.observations,
-                carga == null && e.load ? `Carga: ${e.load}` : null,
+                cls?.tipo === "texto" ? `Carga: ${cls.valor}` : null,
               ),
             };
           });
-          const { error: xe } = await supabase
-            .from("session_block_exercises")
-            .insert(rows);
+          const { error: xe } = await supabase.from("session_block_exercises").insert(rows);
           if (xe) throw xe;
         }
       }
