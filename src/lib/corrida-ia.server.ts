@@ -1,4 +1,4 @@
-/** Prompts especializados por linha metodológica da modalidade Corrida. */
+/** Prompts especializados por escola metodológica de Corrida. */
 
 export type EscolaCorrida =
   | "auto"

@@ -1,4 +1,4 @@
-/** Prompts especializados por linha metodológica do Treinamento Funcional. */
+/** Prompts especializados por escola metodológica do Treinamento Funcional. */
 
 export type EscolaFuncional =
   | "auto"
