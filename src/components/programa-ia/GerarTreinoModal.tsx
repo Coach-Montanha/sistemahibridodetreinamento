@@ -745,7 +745,7 @@ export function GerarTreinoModal({
                           onValueChange={(v) =>
                             setLesoes((arr) =>
                               arr.map((x, j) =>
-                                j === i ? { ...x, fase: v as FaseLesao } : x,
+                                j === i ? { ...x, fase: v as FaseLesaoTf } : x,
                               ),
                             )
                           }
