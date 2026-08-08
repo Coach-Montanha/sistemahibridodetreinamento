@@ -107,7 +107,7 @@ const EQUIPAMENTOS_TF: { value: EquipamentoFuncional; label: string }[] = [
   { value: "outdoor", label: "Outdoor" },
 ];
 
-const REGIOES_TF: { value: RegiaoLesao; label: string }[] = [
+const REGIOES_TF: { value: RegiaoLesaoTf; label: string }[] = [
   { value: "lombar", label: "Lombar" },
   { value: "joelho", label: "Joelho" },
   { value: "ombro", label: "Ombro" },
