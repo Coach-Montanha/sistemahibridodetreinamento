@@ -35,10 +35,10 @@ import type {
 import type {
   EquipamentoFuncional,
   EscolaFuncional,
-  FaseLesao,
-  LesaoLimitacao,
+  FaseLesaoTf,
+  LesaoLimitacaoTf,
   ObjetivoFuncional,
-  RegiaoLesao,
+  RegiaoLesaoTf,
   TfPayload,
 } from "@/lib/funcional-ia.server";
 import type {
