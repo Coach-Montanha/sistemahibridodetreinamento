@@ -303,7 +303,7 @@ export function GerarTreinoModal({
   const [equipamentoTf, setEquipamentoTf] =
     useState<EquipamentoFuncional>("academia_completa");
   const [sedentarismo, setSedentarismo] = useState(false);
-  const [lesoes, setLesoes] = useState<LesaoLimitacao[]>([]);
+  const [lesoes, setLesoes] = useState<LesaoLimitacaoTf[]>([]);
 
   const [escolaCo, setEscolaCo] = useState<EscolaCorrida>("auto");
   const [distanciaCo, setDistanciaCo] = useState<DistanciaAlvo>("10k");
