@@ -9,6 +9,8 @@ const METODOLOGIA_SIGLA: Record<string, string> = {
   kettlebell_sport: "KS",
   levantamento_peso: "LP",
   musculacao: "MU",
+  treinamento_funcional: "TF",
+  corrida: "CO",
 };
 
 const DIA_SEMANA = [
