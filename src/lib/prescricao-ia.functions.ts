@@ -307,7 +307,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const linhaTf: Exclude<EscolaFuncional, "auto"> | null = tf
       ? tf.escolaMetodologica === "auto"
         ? escolherEscolaFuncional({
-            lesoes: tf.lesoes as any,
+            lesoes: tf.lesoes as any[],
             objetivo: tf.objetivo,
             nivel: tf.nivelAtleta,
             sedentarismoProlongado: tf.sedentarismoProlongado,

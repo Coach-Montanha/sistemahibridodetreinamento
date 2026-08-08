@@ -35,10 +35,10 @@ import type {
 import type {
   EquipamentoFuncional,
   EscolaFuncional,
-  FaseLesao,
-  LesaoLimitacao,
+  FaseLesaoTf,
+  LesaoLimitacaoTf,
   ObjetivoFuncional,
-  RegiaoLesao,
+  RegiaoLesaoTf,
   TfPayload,
 } from "@/lib/funcional-ia.server";
 import type {
@@ -107,7 +107,7 @@ const EQUIPAMENTOS_TF: { value: EquipamentoFuncional; label: string }[] = [
   { value: "outdoor", label: "Outdoor" },
 ];
 
-const REGIOES_TF: { value: RegiaoLesao; label: string }[] = [
+const REGIOES_TF: { value: RegiaoLesaoTf; label: string }[] = [
   { value: "lombar", label: "Lombar" },
   { value: "joelho", label: "Joelho" },
   { value: "ombro", label: "Ombro" },
@@ -117,7 +117,7 @@ const REGIOES_TF: { value: RegiaoLesao; label: string }[] = [
   { value: "outro", label: "Outro" },
 ];
 
-const FASES_TF: { value: FaseLesao; label: string }[] = [
+const FASES_TF: { value: FaseLesaoTf; label: string }[] = [
   { value: "aguda", label: "Aguda (dor ativa)" },
   { value: "em_recuperacao", label: "Em recuperação" },
   { value: "cronica_controlada", label: "Crônica controlada" },
@@ -303,7 +303,7 @@ export function GerarTreinoModal({
   const [equipamentoTf, setEquipamentoTf] =
     useState<EquipamentoFuncional>("academia_completa");
   const [sedentarismo, setSedentarismo] = useState(false);
-  const [lesoes, setLesoes] = useState<LesaoLimitacao[]>([]);
+  const [lesoes, setLesoes] = useState<LesaoLimitacaoTf[]>([]);
 
   const [escolaCo, setEscolaCo] = useState<EscolaCorrida>("auto");
   const [distanciaCo, setDistanciaCo] = useState<DistanciaAlvo>("10k");
@@ -724,7 +724,7 @@ export function GerarTreinoModal({
                           onValueChange={(v) =>
                             setLesoes((arr) =>
                               arr.map((x, j) =>
-                                j === i ? { ...x, regiao: v as RegiaoLesao } : x,
+                                j === i ? { ...x, regiao: v as RegiaoLesaoTf } : x,
                               ),
                             )
                           }
@@ -745,7 +745,7 @@ export function GerarTreinoModal({
                           onValueChange={(v) =>
                             setLesoes((arr) =>
                               arr.map((x, j) =>
-                                j === i ? { ...x, fase: v as FaseLesao } : x,
+                                j === i ? { ...x, fase: v as FaseLesaoTf } : x,
                               ),
                             )
                           }

@@ -11,14 +11,7 @@ export type EscolaFuncional =
 
 export type NivelAtletaTf = "iniciante" | "intermediario" | "avancado" | "elite";
 
-export type ObjetivoFuncional =
-  | "condicionamento_geral"
-  | "performance_esportiva"
-  | "reabilitacao_retorno"
-  | "emagrecimento"
-  | "hipertrofia_funcional";
-
-export type RegiaoLesao =
+export type RegiaoLesaoTf =
   | "lombar"
   | "joelho"
   | "ombro"
@@ -27,13 +20,20 @@ export type RegiaoLesao =
   | "core"
   | "outro";
 
-export type FaseLesao = "aguda" | "em_recuperacao" | "cronica_controlada";
+export type FaseLesaoTf = "aguda" | "em_recuperacao" | "cronica_controlada";
 
-export type LesaoLimitacao = {
-  regiao: RegiaoLesao;
-  fase: FaseLesao;
+export type LesaoLimitacaoTf = {
+  regiao: RegiaoLesaoTf;
+  fase: FaseLesaoTf;
   observacaoLivre: string | null;
 };
+
+export type ObjetivoFuncional =
+  | "condicionamento_geral"
+  | "performance_esportiva"
+  | "reabilitacao_retorno"
+  | "emagrecimento"
+  | "hipertrofia_funcional";
 
 export type EquipamentoFuncional =
   | "peso_corporal"
@@ -47,10 +47,10 @@ export type TfPayload = {
   objetivo: ObjetivoFuncional;
   equipamento: EquipamentoFuncional;
   sedentarismoProlongado: boolean;
-  lesoes: LesaoLimitacao[];
+  lesoes: LesaoLimitacaoTf[];
 };
 
-export const ESCOLA_TF_LABEL: Record<Exclude<EscolaFuncional, "auto">, string> = {
+const ESCOLA_TF_LABEL: Record<Exclude<EscolaFuncional, "auto">, string> = {
   fms_sfma: "FMS/SFMA (Gray Cook)",
   boyle: "Joint-by-Joint (Michael Boyle)",
   exos: "EXOS / Core Performance",
@@ -96,7 +96,7 @@ const PROMPT_ESCOLA_TF: Record<Exclude<EscolaFuncional, "auto">, string> = {
 
 /** Seleção determinística (escola = "auto"). Segurança clínica tem prioridade máxima. */
 export function escolherEscolaFuncional(p: {
-  lesoes: LesaoLimitacao[];
+  lesoes: LesaoLimitacaoTf[];
   objetivo: ObjetivoFuncional;
   nivel: NivelAtletaTf;
   sedentarismoProlongado: boolean;
@@ -113,22 +113,30 @@ export function escolherEscolaFuncional(p: {
   return "exos";
 }
 
-export const TF_SYSTEM_PROMPT = `Você é um preparador físico especialista em TREINAMENTO FUNCIONAL, atuando dentro de uma linha metodológica específica informada no pedido.
-Este motor é exclusivo de treinamento funcional: prescreva padrões de movimento com transferência para a vida real ou para o esporte do praticante (agachar, dobradiça de quadril, empurrar, puxar, girar, carregar, locomover, saltar), corretivos, mobilidade, estabilidade, potência e condicionamento.
-SEGURANÇA CLÍNICA TEM PRIORIDADE MÁXIMA: respeite integralmente as lesões e limitações informadas, evite qualquer padrão que agrave a região afetada e registre alertas explícitos nas observações.
-Respeite o equipamento disponível informado — não prescreva o que o aluno não tem.
+export const TF_SYSTEM_PROMPT = `Você é um treinador especialista em TREINAMENTO FUNCIONAL de nível internacional.
+
+Este motor é exclusivo de Treinamento Funcional: prescreva padrões de movimento multiarticulares com transferência real — agachar, empurrar (horizontal/vertical), puxar (horizontal/vertical), dobradiça de quadril, carregar, rotação/anti-rotação, engatinhar/rolar, além de corretivos de mobilidade e estabilidade. Use peso corporal, kettlebell, halteres, bandas ou TRX conforme o equipamento disponível informado.
+
+PROIBIDO prescrever os levantamentos completos de competição de Kettlebell Sport (Snatch, Jerk, Long Cycle) ou de Levantamento de Peso Olímpico (Arranco, Arremesso completos) — pode citar variações leves apenas como acessório, nunca como foco central. PROIBIDO isolamento clássico de musculação em máquina (cadeira extensora, cadeira flexora, peck deck).
+
 Você NÃO tem acesso a nenhum banco de exercícios: escreva os nomes por extenso, em português.
-Exercícios podem ser combinados em circuitos ou pares: use o mesmo prefixo em "group" ("A1"/"A2") e "group_type" igual a "superset"; isolados usam "group" vazio e "group_type" "individual".
+
+Use "sets_reps" no formato "3x12" ou "3x30s"; coloque carga/nível em "load" (ex.: "peso corporal", "kettlebell 16kg", pode ficar vazio); detalhes técnicos e cautelas em "observations".
+
+Exercícios podem ser combinados em complexos: use o mesmo prefixo em "group" ("A1"/"A2") e "group_type" igual a "superset"; isolados usam "group" vazio e "group_type" "individual".
+
 Responda APENAS com JSON válido, sem markdown, no formato:
+
 {
   "days": [
     { "name": "Sessão 1", "day_label": "Dia 1", "description": "Foco da sessão",
-      "exercises": [ { "name": "Agachamento búlgaro", "sets_reps": "3x8 cada lado", "load": "halteres 12kg",
-        "rest_seconds": 60, "observations": "Controle do joelho", "group": "", "group_type": "individual" } ] }
+      "exercises": [ { "name": "Agachamento búlgaro", "sets_reps": "3x10 cada lado", "load": "halteres leves",
+        "rest_seconds": 60, "observations": "Foco em controle excêntrico", "group": "", "group_type": "individual" } ] }
   ],
-  "notes": "Observações finais, recomendações de recuperação e próxima reavaliação"
+  "notes": "Observações finais do ciclo"
 }
-Regras: 5 a 9 exercícios por sessão, cobrindo preparação, bloco principal e finalização; 'load' e 'observations' podem ser vazios.`;
+
+Regras: 4 a 8 exercícios por sessão; sempre inclua preparação de movimento no início e mobilidade/regeneração ao final da sessão; 'load' e 'observations' podem ser vazios.`;
 
 const OBJETIVO_LABEL: Record<ObjetivoFuncional, string> = {
   condicionamento_geral: "condicionamento geral",
@@ -157,7 +165,7 @@ export function montarFuncionalPrompt(args: {
   const { tf, linha, semanas, diasPorSemana, dataInicio, escopoLabel } = args;
   const dias = diasPorSemana && diasPorSemana > 0 ? diasPorSemana : 1;
   const dados = {
-    linha_metodologica: linha,
+    escola_metodologica: linha,
     nivel_atleta: tf.nivelAtleta,
     objetivo: OBJETIVO_LABEL[tf.objetivo],
     equipamento_disponivel: EQUIPAMENTO_LABEL[tf.equipamento],
@@ -172,22 +180,31 @@ export function montarFuncionalPrompt(args: {
     data_inicio: dataInicio,
   };
 
+  const temLesaoAtiva = tf.lesoes.some(
+    (l) => l.fase === "aguda" || l.fase === "em_recuperacao",
+  );
+
+  const alertaLesao =
+    temLesaoAtiva && (linha === "crossfit" || linha === "boyle")
+      ? "ATENÇÃO: há lesão/limitação ativa ou em recuperação registrada, e esta linha pressupõe ausência de lesões ativas. Reduza significativamente intensidade e complexidade, priorize segurança, e registre esse alerta em 'notes'."
+      : null;
+
   return [
-    `LINHA METODOLÓGICA APLICADA: ${ESCOLA_TF_LABEL[linha]}`,
     PROMPT_ESCOLA_TF[linha],
+    alertaLesao,
     "",
-    "DADOS DO ALUNO (JSON):",
+    "Dados do aluno e da geração:",
     JSON.stringify(dados, null, 2),
     "",
-    `OBRIGATÓRIO: gere exatamente ${dias} sessão(ões) distintas, formando a divisão semanal a ser repetida ao longo das ${semanas} semana(s).`,
-    tf.lesoes.length > 0
-      ? "OBRIGATÓRIO: adapte cada exercício às lesões/limitações listadas e explique a adaptação nas observações."
-      : null,
+    `Gere um programa de ${semanas} semana(s), ${dias} sessão(ões)/semana, iniciando em ${
+      dataInicio ?? "data não informada"
+    }, seguindo estritamente a filosofia ${ESCOLA_TF_LABEL[linha]} descrita acima.`,
+    `OBRIGATÓRIO: gere exatamente ${dias} sessão(ões) distinta(s), que formam a semana-modelo a ser repetida/progredida ao longo das ${semanas} semana(s).`,
     "",
     "INSTRUÇÕES DO TREINADOR:",
-    args.instrucoes.trim().length > 0
-      ? args.instrucoes.trim()
-      : "Sem instruções adicionais: siga estritamente a filosofia da linha metodológica acima.",
+    args.instrucoes.trim().length > 0 ? args.instrucoes.trim() : "Sem instruções adicionais.",
+    "",
+    "Responda APENAS em JSON válido no schema de programa.",
   ]
     .filter(Boolean)
     .join("\n");
