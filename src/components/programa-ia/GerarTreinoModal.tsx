@@ -117,7 +117,7 @@ const REGIOES_TF: { value: RegiaoLesaoTf; label: string }[] = [
   { value: "outro", label: "Outro" },
 ];
 
-const FASES_TF: { value: FaseLesao; label: string }[] = [
+const FASES_TF: { value: FaseLesaoTf; label: string }[] = [
   { value: "aguda", label: "Aguda (dor ativa)" },
   { value: "em_recuperacao", label: "Em recuperação" },
   { value: "cronica_controlada", label: "Crônica controlada" },
