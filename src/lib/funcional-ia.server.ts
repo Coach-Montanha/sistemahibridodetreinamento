@@ -18,7 +18,7 @@ export type ObjetivoFuncional =
   | "emagrecimento"
   | "hipertrofia_funcional";
 
-export type RegiaoLesao =
+export type RegiaoLesaoTf =
   | "lombar"
   | "joelho"
   | "ombro"
@@ -27,11 +27,11 @@ export type RegiaoLesao =
   | "core"
   | "outro";
 
-export type FaseLesao = "aguda" | "em_recuperacao" | "cronica_controlada";
+export type FaseLesaoTf = "aguda" | "em_recuperacao" | "cronica_controlada";
 
-export type LesaoLimitacao = {
-  regiao: RegiaoLesao;
-  fase: FaseLesao;
+export type LesaoLimitacaoTf = {
+  regiao: RegiaoLesaoTf;
+  fase: FaseLesaoTf;
   observacaoLivre: string | null;
 };
 
@@ -47,7 +47,7 @@ export type TfPayload = {
   objetivo: ObjetivoFuncional;
   equipamento: EquipamentoFuncional;
   sedentarismoProlongado: boolean;
-  lesoes: LesaoLimitacao[];
+  lesoes: LesaoLimitacaoTf[];
 };
 
 export const ESCOLA_TF_LABEL: Record<Exclude<EscolaFuncional, "auto">, string> = {
@@ -95,8 +95,8 @@ const PROMPT_ESCOLA_TF: Record<Exclude<EscolaFuncional, "auto">, string> = {
 };
 
 /** Seleção determinística (escola = "auto"). Segurança clínica tem prioridade máxima. */
-export function escolherEscolaFuncional(p: {
-  lesoes: LesaoLimitacao[];
+export function escolherEscolaFuncional(p: { nivel: NivelAtletaTf; objetivo: ObjetivoFuncional; lesoes: LesaoLimitacaoTf[]; sedentarismoProlongado: boolean; }): Exclude<EscolaFuncional, "auto"> {
+  lesoes: LesaoLimitacaoTf[];
   objetivo: ObjetivoFuncional;
   nivel: NivelAtletaTf;
   sedentarismoProlongado: boolean;
