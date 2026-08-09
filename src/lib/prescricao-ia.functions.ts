@@ -34,6 +34,12 @@ import {
   montarCorridaPrompt,
   type EscolaCorrida,
 } from "@/lib/corrida-ia.server";
+import {
+  buscarCandidatosDoMolde,
+  montarHibridoPrompt,
+  normalizarPrescricaoHibrido,
+  type HibridoPayload,
+} from "@/lib/hibrido-ia.server";
 
 const CARGA = z
   .object({
@@ -203,6 +209,7 @@ const INPUT = z.object({
   wl: WL,
   tf: TF,
   co: CO,
+  hibrido: z.any().optional(),
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
@@ -243,6 +250,10 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     }
     if (isCo && !data.co) {
       throw new Error("Configuração da Corrida ausente");
+    }
+    const isHibrido = programa.metodologia === "hibrido" || programa.metodologia === "kettlebell_fitness";
+    if (isHibrido && !data.hibrido) {
+      throw new Error("Configuração do motor Híbrido/KB Fitness ausente");
     }
 
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(
@@ -378,6 +389,12 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             escopoLabel: ctx.escopo_label,
             instrucoes: data.prompt,
           })
+        : isHibrido
+        ? montarHibridoPrompt({
+            payload: data.hibrido,
+            candidatos: await buscarCandidatosDoMolde(supabase, data.hibrido.sessaoTemplate),
+            instrucoes: data.prompt,
+          })
         : montarUserPrompt(ctx, data.prompt);
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -403,6 +420,14 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const conteudo = payload?.choices?.[0]?.message?.content;
     if (typeof conteudo !== "string" || conteudo.trim().length === 0) {
       throw new Error("A IA não retornou conteúdo. Tente novamente.");
+    }
+
+    if (isHibrido) {
+      return normalizarPrescricaoHibrido(
+        conteudo,
+        data.hibrido.sessaoTemplate,
+        await buscarCandidatosDoMolde(supabase, data.hibrido.sessaoTemplate)
+      ) as any;
     }
 
     return normalizarPrescricao(conteudo);

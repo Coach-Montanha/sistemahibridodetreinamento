@@ -26,6 +26,10 @@ import type {
   KbSportPayload,
   NivelAtleta,
 } from "@/lib/kb-sport-ia.server";
+import {
+  type HibridoPayload,
+  type ModalidadeHibrida,
+} from "@/lib/hibrido-ia.server";
 import type {
   CapacidadeRecuperacao,
   EscolaWeightlifting,
@@ -52,8 +56,9 @@ export type ModalidadeIa =
   | "kettlebell_sport"
   | "levantamento_peso"
   | "treinamento_funcional"
-  | "corrida";
-export type { KbSportPayload, WlPayload, TfPayload, CorridaPayload };
+  | "corrida"
+  | ModalidadeHibrida;
+export type { KbSportPayload, WlPayload, TfPayload, CorridaPayload, HibridoPayload };
 
 const ESCOLAS_CO: { value: EscolaCorrida; label: string; descricao: string }[] = [
   { value: "auto", label: "Deixar sistema escolher", descricao: "Seleção pela distância-alvo, nível, volume e lesões" },
@@ -271,12 +276,14 @@ export function GerarTreinoModal({
   onGenerateWl: (payload: WlPayload) => void;
   onGenerateTf?: (payload: TfPayload) => void;
   onGenerateCo?: (payload: CorridaPayload) => void;
+  onGenerateHibrido?: (payload: HibridoPayload) => void;
   isGenerating?: boolean;
 }) {
   const isKb = modalidade === "kettlebell_sport";
   const isTf = modalidade === "treinamento_funcional";
   const isCo = modalidade === "corrida";
-  const isWlMod = !isKb && !isTf && !isCo;
+  const isHibrido = modalidade === "hibrido" || modalidade === "kettlebell_fitness";
+  const isWlMod = !isKb && !isTf && !isCo && !isHibrido;
 
   const [escolaKb, setEscolaKb] = useState<EscolaMetodologica>("auto");
   const [escolaWl, setEscolaWl] = useState<EscolaWeightlifting>("auto");
@@ -328,7 +335,9 @@ export function GerarTreinoModal({
       ? escolaTf
       : isKb
         ? escolaKb
-        : escolaWl;
+        : isHibrido
+          ? "auto"
+          : escolaWl;
   const descricaoEscola = escolas.find((e) => e.value === escolaAtual)?.descricao;
 
   const avisoKb =
@@ -356,6 +365,15 @@ export function GerarTreinoModal({
         terreno: terreno === "nao_informado" ? null : terreno,
         preferenciaAltaFrequencia: altaFrequencia,
         lesoes,
+      });
+      return;
+    }
+    if (isHibrido) {
+      onGenerateHibrido?.({
+        modalidade: modalidade as ModalidadeHibrida,
+        tituloPrograma: titulo,
+        numeroSessoes: diasPorSemana,
+        sessaoTemplate: [], // O molde deve ser injetado via store ou editor
       });
       return;
     }
