@@ -33,6 +33,12 @@ const GerarTreinoModal = lazy(() =>
   })),
 );
 
+const ConstrutorMoldeDialog = lazy(() =>
+  import("@/components/programa-ia/ConstrutorMoldeDialog").then((m) => ({
+    default: m.ConstrutorMoldeDialog,
+  })),
+);
+
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
 import type { TfPayload } from "@/lib/funcional-ia.server";
@@ -86,6 +92,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const [tfConfig, setTfConfig] = useState<TfPayload | null>(null);
   const [coConfig, setCoConfig] = useState<CorridaPayload | null>(null);
   const [hibridoConfig, setHibridoConfig] = useState<HibridoPayload | null>(null);
+  const [hibridoInstrucoes, setHibridoInstrucoes] = useState("");
   const [kbModalOpen, setKbModalOpen] = useState(false);
   const isMusculacao = metodologia === "musculacao";
   const isKbSport = metodologia === "kettlebell_sport";
@@ -165,6 +172,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
     tf?: TfPayload;
     co?: CorridaPayload;
     hibrido?: HibridoPayload;
+    instrucoes?: string;
   }) {
     setLoading(true);
     try {
@@ -187,6 +195,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       setTfConfig(cfg.tf ?? null);
       setCoConfig(cfg.co ?? null);
       setHibridoConfig(cfg.hibrido ?? null);
+      setHibridoInstrucoes(cfg.instrucoes ?? "");
       setKbModalOpen(false);
       setIaEscopo({
         label: ESCOPO_LABEL[escopo] ?? escopo,
@@ -403,7 +412,20 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         )}
       </Card>
 
-      {kbModalOpen && (
+      {kbModalOpen && isHibrido && (
+        <Suspense fallback={null}>
+          <ConstrutorMoldeDialog
+            open={kbModalOpen}
+            onOpenChange={setKbModalOpen}
+            modalidade={metodologia as "hibrido" | "kettlebell_fitness"}
+            tituloPrograma={titulo}
+            isGenerating={loading}
+            onGerar={(hibrido, instrucoes) => gerarComEscola({ hibrido, instrucoes })}
+          />
+        </Suspense>
+      )}
+
+      {kbModalOpen && !isHibrido && (
         <Suspense fallback={null}>
           <GerarTreinoModal
             open={kbModalOpen}
@@ -415,9 +437,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
                   ? "corrida"
                   : isFuncional
                     ? "treinamento_funcional"
-                    : isHibrido
-                      ? metodologia
-                      : "levantamento_peso"
+                    : "levantamento_peso"
             }
             titulo={titulo}
             escopoLabel={ESCOPO_LABEL[escopo] ?? escopo}
@@ -428,7 +448,6 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             onGenerateWl={(wl) => gerarComEscola({ wl })}
             onGenerateTf={(tf) => gerarComEscola({ tf })}
             onGenerateCo={(co) => gerarComEscola({ co })}
-            onGenerateHibrido={(hibrido) => gerarComEscola({ hibrido })}
           />
         </Suspense>
       )}
@@ -442,6 +461,8 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             wl={wlConfig}
             tf={tfConfig}
             co={coConfig}
+            hibrido={hibridoConfig}
+            promptInicial={hibridoInstrucoes}
             onOpenChange={(o: boolean) => {
               if (!o) {
                 setIaPrograma(null);
@@ -450,6 +471,8 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
                 setWlConfig(null);
                 setTfConfig(null);
                 setCoConfig(null);
+                setHibridoConfig(null);
+                setHibridoInstrucoes("");
                 navigate({ to: "/app/programas" });
               }
             }}
