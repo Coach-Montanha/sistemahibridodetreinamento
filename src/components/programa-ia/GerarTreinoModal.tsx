@@ -263,6 +263,7 @@ export function GerarTreinoModal({
   onGenerateWl,
   onGenerateTf,
   onGenerateCo,
+  onGenerateHibrido,
   isGenerating = false,
 }: {
   open: boolean;
