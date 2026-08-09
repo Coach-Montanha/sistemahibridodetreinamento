@@ -61,17 +61,23 @@ export type BlocoTemplate = {
   chave: string;
   formato: BlockFormatHibrido;
   titulo?: string | null;
-  /** Teto de tempo do bloco, em minutos. */
+  /** Teto de tempo do bloco, em minutos. Para emom/e2mom, é o total (rounds × intervaloMin). */
   duracaoMin: number | null;
-  /** Faixa de séries — se fixo, seriesMin === seriesMax. Irrelevante para amrap/preparacao_movimento. */
+  /** Faixa de séries/rounds — se fixo, seriesMin === seriesMax. Irrelevante para amrap. */
   seriesMin: number | null;
   seriesMax: number | null;
   numeroExercicios: number;
   /** "12", "8-12", ou número. */
   repsPorExercicio: string | number | null;
   modoExecucao: ModoExecucao;
-  /** Descanso após este bloco, antes do próximo, em segundos. */
+  /** Descanso DEPOIS deste bloco, antes do próximo bloco da sessão, em segundos. */
   descansoAposSeg: number;
+  /** Descanso DENTRO do bloco, entre séries/rounds (ex.: SetsRepsForm.descanso_seg). Irrelevante para emom/e2mom/amrap (o próprio formato define o ritmo). */
+  descansoEntreSeriesSeg?: number | null;
+  /** Só para emom/e2mom: minutos de cada ciclo (1 para emom, 2 para e2mom, mas editável). */
+  intervaloMin?: number | null;
+  /** Só para forca_tecnica_pct: percentual de 1RM do passo único deste bloco. */
+  percentual1rm?: number | null;
   selecaoExercicios: SelecaoExercicios;
   /** IDs de exercícios já escolhidos manualmente — usado quando selecaoExercicios === "manual". */
   exerciciosFixos?: string[];
@@ -105,19 +111,25 @@ export async function buscarCandidatosDoMolde(
   template: SessaoTemplate,
 ): Promise<CandidatosPorBloco> {
   const out: CandidatosPorBloco = {};
+
   for (const bloco of template) {
     if (bloco.selecaoExercicios !== "ia") continue;
+
     let query = supabase.from("exercises").select("id, nome_pt").order("nome_pt").limit(60);
+
     if (bloco.fonteExercicios.metodologias?.length) {
       query = query.overlaps("metodologias", bloco.fonteExercicios.metodologias);
     }
     if (bloco.fonteExercicios.equipamento?.length) {
       query = query.overlaps("equipamento", bloco.fonteExercicios.equipamento);
     }
+
     const { data, error } = await query;
     if (error) throw new Error(`Falha ao buscar exercícios para o bloco "${bloco.chave}": ${error.message}`);
+
     out[bloco.chave] = (data ?? []).map((e: any) => ({ id: e.id as string, nome: e.nome_pt as string }));
   }
+
   return out;
 }
 
@@ -239,6 +251,7 @@ export function normalizarPrescricaoHibrido(
       if (bt.selecaoExercicios === "manual") {
         return { chave: bt.chave, exerciciosIds: bt.exerciciosFixos ?? [] };
       }
+
       const recebido = blocosRaw.find((b: any) => b?.chave === bt.chave);
       const idsRecebidos: string[] = Array.isArray(recebido?.exercicios_ids)
         ? recebido.exercicios_ids.filter((x: unknown) => typeof x === "string")
