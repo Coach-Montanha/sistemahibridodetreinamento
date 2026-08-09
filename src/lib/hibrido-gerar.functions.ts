@@ -225,7 +225,7 @@ export const gerarSessoesHibrido = createServerFn({ method: "POST" })
       const { data: sess, error: sessErr } = await supabase
         .from("sessions")
         .insert({
-          program_week_id: semanaId,
+          program_week_id: semanaId!,
           numero_dia: numeroDiaNaSemana,
           titulo: `Sessão ${i + 1}`,
           status: "rascunho",
@@ -248,7 +248,7 @@ export const gerarSessoesHibrido = createServerFn({ method: "POST" })
             formato: blocoTpl.formato,
             titulo: blocoTpl.titulo ?? null,
             duracao_min: blocoTpl.duracaoMin,
-            config: configDoBloco(blocoTpl),
+            config: configDoBloco(blocoTpl) as any,
           })
           .select("id")
           .single();
