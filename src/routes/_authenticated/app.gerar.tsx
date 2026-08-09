@@ -37,6 +37,7 @@ import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
 import type { TfPayload } from "@/lib/funcional-ia.server";
 import type { CorridaPayload } from "@/lib/corrida-ia.server";
+import type { HibridoPayload } from "@/lib/hibrido-ia.server";
 
 const SEMANAS_POR_ESCOPO: Record<string, number> = {
   sessao: 1,
@@ -84,13 +85,15 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const [wlConfig, setWlConfig] = useState<WlPayload | null>(null);
   const [tfConfig, setTfConfig] = useState<TfPayload | null>(null);
   const [coConfig, setCoConfig] = useState<CorridaPayload | null>(null);
+  const [hibridoConfig, setHibridoConfig] = useState<HibridoPayload | null>(null);
   const [kbModalOpen, setKbModalOpen] = useState(false);
   const isMusculacao = metodologia === "musculacao";
   const isKbSport = metodologia === "kettlebell_sport";
   const isWeightlifting = metodologia === "levantamento_peso";
   const isFuncional = metodologia === "treinamento_funcional";
   const isCorrida = metodologia === "corrida";
-  const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida;
+  const isHibrido = metodologia === "hibrido" || metodologia === "kettlebell_fitness";
+  const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida || isHibrido;
 
   const prefs = useQuery({
     queryKey: ["generator-prefs", metodologia],
@@ -161,6 +164,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
     wl?: WlPayload;
     tf?: TfPayload;
     co?: CorridaPayload;
+    hibrido?: HibridoPayload;
   }) {
     setLoading(true);
     try {
@@ -182,6 +186,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       setWlConfig(cfg.wl ?? null);
       setTfConfig(cfg.tf ?? null);
       setCoConfig(cfg.co ?? null);
+      setHibridoConfig(cfg.hibrido ?? null);
       setKbModalOpen(false);
       setIaEscopo({
         label: ESCOPO_LABEL[escopo] ?? escopo,
@@ -410,7 +415,9 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
                   ? "corrida"
                   : isFuncional
                     ? "treinamento_funcional"
-                    : "levantamento_peso"
+                    : isHibrido
+                      ? metodologia
+                      : "levantamento_peso"
             }
             titulo={titulo}
             escopoLabel={ESCOPO_LABEL[escopo] ?? escopo}
@@ -421,6 +428,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             onGenerateWl={(wl) => gerarComEscola({ wl })}
             onGenerateTf={(tf) => gerarComEscola({ tf })}
             onGenerateCo={(co) => gerarComEscola({ co })}
+            onGenerateHibrido={(hibrido) => gerarComEscola({ hibrido })}
           />
         </Suspense>
       )}
