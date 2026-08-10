@@ -101,10 +101,8 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const isFuncional = metodologia === "treinamento_funcional";
   const isCorrida = metodologia === "corrida";
   const isHibrido = metodologia === "hibrido";
-  // Kettlebell Fitness já tem um gerador dedicado (sorteio por categoria via
-  // gerarTreino/gerador.functions). NÃO ativamos o molde para ele ainda —
-  // troque para `metodologia === "kettlebell_fitness"` quando decidir migrar.
-  const isKbFitnessMolde = false;
+  const isKbFitness = metodologia === "kettlebell_fitness";
+  const isKbFitnessMolde = isKbFitness;
   const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida;
   const usaMolde = isHibrido || isKbFitnessMolde;
 
