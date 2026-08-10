@@ -45,7 +45,7 @@ const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
 };
 
 const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
-  "preparacao_movimento",
+  "mobilidade",
   "forca_tecnica_pct",
   "emom",
   "e2mom",
