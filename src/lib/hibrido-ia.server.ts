@@ -117,11 +117,23 @@ export async function buscarCandidatosDoMolde(
 
     let query = supabase.from("exercises").select("id, nome_pt").order("nome_pt").limit(60);
 
-    if (bloco.fonteExercicios.metodologias?.length) {
-      query = query.overlaps("metodologias", bloco.fonteExercicios.metodologias);
+    // Regras de conexão Bloco -> Equipamento (e Metodologia quando implícito)
+    const metodologias = [...(bloco.fonteExercicios.metodologias ?? [])];
+    const equipamentos = [...(bloco.fonteExercicios.equipamento ?? [])];
+
+    if (bloco.formato === "mobilidade" && bloco.slot === "mobilidade") {
+      // Bloco de mobilidade só consegue solicitar e selecionar movimentos do equipamento mobilidade.
+      equipamentos.push("mobilidade");
+    } else if (bloco.titulo?.toLowerCase() === "aquecimento" || bloco.chave.includes("aquecimento")) {
+      // Bloco de aquecimento só consegue solicitar e selecionar movimentos do bloco kettlebell e ginástico.
+      equipamentos.push("kettlebell", "ginastico");
     }
-    if (bloco.fonteExercicios.equipamento?.length) {
-      query = query.overlaps("equipamento", bloco.fonteExercicios.equipamento);
+
+    if (metodologias.length > 0) {
+      query = query.overlaps("metodologias", metodologias);
+    }
+    if (equipamentos.length > 0) {
+      query = query.overlaps("equipamento", equipamentos);
     }
 
     const { data, error } = await query;
