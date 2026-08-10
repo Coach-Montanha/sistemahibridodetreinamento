@@ -60,7 +60,6 @@ const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
 const USA_SERIES: BlockFormatHibrido[] = [
-  "mobilidade",
   "emom",
   "e2mom",
   "circuito",
@@ -69,7 +68,7 @@ const USA_SERIES: BlockFormatHibrido[] = [
   "finalizador",
 ];
 const USA_INTERVALO: BlockFormatHibrido[] = ["emom", "e2mom"];
-const USA_DURACAO_TOTAL: BlockFormatHibrido[] = ["amrap"];
+const USA_DURACAO_TOTAL: BlockFormatHibrido[] = ["amrap", "mobilidade"];
 const USA_PERCENTUAL: BlockFormatHibrido[] = ["forca_tecnica_pct"];
 const USA_DESCANSO_ENTRE_SERIES: BlockFormatHibrido[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
 const USA_SLOT: BlockFormatHibrido[] = ["mobilidade"];
