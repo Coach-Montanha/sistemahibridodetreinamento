@@ -78,7 +78,7 @@ function configDoBloco(b: BlocoTemplate): Record<string, unknown> {
 
   switch (b.formato) {
     case "mobilidade":
-      return { ...base, rounds: b.seriesMin ?? 4, round_min: b.duracaoMin ?? 5, modo_execucao: b.modoExecucao };
+      return { ...base, rounds: b.seriesMin ?? 4, round_min: b.duracaoMin ?? 2, modo_execucao: b.modoExecucao };
     case "forca_tecnica_pct": {
       const reps = typeof b.repsPorExercicio === "number" ? b.repsPorExercicio : Number(b.repsPorExercicio) || 6;
       return { ...base, passos: [{ pct: b.percentual1rm ?? 70, sets: b.seriesMin ?? 3, reps }] };
