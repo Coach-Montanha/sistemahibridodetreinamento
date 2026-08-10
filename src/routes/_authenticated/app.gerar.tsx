@@ -293,9 +293,13 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
           <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
             <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <p className="flex-1 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Motor dedicado.</strong> Kettlebell Fitness gera um bloco único de estações (5–6, 30 min), com sorteio por categoria calibrado pela distribuição real. Suas preferências de blocos não se aplicam aqui.
+              <strong className="text-foreground">Motor dedicado por molde.</strong> Kettlebell Fitness segue uma estrutura técnica rigorosa:
               <br /><br />
-              Esse motor gera uma estrutura com Preparação de movimento (mobilidade, 2'), Aquecimento (2-3 movimentos, 4 séries, limite 5') e um bloco de Kettlebell Fitness (Circuito 6 rounds, Séries Fixas 6x12, Cluster ou EMOM-AMRAP). A mobilidade só seleciona mobilidade, aquecimento seleciona ginástico/kettlebell, e o bloco principal foca 90-100% em kettlebell.
+              1. <strong className="text-foreground">Bloco de Mobilidade:</strong> Seleção automática de 1 exercício de mobilidade (2 minutos total).
+              <br />
+              2. <strong className="text-foreground">Aquecimento:</strong> Circuito de 5 minutos com 2-3 movimentos (ginástico/kettlebell), 4 séries.
+              <br />
+              3. <strong className="text-foreground">Kettlebell Fitness:</strong> Bloco principal focado (90-100% kettlebell) em formatos de Circuito, Séries Fixas, Cluster ou EMOM-AMRAP.
             </p>
           </div>
         ) : isCorrida ? (
