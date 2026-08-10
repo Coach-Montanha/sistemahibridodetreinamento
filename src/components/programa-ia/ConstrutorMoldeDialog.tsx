@@ -42,7 +42,6 @@ const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
   bodybuilding_sets: "Séries × Reps",
   finalizador: "Finalizador",
   livre: "Bloco livre",
-  livre2: "Bloco livre2",
 };
 
 const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
@@ -57,7 +56,6 @@ const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
   "finalizador",
   "kb_timed_sets",
   "livre",
-  "livre2",
 ];
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
