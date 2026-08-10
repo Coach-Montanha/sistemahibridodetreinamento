@@ -57,6 +57,7 @@ const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
   "finalizador",
   "kb_timed_sets",
   "livre",
+  "livre2",
 ];
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
