@@ -971,7 +971,7 @@ export type Database = {
     }
     Enums: {
       block_format:
-        | "preparacao_movimento"
+        | "mobilidade"
         | "forca_tecnica_pct"
         | "emom"
         | "e2mom"
@@ -1124,7 +1124,7 @@ export const Constants = {
   public: {
     Enums: {
       block_format: [
-        "preparacao_movimento",
+        "mobilidade",
         "forca_tecnica_pct",
         "emom",
         "e2mom",
