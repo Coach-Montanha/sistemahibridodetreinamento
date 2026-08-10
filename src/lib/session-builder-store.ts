@@ -118,7 +118,7 @@ function mapExerciseSets(
 }
 
 const DEFAULT_CONFIG: Record<BlockFormat, Record<string, any>> = {
-  preparacao_movimento: { rounds: 4, round_min: 5, modo_execucao: "circuito" },
+  mobilidade: { rounds: 4, round_min: 5, modo_execucao: "circuito" },
   e2mom: { rounds: 8, intervalo_min: 2, rest_after_min: 3, modo_execucao: "circuito" },
   amrap: { duracao_min: 12, modo_execucao: "circuito" },
   emom: { rounds: 10, intervalo_min: 1, modo_execucao: "circuito" },
