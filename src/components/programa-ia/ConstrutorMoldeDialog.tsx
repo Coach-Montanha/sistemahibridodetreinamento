@@ -72,7 +72,7 @@ const USA_INTERVALO: BlockFormatHibrido[] = ["emom", "e2mom"];
 const USA_DURACAO_TOTAL: BlockFormatHibrido[] = ["amrap"];
 const USA_PERCENTUAL: BlockFormatHibrido[] = ["forca_tecnica_pct"];
 const USA_DESCANSO_ENTRE_SERIES: BlockFormatHibrido[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
-const USA_SLOT: BlockFormatHibrido[] = ["preparacao_movimento"];
+const USA_SLOT: BlockFormatHibrido[] = ["mobilidade"];
 const USA_NUMERO_EXERCICIOS: BlockFormatHibrido[] = FORMATOS_DISPONIVEIS.filter((f) => f !== "kb_timed_sets");
 
 function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
