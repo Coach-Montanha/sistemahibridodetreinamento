@@ -110,6 +110,9 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
 
   switch (formato) {
     case "mobilidade":
+      // O Bloco de Mobilidade agora é um "atalho" que carrega Mobilidade + Aquecimento
+      // Mas no molde físico, vamos manter a lógica de adicionar UM bloco por vez no array.
+      // Para atender ao pedido de "carregar os dois", vamos modificar a função que chama addBlock.
       return { ...base, duracaoMin: 2, numeroExercicios: 1, seriesMin: 4, seriesMax: 4, slot: "mobilidade" };
     case "forca_tecnica_pct":
       return {
@@ -141,6 +144,26 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
     default:
       return base;
   }
+}
+
+function novoAquecimento(existentes: BlocoTemplate[]): BlocoTemplate {
+  const chave = gerarChave("circuito", existentes);
+  return {
+    chave,
+    formato: "circuito",
+    titulo: "Aquecimento",
+    duracaoMin: 5,
+    seriesMin: 4,
+    seriesMax: 4,
+    numeroExercicios: 2,
+    repsPorExercicio: 10,
+    modoExecucao: "circuito",
+    descansoAposSeg: 0,
+    descansoEntreSeriesSeg: 30,
+    selecaoExercicios: "ia",
+    exerciciosFixos: [],
+    fonteExercicios: { metodologias: ["ginastico", "kettlebell"] },
+  };
 }
 
 function resumoBloco(b: BlocoTemplate): string {
