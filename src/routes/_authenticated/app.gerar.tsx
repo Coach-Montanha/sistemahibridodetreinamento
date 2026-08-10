@@ -279,7 +279,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
               antes de salvar.
             </p>
           </div>
-        ) : isHibrido || isKbFitness ? (
+        ) : isHibrido ? (
           <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
             <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <p className="flex-1 leading-relaxed text-muted-foreground">
@@ -287,6 +287,15 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
               Ao gerar, você monta a estrutura fixa de blocos da sessão (formato, duração,
               séries, número de exercícios, descanso) e a IA só escolhe quais exercícios da
               sua biblioteca preenchem cada bloco marcado como "IA escolhe".
+            </p>
+          </div>
+        ) : isKbFitness ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <p className="flex-1 leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">Motor dedicado.</strong> Kettlebell Fitness gera um bloco único de estações (5–6, 30 min), com sorteio por categoria calibrado pela distribuição real. Suas preferências de blocos não se aplicam aqui.
+              <br /><br />
+              Esse motor gera uma estrutura com Preparação de movimento (mobilidade, 2'), Aquecimento (2-3 movimentos, 4 séries, limite 5') e um bloco de Kettlebell Fitness (Circuito 6 rounds, Séries Fixas 6x12, Cluster ou EMOM-AMRAP). A mobilidade só seleciona mobilidade, aquecimento seleciona ginástico/kettlebell, e o bloco principal foca 90-100% em kettlebell.
             </p>
           </div>
         ) : isCorrida ? (

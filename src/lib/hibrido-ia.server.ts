@@ -140,7 +140,15 @@ const LABEL_MODALIDADE: Record<ModalidadeHibrida, string> = {
 
 const FILOSOFIA_HIBRIDO = `Filosofia do Treinamento Híbrido: os movimentos somam padrões simples e compostos, executados de forma isolada ou integrada, buscando os três planos de movimento (sagital, frontal, transversal) — tridimensionalidade, não repetição plana. Os três sistemas energéticos (ATP-CP, glicolítico, oxidativo) são estimulados em conjunto sempre que possível dentro da mesma sessão. Exercícios ginásticos (peso corporal), exercícios com sobrecarga externa (kettlebell, halteres, barra) e exercícios cíclicos (corda, bike, remo) se combinam — não são tratados como categorias isoladas.`;
 
-const FILOSOFIA_KETTLEBELL_FITNESS = `Filosofia do Kettlebell Fitness: sessões mais simples e diretas que o Treinamento Híbrido, centradas quase exclusivamente em kettlebell (e complementos leves de peso corporal), priorizando fluência de movimento e densidade de treino sobre a complexidade de combinar múltiplos sistemas/planos — ainda assim, mantenha variedade de padrões de movimento (empurrar, puxar, dobradiça de quadril, agachar, rotação, carregar) dentro de cada bloco.`;
+const FILOSOFIA_KETTLEBELL_FITNESS = `Filosofia do Kettlebell Fitness: sessões mais simples e diretas que o Treinamento Híbrido, centradas quase exclusivamente em kettlebell (e complementos leves de peso corporal), priorizando fluência de movimento e densidade de treino sobre a complexidade de combinar múltiplos sistemas/planos.
+A estrutura de Kettlebell Fitness deve seguir:
+1. Preparação de movimento: selecionar automaticamente um movimento do grupo Mobilidade, com duração exata de 2'.
+2. Aquecimento: selecionar 2-3 movimentos realizados em circuitos (grupo ginástico e kettlebell), com 4 séries desse circuito e um tempo limite de 5'.
+3. Kettlebell Fitness: um bloco principal com opções de estrutura (Circuito de 6 rounds, Séries Fixas de 6x12, Cluster Sets ou EMOM-AMRAP).
+Regras de seleção:
+- Mobilidade: apenas exercícios do grupo mobilidade.
+- Aquecimento: apenas movimentos do grupo ginástico e kettlebell.
+- Kettlebell Fitness: 90-100% kettlebell e 0-10% ginástico.`;
 
 /**
  * Monta o prompt único cobrindo toda a sequência de sessões.
