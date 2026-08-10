@@ -103,8 +103,8 @@ async function montarInputDeBlocos(
   const principal: BlocoImagem[] = [];
 
   for (const b of blocks) {
-    if (b.formato === "preparacao_movimento") {
-      esquerda.push(blocoParaImagem(b, "PREPARAÇÃO DE MOVIMENTO"));
+    if (b.formato === "mobilidade") {
+      esquerda.push(blocoParaImagem(b, "BLOCO DE MOBILIDADE"));
     } else if (ehAquecimento(b)) {
       esquerda.push(blocoParaImagem(b, "AQUECIMENTO"));
     } else {

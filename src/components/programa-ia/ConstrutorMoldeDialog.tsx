@@ -31,7 +31,7 @@ import type {
 } from "@/lib/hibrido-ia.server";
 
 const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
-  preparacao_movimento: "Preparação de Movimento",
+  mobilidade: "Bloco de Mobilidade",
   forca_tecnica_pct: "Força/Técnica (%1RM)",
   emom: "EMOM",
   e2mom: "E2MOM",
@@ -45,7 +45,7 @@ const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
 };
 
 const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
-  "preparacao_movimento",
+  "mobilidade",
   "forca_tecnica_pct",
   "emom",
   "e2mom",
@@ -60,7 +60,6 @@ const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
 const USA_SERIES: BlockFormatHibrido[] = [
-  "preparacao_movimento",
   "emom",
   "e2mom",
   "circuito",
@@ -69,10 +68,10 @@ const USA_SERIES: BlockFormatHibrido[] = [
   "finalizador",
 ];
 const USA_INTERVALO: BlockFormatHibrido[] = ["emom", "e2mom"];
-const USA_DURACAO_TOTAL: BlockFormatHibrido[] = ["amrap"];
+const USA_DURACAO_TOTAL: BlockFormatHibrido[] = ["amrap", "mobilidade"];
 const USA_PERCENTUAL: BlockFormatHibrido[] = ["forca_tecnica_pct"];
 const USA_DESCANSO_ENTRE_SERIES: BlockFormatHibrido[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
-const USA_SLOT: BlockFormatHibrido[] = ["preparacao_movimento"];
+const USA_SLOT: BlockFormatHibrido[] = ["mobilidade"];
 const USA_NUMERO_EXERCICIOS: BlockFormatHibrido[] = FORMATOS_DISPONIVEIS.filter((f) => f !== "kb_timed_sets");
 
 function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
@@ -110,7 +109,7 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
   };
 
   switch (formato) {
-    case "preparacao_movimento":
+    case "mobilidade":
       return { ...base, duracaoMin: 2, numeroExercicios: 1, seriesMin: 4, seriesMax: 4, slot: "mobilidade" };
     case "forca_tecnica_pct":
       return {

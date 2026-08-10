@@ -1851,7 +1851,7 @@ function SortableBloco({
           <div className="grid gap-3 md:grid-cols-[220px_1fr]">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Formato</Label>
-              <Select value={bloco.formato} onValueChange={(v) => onChange({ ...bloco, formato: v as BlockFormat })}>
+              <Select value={bloco.formato} onValueChange={(v) => onChange({ ...bloco, formato: v as any })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ENABLED_FORMATS.map((f) => (

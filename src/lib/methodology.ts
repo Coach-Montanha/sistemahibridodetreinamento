@@ -18,7 +18,7 @@ export const METHODOLOGY_LABEL: Record<Methodology, string> = {
 };
 
 export type BlockFormat =
-  | "preparacao_movimento"
+  | "mobilidade"
   | "forca_tecnica_pct"
   | "emom"
   | "e2mom"
@@ -31,7 +31,7 @@ export type BlockFormat =
   | "livre";
 
 export const BLOCK_FORMAT_LABEL: Record<BlockFormat, string> = {
-  preparacao_movimento: "Preparação de Movimento",
+  mobilidade: "Bloco de Mobilidade",
   forca_tecnica_pct: "Força/Técnica (%1RM)",
   emom: "EMOM",
   e2mom: "E2MOM",
@@ -46,7 +46,7 @@ export const BLOCK_FORMAT_LABEL: Record<BlockFormat, string> = {
 
 /** Todos os formatos disponíveis para uso em blocos de treino. */
 export const ENABLED_FORMATS: BlockFormat[] = [
-  "preparacao_movimento",
+  "mobilidade",
   "forca_tecnica_pct",
   "emom",
   "e2mom",

@@ -321,7 +321,7 @@ function ModoToggle({ block }: { block: BuilderBlock }) {
   );
 }
 
-/* ---------- Preparação de Movimento ---------- */
+/* ---------- Bloco de Mobilidade ---------- */
 export function PrepMovimentoForm({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
   const cfg = block.config;
