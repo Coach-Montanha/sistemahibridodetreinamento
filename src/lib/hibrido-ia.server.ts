@@ -152,15 +152,11 @@ const LABEL_MODALIDADE: Record<ModalidadeHibrida, string> = {
 
 const FILOSOFIA_HIBRIDO = `Filosofia do Treinamento Híbrido: os movimentos somam padrões simples e compostos, executados de forma isolada ou integrada, buscando os três planos de movimento (sagital, frontal, transversal) — tridimensionalidade, não repetição plana. Os três sistemas energéticos (ATP-CP, glicolítico, oxidativo) são estimulados em conjunto sempre que possível dentro da mesma sessão. Exercícios ginásticos (peso corporal), exercícios com sobrecarga externa (kettlebell, halteres, barra) e exercícios cíclicos (corda, bike, remo) se combinam — não são tratados como categorias isoladas.`;
 
-const FILOSOFIA_KETTLEBELL_FITNESS = `Filosofia do Kettlebell Fitness: sessões mais simples e diretas que o Treinamento Híbrido, centradas quase exclusivamente em kettlebell (e complementos leves de peso corporal), priorizando fluência de movimento e densidade de treino sobre a complexidade de combinar múltiplos sistemas/planos.
-A estrutura de Kettlebell Fitness deve seguir:
-1. Mobilidade: selecionar automaticamente um movimento do grupo Mobilidade, com duração exata de 2' (esta é a duração do bloco).
-2. Aquecimento: selecionar 2-3 movimentos realizados em circuitos (grupo ginástico e kettlebell), com 4 séries desse circuito e um tempo limite de 5'.
-3. Kettlebell Fitness: um bloco principal com opções de estrutura (Circuito de 6 rounds, Séries Fixas de 6x12, Cluster Sets ou EMOM-AMRAP).
-Regras de seleção:
-- Mobilidade: apenas exercícios do grupo mobilidade.
-- Aquecimento: apenas movimentos do grupo ginástico e kettlebell.
-- Kettlebell Fitness: 90-100% kettlebell e 0-10% ginástico.`;
+const FILOSOFIA_KETTLEBELL_FITNESS = `Filosofia do Kettlebell Fitness: sessões centradas quase exclusivamente em kettlebell e ginástico, priorizando fluência de movimento e densidade.
+A estrutura de Kettlebell Fitness deve seguir rigorosamente:
+1. Mobilidade: selecionar 1 movimento do equipamento Mobilidade (duração 2').
+2. Aquecimento: selecionar 2-3 movimentos do equipamento ginástico e kettlebell (circuito, 5', 4 séries).
+3. Bloco Principal Kettlebell Fitness: a seleção deve ser de 90% a 100% de exercícios com equipamento kettlebell e de 0% a 10% de movimentos com equipamento ginástico.`;
 
 /**
  * Monta o prompt único cobrindo toda a sequência de sessões.
