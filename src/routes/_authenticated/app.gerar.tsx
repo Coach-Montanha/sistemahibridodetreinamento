@@ -293,7 +293,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
           <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
             <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <p className="flex-1 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Motor dedicado por molde.</strong> Kettlebell Fitness segue uma estrutura técnica rigorosa:
+              <strong className="text-foreground">Motor dedicado por molde.</strong> Kettlebell Fitness segue uma estrutura técnica rigorosa (ex.: ao selecionar Mobilidade / Preparação, geramos Mobilidade e Aquecimento sequencialmente):
               <br /><br />
               1. <strong className="text-foreground">Bloco de Mobilidade:</strong> Seleção automática de 1 exercício de mobilidade (2 minutos total).
               <br />

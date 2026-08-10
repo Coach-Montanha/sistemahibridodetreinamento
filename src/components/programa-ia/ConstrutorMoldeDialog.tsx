@@ -576,6 +576,9 @@ export function ConstrutorMoldeDialog({
     if (formato === "mobilidade") {
       const mob = novoBloco("mobilidade", blocos);
       const aq = novoAquecimento([...blocos, mob]);
+      // Garante que o bloco de mobilidade tenha o nome correto e o aquecimento também
+      mob.titulo = "Mobilidade";
+      aq.titulo = "Aquecimento";
       setBlocos((prev) => [...prev, mob, aq]);
       setAbertoChave(mob.chave);
     } else {
