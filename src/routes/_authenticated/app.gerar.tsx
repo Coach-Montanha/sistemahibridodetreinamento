@@ -200,11 +200,33 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         .select("id, titulo")
         .single();
       if (error || !prog) throw new Error(error?.message ?? "Falha ao criar rotina");
+
+      // O Híbrido tem seu próprio fluxo direto que não passa pelo PrescreverIaDialog
+      // para evitar conflito de tipos no step de prévia (o hibrido-gerar salva direto).
+      if (isHibrido && cfg.hibrido) {
+        const { gerarSessoesHibrido } = await import("@/lib/hibrido-gerar.functions");
+        const res = await gerarSessoesHibrido({
+          data: {
+            modalidade: "hibrido",
+            tituloPrograma: titulo,
+            numeroSessoes: cfg.hibrido.numeroSessoes,
+            diasPorSemana: escopo === "sessao" ? 1 : dias,
+            dataInicio,
+            sessaoTemplate: cfg.hibrido.sessaoTemplate,
+            instrucoes: cfg.instrucoes ?? "",
+          },
+        });
+        toast.success(`${res.sessoesGeradas} treino(s) gerado(s) com sucesso.`);
+        setMoldeModalOpen(false);
+        navigate({ to: "/app/treinos", search: { aba: "programas" } });
+        return;
+      }
+
       setKbConfig(cfg.kb ?? null);
       setWlConfig(cfg.wl ?? null);
       setTfConfig(cfg.tf ?? null);
       setCoConfig(cfg.co ?? null);
-      setHibridoConfig(cfg.hibrido ?? null);
+      setHibridoConfig(null);
       setHibridoInstrucoes(cfg.instrucoes ?? "");
       setKbModalOpen(false);
       setIaEscopo({
