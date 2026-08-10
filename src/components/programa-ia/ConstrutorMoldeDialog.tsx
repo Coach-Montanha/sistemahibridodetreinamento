@@ -31,7 +31,7 @@ import type {
 } from "@/lib/hibrido-ia.server";
 
 const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
-  mobilidade: "Bloco de Mobilidade",
+  mobilidade: "Mobilidade / Preparação",
   forca_tecnica_pct: "Força/Técnica (%1RM)",
   emom: "EMOM",
   e2mom: "E2MOM",
@@ -110,10 +110,7 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
 
   switch (formato) {
     case "mobilidade":
-      // O Bloco de Mobilidade agora é um "atalho" que carrega Mobilidade + Aquecimento
-      // Mas no molde físico, vamos manter a lógica de adicionar UM bloco por vez no array.
-      // Para atender ao pedido de "carregar os dois", vamos modificar a função que chama addBlock.
-      return { ...base, duracaoMin: 2, numeroExercicios: 1, seriesMin: 4, seriesMax: 4, slot: "mobilidade" };
+      return { ...base, titulo: "Mobilidade", duracaoMin: 2, numeroExercicios: 1, seriesMin: 4, seriesMax: 4, slot: "mobilidade" };
     case "forca_tecnica_pct":
       return {
         ...base,
@@ -579,6 +576,9 @@ export function ConstrutorMoldeDialog({
     if (formato === "mobilidade") {
       const mob = novoBloco("mobilidade", blocos);
       const aq = novoAquecimento([...blocos, mob]);
+      // Garante que o bloco de mobilidade tenha o nome correto e o aquecimento também
+      mob.titulo = "Mobilidade";
+      aq.titulo = "Aquecimento";
       setBlocos((prev) => [...prev, mob, aq]);
       setAbertoChave(mob.chave);
     } else {
@@ -692,7 +692,7 @@ export function ConstrutorMoldeDialog({
               <div className="rounded-xl border border-dashed border-border/70 p-6 text-center">
                 <p className="text-sm text-muted-foreground">Nenhum bloco adicionado ainda.</p>
                 <p className="mt-1 text-xs text-muted-foreground/80">
-                  Comece adicionando o primeiro bloco da sessão (ex.: Preparação de Movimento).
+                  Comece adicionando o primeiro bloco da sessão (ex.: Mobilidade / Preparação).
                 </p>
               </div>
             ) : (
