@@ -43,7 +43,7 @@ import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
 import type { TfPayload } from "@/lib/funcional-ia.server";
 import type { CorridaPayload } from "@/lib/corrida-ia.server";
-import type { HibridoPayload } from "@/lib/hibrido-ia.server";
+import type { HibridoPayload, ModalidadeHibrida } from "@/lib/hibrido-ia.server";
 
 const SEMANAS_POR_ESCOPO: Record<string, number> = {
   sessao: 1,
@@ -94,13 +94,19 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const [hibridoConfig, setHibridoConfig] = useState<HibridoPayload | null>(null);
   const [hibridoInstrucoes, setHibridoInstrucoes] = useState("");
   const [kbModalOpen, setKbModalOpen] = useState(false);
+  const [moldeModalOpen, setMoldeModalOpen] = useState(false);
   const isMusculacao = metodologia === "musculacao";
   const isKbSport = metodologia === "kettlebell_sport";
   const isWeightlifting = metodologia === "levantamento_peso";
   const isFuncional = metodologia === "treinamento_funcional";
   const isCorrida = metodologia === "corrida";
-  const isHibrido = metodologia === "hibrido" || metodologia === "kettlebell_fitness";
-  const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida || isHibrido;
+  const isHibrido = metodologia === "hibrido";
+  // Kettlebell Fitness já tem um gerador dedicado (sorteio por categoria via
+  // gerarTreino/gerador.functions). NÃO ativamos o molde para ele ainda —
+  // troque para `metodologia === "kettlebell_fitness"` quando decidir migrar.
+  const isKbFitnessMolde = false;
+  const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida;
+  const usaMolde = isHibrido || isKbFitnessMolde;
 
   const prefs = useQuery({
     queryKey: ["generator-prefs", metodologia],
@@ -109,6 +115,10 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (usaMolde) {
+      setMoldeModalOpen(true);
+      return;
+    }
     if (usaModalIa) {
       setKbModalOpen(true);
       return;
@@ -247,6 +257,16 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
               gerar, criamos a rotina e abrimos o <strong className="text-foreground">Prescrever
               com IA</strong>, onde você descreve a divisão desejada e revisa a prévia
               antes de salvar.
+            </p>
+          </div>
+        ) : isHibrido ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <p className="flex-1 leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">Motor por molde estrutural.</strong>{" "}
+              Ao gerar, você monta a estrutura fixa de blocos da sessão (formato, duração,
+              séries, número de exercícios, descanso) e a IA só escolhe quais exercícios da
+              sua biblioteca preenchem cada bloco marcado como "IA escolhe".
             </p>
           </div>
         ) : isCorrida ? (
@@ -412,12 +432,12 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         )}
       </Card>
 
-      {kbModalOpen && isHibrido && (
+      {moldeModalOpen && (
         <Suspense fallback={null}>
           <ConstrutorMoldeDialog
-            open={kbModalOpen}
-            onOpenChange={setKbModalOpen}
-            modalidade={metodologia as "hibrido" | "kettlebell_fitness"}
+            open={moldeModalOpen}
+            onOpenChange={setMoldeModalOpen}
+            modalidade={metodologia as ModalidadeHibrida}
             tituloPrograma={titulo}
             isGenerating={loading}
             onGerar={(hibrido, instrucoes) => gerarComEscola({ hibrido, instrucoes })}
