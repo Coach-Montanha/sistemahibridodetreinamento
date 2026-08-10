@@ -77,7 +77,7 @@ function configDoBloco(b: BlocoTemplate): Record<string, unknown> {
   const base = { descanso_apos_seg: b.descansoAposSeg };
 
   switch (b.formato) {
-    case "preparacao_movimento":
+    case "mobilidade":
       return { ...base, rounds: b.seriesMin ?? 4, round_min: b.duracaoMin ?? 5, modo_execucao: b.modoExecucao };
     case "forca_tecnica_pct": {
       const reps = typeof b.repsPorExercicio === "number" ? b.repsPorExercicio : Number(b.repsPorExercicio) || 6;
