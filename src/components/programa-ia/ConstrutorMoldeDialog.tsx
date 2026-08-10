@@ -689,7 +689,7 @@ export function ConstrutorMoldeDialog({
               <div className="rounded-xl border border-dashed border-border/70 p-6 text-center">
                 <p className="text-sm text-muted-foreground">Nenhum bloco adicionado ainda.</p>
                 <p className="mt-1 text-xs text-muted-foreground/80">
-                  Comece adicionando o primeiro bloco da sessão (ex.: Preparação de Movimento).
+                  Comece adicionando o primeiro bloco da sessão (ex.: Mobilidade / Preparação).
                 </p>
               </div>
             ) : (
