@@ -35,7 +35,7 @@ export type ModalidadeHibrida = "hibrido" | "kettlebell_fitness";
 
 /** Mesmo vocabulário do BlockFormat já usado em session-builder/BlockFormats.tsx. */
 export type BlockFormatHibrido =
-  | "preparacao_movimento"
+  | "mobilidade"
   | "forca_tecnica_pct"
   | "emom"
   | "e2mom"
