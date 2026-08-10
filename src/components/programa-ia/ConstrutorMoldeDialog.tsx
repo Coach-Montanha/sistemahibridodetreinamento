@@ -691,13 +691,15 @@ export function ConstrutorMoldeDialog({
                 <div className="space-y-2">
                   {blocos.map((b) => (
                     <SortableRow key={b.chave} id={b.chave} handleLabel={`Reordenar ${FORMATO_LABEL[b.formato]}`}>
-                      <BlocoCard
-                        bloco={b}
-                        aberto={abertoChave === b.chave}
-                        onToggle={() => setAbertoChave((prev) => (prev === b.chave ? null : b.chave))}
-                        onChange={(patch) => atualizarBloco(b.chave, patch)}
-                        onRemove={() => removerBloco(b.chave)}
-                      />
+                      <div className="flex-1 min-w-0 pr-3 py-1">
+                        <BlocoCard
+                          bloco={b}
+                          aberto={abertoChave === b.chave}
+                          onToggle={() => setAbertoChave((prev) => (prev === b.chave ? null : b.chave))}
+                          onChange={(patch) => atualizarBloco(b.chave, patch)}
+                          onRemove={() => removerBloco(b.chave)}
+                        />
+                      </div>
                     </SortableRow>
                   ))}
                 </div>
