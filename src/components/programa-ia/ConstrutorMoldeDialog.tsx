@@ -110,7 +110,7 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
   };
 
   switch (formato) {
-    case "preparacao_movimento":
+    case "mobilidade":
       return { ...base, duracaoMin: 2, numeroExercicios: 1, seriesMin: 4, seriesMax: 4, slot: "mobilidade" };
     case "forca_tecnica_pct":
       return {
