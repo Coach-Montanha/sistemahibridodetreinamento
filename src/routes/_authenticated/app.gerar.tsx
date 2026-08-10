@@ -101,10 +101,8 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const isFuncional = metodologia === "treinamento_funcional";
   const isCorrida = metodologia === "corrida";
   const isHibrido = metodologia === "hibrido";
-  // Kettlebell Fitness já tem um gerador dedicado (sorteio por categoria via
-  // gerarTreino/gerador.functions). NÃO ativamos o molde para ele ainda —
-  // troque para `metodologia === "kettlebell_fitness"` quando decidir migrar.
-  const isKbFitnessMolde = false;
+  const isKbFitness = metodologia === "kettlebell_fitness";
+  const isKbFitnessMolde = isKbFitness;
   const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida;
   const usaMolde = isHibrido || isKbFitnessMolde;
 
@@ -201,13 +199,13 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         .single();
       if (error || !prog) throw new Error(error?.message ?? "Falha ao criar rotina");
 
-      // O Híbrido tem seu próprio fluxo direto que não passa pelo PrescreverIaDialog
+      // O Híbrido e o Kettlebell Fitness têm seu próprio fluxo direto que não passa pelo PrescreverIaDialog
       // para evitar conflito de tipos no step de prévia (o hibrido-gerar salva direto).
-      if (isHibrido && cfg.hibrido) {
+      if (usaMolde && cfg.hibrido) {
         const { gerarSessoesHibrido } = await import("@/lib/hibrido-gerar.functions");
         const res = await gerarSessoesHibrido({
           data: {
-            modalidade: "hibrido",
+            modalidade: metodologia as ModalidadeHibrida,
             tituloPrograma: titulo,
             numeroSessoes: cfg.hibrido.numeroSessoes,
             diasPorSemana: escopo === "sessao" ? 1 : dias,
@@ -281,7 +279,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
               antes de salvar.
             </p>
           </div>
-        ) : isHibrido ? (
+        ) : isHibrido || isKbFitness ? (
           <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
             <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <p className="flex-1 leading-relaxed text-muted-foreground">
@@ -330,16 +328,6 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
               Ao gerar, você escolhe a linha (Fedorenko, Rudnev, Vorotyntsev, Denisov,
               Vasilev, Gomonov ou automática), nível, disciplina e cargas iniciais — a IA
               monta o ciclo seguindo estritamente essa filosofia.
-            </p>
-          </div>
-        ) : metodologia === "kettlebell_fitness" ? (
-          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p className="flex-1 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Motor dedicado.</strong> Kettlebell
-              Fitness gera um bloco único de estações (5–6, 30 min), com sorteio por
-              categoria calibrado pela distribuição real. Suas preferências de blocos
-              não se aplicam aqui.
             </p>
           </div>
         ) : (
