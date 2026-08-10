@@ -12,33 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  ChevronDown,
-  Plus,
-  Trash2,
-  Sparkles,
-  Hand,
-  Wand2,
-  X,
-} from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronDown, Plus, Trash2, Sparkles, Hand, Wand2, X } from "lucide-react";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import { ExercisePicker } from "@/components/session-builder/ExercisePicker";
 import type {
@@ -64,6 +42,7 @@ const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
   bodybuilding_sets: "Séries × Reps",
   finalizador: "Finalizador",
   livre: "Bloco livre",
+  livre2: "Bloco livre2",
 };
 
 const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
@@ -93,16 +72,9 @@ const USA_SERIES: BlockFormatHibrido[] = [
 const USA_INTERVALO: BlockFormatHibrido[] = ["emom", "e2mom"];
 const USA_DURACAO_TOTAL: BlockFormatHibrido[] = ["amrap"];
 const USA_PERCENTUAL: BlockFormatHibrido[] = ["forca_tecnica_pct"];
-const USA_DESCANSO_ENTRE_SERIES: BlockFormatHibrido[] = [
-  "circuito",
-  "bodybuilding_sets",
-  "metcon",
-  "finalizador",
-];
+const USA_DESCANSO_ENTRE_SERIES: BlockFormatHibrido[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
 const USA_SLOT: BlockFormatHibrido[] = ["preparacao_movimento"];
-const USA_NUMERO_EXERCICIOS: BlockFormatHibrido[] = FORMATOS_DISPONIVEIS.filter(
-  (f) => f !== "kb_timed_sets",
-);
+const USA_NUMERO_EXERCICIOS: BlockFormatHibrido[] = FORMATOS_DISPONIVEIS.filter((f) => f !== "kb_timed_sets");
 
 function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
   const base = formato.split("_")[0];
@@ -142,7 +114,15 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
     case "preparacao_movimento":
       return { ...base, duracaoMin: 2, numeroExercicios: 1, seriesMin: 4, seriesMax: 4, slot: "mobilidade" };
     case "forca_tecnica_pct":
-      return { ...base, duracaoMin: 8, seriesMin: 6, seriesMax: 6, numeroExercicios: 1, repsPorExercicio: 6, percentual1rm: 70 };
+      return {
+        ...base,
+        duracaoMin: 8,
+        seriesMin: 6,
+        seriesMax: 6,
+        numeroExercicios: 1,
+        repsPorExercicio: 6,
+        percentual1rm: 70,
+      };
     case "emom":
       return { ...base, duracaoMin: 9, seriesMin: 9, seriesMax: 9, intervaloMin: 1, numeroExercicios: 2 };
     case "e2mom":
@@ -150,7 +130,14 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
     case "amrap":
       return { ...base, duracaoMin: 12, seriesMin: null, seriesMax: null, numeroExercicios: 3 };
     case "kb_timed_sets":
-      return { ...base, duracaoMin: 10, seriesMin: null, seriesMax: null, numeroExercicios: 1, selecaoExercicios: "manual" };
+      return {
+        ...base,
+        duracaoMin: 10,
+        seriesMin: null,
+        seriesMax: null,
+        numeroExercicios: 1,
+        selecaoExercicios: "manual",
+      };
     case "finalizador":
       return { ...base, duracaoMin: 2, seriesMin: 1, seriesMax: 1, numeroExercicios: 1 };
     default:
@@ -304,9 +291,7 @@ function BlocoConfigForm({
                 min={1}
                 className="h-9 w-16 tabular-nums"
                 value={bloco.seriesMin ?? ""}
-                onChange={(e) =>
-                  onChange({ seriesMin: e.target.value ? Number(e.target.value) : null })
-                }
+                onChange={(e) => onChange({ seriesMin: e.target.value ? Number(e.target.value) : null })}
               />
               <span className="text-xs text-muted-foreground">a</span>
               <Input
@@ -314,9 +299,7 @@ function BlocoConfigForm({
                 min={1}
                 className="h-9 w-16 tabular-nums"
                 value={bloco.seriesMax ?? ""}
-                onChange={(e) =>
-                  onChange({ seriesMax: e.target.value ? Number(e.target.value) : null })
-                }
+                onChange={(e) => onChange({ seriesMax: e.target.value ? Number(e.target.value) : null })}
               />
             </div>
           </div>
@@ -378,10 +361,7 @@ function BlocoConfigForm({
         {USA_SLOT.includes(bloco.formato) && (
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Slot</Label>
-            <Select
-              value={bloco.slot ?? "mobilidade"}
-              onValueChange={(v) => onChange({ slot: v as SlotPreparacao })}
-            >
+            <Select value={bloco.slot ?? "mobilidade"} onValueChange={(v) => onChange({ slot: v as SlotPreparacao })}>
               <SelectTrigger className="h-9">
                 <SelectValue />
               </SelectTrigger>
@@ -402,10 +382,16 @@ function BlocoConfigForm({
             onValueChange={(v) => v && onChange({ modoExecucao: v as ModoExecucao })}
             className="rounded-md border border-border/60 bg-muted/30 p-0.5"
           >
-            <ToggleGroupItem value="circuito" className="h-7 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            <ToggleGroupItem
+              value="circuito"
+              className="h-7 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            >
               Circuito
             </ToggleGroupItem>
-            <ToggleGroupItem value="series_fixas" className="h-7 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            <ToggleGroupItem
+              value="series_fixas"
+              className="h-7 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            >
               Séries fixas
             </ToggleGroupItem>
           </ToggleGroup>
@@ -423,10 +409,16 @@ function BlocoConfigForm({
           onValueChange={(v) => v && onChange({ selecaoExercicios: v as SelecaoExercicios })}
           className="mb-3 rounded-md border border-border/60 bg-background p-0.5"
         >
-          <ToggleGroupItem value="ia" className="h-7 gap-1.5 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+          <ToggleGroupItem
+            value="ia"
+            className="h-7 gap-1.5 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          >
             <Wand2 className="h-3 w-3" /> IA escolhe
           </ToggleGroupItem>
-          <ToggleGroupItem value="manual" className="h-7 gap-1.5 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+          <ToggleGroupItem
+            value="manual"
+            className="h-7 gap-1.5 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          >
             <Hand className="h-3 w-3" /> Eu escolho
           </ToggleGroupItem>
         </ToggleGroup>
@@ -436,21 +428,18 @@ function BlocoConfigForm({
             <TagInput
               label="Metodologias de origem"
               values={bloco.fonteExercicios.metodologias ?? []}
-              onChange={(v) =>
-                onChange({ fonteExercicios: { ...bloco.fonteExercicios, metodologias: v } })
-              }
+              onChange={(v) => onChange({ fonteExercicios: { ...bloco.fonteExercicios, metodologias: v } })}
               placeholder="ex: hibrido"
             />
             <TagInput
               label="Equipamento"
               values={bloco.fonteExercicios.equipamento ?? []}
-              onChange={(v) =>
-                onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: v } })
-              }
+              onChange={(v) => onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: v } })}
               placeholder="ex: kettlebell"
             />
             <p className="col-span-full text-[11px] text-muted-foreground">
-              Deixe em branco para não filtrar por essa dimensão. A IA escolherá {bloco.numeroExercicios} exercício(s) só entre os que baterem com esses filtros.
+              Deixe em branco para não filtrar por essa dimensão. A IA escolherá {bloco.numeroExercicios} exercício(s)
+              só entre os que baterem com esses filtros.
             </p>
           </div>
         ) : (
@@ -511,9 +500,7 @@ function BlocoCard({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold">
-                    {bloco.titulo || FORMATO_LABEL[bloco.formato]}
-                  </span>
+                  <span className="text-sm font-semibold">{bloco.titulo || FORMATO_LABEL[bloco.formato]}</span>
                   <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
                     {FORMATO_LABEL[bloco.formato]}
                   </Badge>
@@ -632,18 +619,16 @@ export function ConstrutorMoldeDialog({
             </Badge>
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Monte a estrutura fixa de blocos da sessão. A IA só escolhe quais exercícios da sua
-            biblioteca preenchem cada bloco marcado como "IA escolhe" — a estrutura em si (formato,
-            duração, séries, número de exercícios, descanso) é definida por você.
+            Monte a estrutura fixa de blocos da sessão. A IA só escolhe quais exercícios da sua biblioteca preenchem
+            cada bloco marcado como "IA escolhe" — a estrutura em si (formato, duração, séries, número de exercícios,
+            descanso) é definida por você.
           </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">
-                Sessões a gerar nesta sequência
-              </Label>
+              <Label className="text-xs text-muted-foreground">Sessões a gerar nesta sequência</Label>
               <Input
                 type="number"
                 min={1}
@@ -683,11 +668,7 @@ export function ConstrutorMoldeDialog({
                 </p>
               </div>
             ) : (
-              <SortableList
-                ids={blocos.map((b) => b.chave)}
-                label="Bloco"
-                onReorder={reordenar}
-              >
+              <SortableList ids={blocos.map((b) => b.chave)} label="Bloco" onReorder={reordenar}>
                 <div className="space-y-2">
                   {blocos.map((b) => (
                     <SortableRow key={b.chave} id={b.chave} handleLabel={`Reordenar ${FORMATO_LABEL[b.formato]}`}>
