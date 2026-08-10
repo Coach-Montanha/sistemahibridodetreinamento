@@ -16,7 +16,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const FORMATO = z.enum([
-  "preparacao_movimento",
+  "mobilidade",
   "forca_tecnica_pct",
   "emom",
   "e2mom",
