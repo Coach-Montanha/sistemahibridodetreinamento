@@ -60,7 +60,7 @@ const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
 const USA_SERIES: BlockFormatHibrido[] = [
-  "preparacao_movimento",
+  "mobilidade",
   "emom",
   "e2mom",
   "circuito",
