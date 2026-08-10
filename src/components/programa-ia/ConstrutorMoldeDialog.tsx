@@ -576,9 +576,16 @@ export function ConstrutorMoldeDialog({
   const [abertoChave, setAbertoChave] = useState<string | null>(null);
 
   function adicionarBloco(formato: BlockFormatHibrido) {
-    const b = novoBloco(formato, blocos);
-    setBlocos((prev) => [...prev, b]);
-    setAbertoChave(b.chave);
+    if (formato === "mobilidade") {
+      const mob = novoBloco("mobilidade", blocos);
+      const aq = novoAquecimento([...blocos, mob]);
+      setBlocos((prev) => [...prev, mob, aq]);
+      setAbertoChave(mob.chave);
+    } else {
+      const b = novoBloco(formato, blocos);
+      setBlocos((prev) => [...prev, b]);
+      setAbertoChave(b.chave);
+    }
   }
 
   function atualizarBloco(chave: string, patch: Partial<BlocoTemplate>) {
