@@ -31,7 +31,7 @@ import type {
 } from "@/lib/hibrido-ia.server";
 
 const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
-  preparacao_movimento: "Preparação de Movimento",
+  mobilidade: "Bloco de Mobilidade",
   forca_tecnica_pct: "Força/Técnica (%1RM)",
   emom: "EMOM",
   e2mom: "E2MOM",
