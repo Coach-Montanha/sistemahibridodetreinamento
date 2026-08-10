@@ -501,9 +501,9 @@ function BlocoCard({
   onRemove: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-border/70 bg-card">
+    <div className="w-full">
       <Collapsible open={aberto} onOpenChange={onToggle}>
-        <div className="flex items-center gap-2 p-3">
+        <div className="flex items-center gap-2 p-3 pr-0">
           <CollapsibleTrigger asChild>
             <button type="button" className="flex flex-1 items-center gap-2 text-left">
               <ChevronDown
@@ -525,7 +525,7 @@ function BlocoCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive mr-1"
             onClick={onRemove}
             aria-label="Remover bloco"
           >
