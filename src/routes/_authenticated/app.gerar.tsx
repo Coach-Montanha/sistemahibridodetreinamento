@@ -369,7 +369,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
               search={{ section: "geracao" }}
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              {prefs.data?.origem === "custom" ? "Ajustar" : "Personalizar"}
+              Personalizar
             </Link>
           </div>
         </div>

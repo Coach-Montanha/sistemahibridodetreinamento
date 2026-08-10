@@ -442,13 +442,7 @@ function BlocoConfigForm({
         </ToggleGroup>
 
         {bloco.selecaoExercicios === "ia" ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <TagInput
-              label="Metodologias de origem"
-              values={bloco.fonteExercicios.metodologias ?? []}
-              onChange={(v) => onChange({ fonteExercicios: { ...bloco.fonteExercicios, metodologias: v } })}
-              placeholder="ex: hibrido"
-            />
+          <div className="grid gap-3 sm:grid-cols-1">
             <TagInput
               label="Equipamento"
               values={bloco.fonteExercicios.equipamento ?? []}
