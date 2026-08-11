@@ -144,7 +144,7 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
   }
 }
 
-function novoAquecimento(existentes: BlocoTemplate[]): BlocoTemplate {
+function novoAquecimento(existentes: BlocoTemplate[], modalidade: ModalidadeHibrida): BlocoTemplate {
   const chave = gerarChave("circuito", existentes);
   return {
     chave,
@@ -160,7 +160,7 @@ function novoAquecimento(existentes: BlocoTemplate[]): BlocoTemplate {
     descansoEntreSeriesSeg: 30,
     selecaoExercicios: "ia",
     exerciciosFixos: [],
-    fonteExercicios: { metodologias: ["ginastico", "kettlebell"] },
+    fonteExercicios: { metodologias: [modalidade] },
   };
 }
 
