@@ -213,8 +213,6 @@ export function PrescreverIaDialog({
   wl,
   tf,
   co,
-  hibrido,
-  promptInicial,
   onOpenChange,
 }: {
   programa: { id: string; titulo?: string | null; metodologia?: string | null } | null;
@@ -232,10 +230,6 @@ export function PrescreverIaDialog({
   tf?: TfPayload | null;
   /** Configuração da Corrida (quando a rotina é dessa modalidade). */
   co?: import("@/lib/corrida-ia.server").CorridaPayload | null;
-  /** Molde estrutural do Híbrido / Kettlebell Fitness. */
-  hibrido?: import("@/lib/hibrido-ia.server").HibridoPayload | null;
-  /** Texto inicial do campo de instruções. */
-  promptInicial?: string | null;
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
