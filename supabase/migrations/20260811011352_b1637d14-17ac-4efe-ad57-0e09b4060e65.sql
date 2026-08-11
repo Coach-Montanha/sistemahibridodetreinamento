@@ -1,0 +1,1 @@
+ALTER TYPE public.block_format ADD VALUE 'preparacao_movimento';
