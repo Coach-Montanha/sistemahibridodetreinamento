@@ -567,8 +567,8 @@ export function ConstrutorMoldeDialog({
   const [abertoChave, setAbertoChave] = useState<string | null>(null);
 
   function adicionarBloco(formato: BlockFormatHibrido) {
-    if (formato === "mobilidade") {
-      const mob = novoBloco("mobilidade", blocos);
+    if (formato === "preparacao_movimento") {
+      const mob = novoBloco("preparacao_movimento", blocos);
       const aq = novoAquecimento([...blocos, mob]);
       // Garante que o bloco de mobilidade tenha o nome correto e o aquecimento também
       mob.titulo = "Mobilidade";
