@@ -183,22 +183,9 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
     setLoading(true);
     try {
       if (!coach) throw new Error("Perfil de treinador não encontrado");
-      const semanas = SEMANAS_POR_ESCOPO[escopo] ?? 4;
-      const { data: prog, error } = await supabase
-        .from("programs")
-        .insert({
-          coach_id: coach.id,
-          metodologia,
-          titulo,
-          data_inicio: dataInicio,
-          duracao_semanas: semanas,
-        })
-        .select("id, titulo")
-        .single();
-      if (error || !prog) throw new Error(error?.message ?? "Falha ao criar rotina");
 
-      // O Híbrido e o Kettlebell Fitness têm seu próprio fluxo direto que não passa pelo PrescreverIaDialog
-      // para evitar conflito de tipos no step de prévia (o hibrido-gerar salva direto).
+      // Híbrido/KB Fitness molde: fluxo direto, NÃO cria o programa aqui —
+      // gerarSessoesHibrido já cria o programa por conta própria.
       if (usaMolde && cfg.hibrido) {
         const { gerarSessoesHibrido } = await import("@/lib/hibrido-gerar.functions");
         const res = await gerarSessoesHibrido({
@@ -218,12 +205,26 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         return;
       }
 
+      // Demais modalidades (KB Sport, WL, Funcional, Corrida, Musculação):
+      // criam o programa e abrem o PrescreverIaDialog para revisão da prévia.
+      const semanas = SEMANAS_POR_ESCOPO[escopo] ?? 4;
+      const { data: prog, error } = await supabase
+        .from("programs")
+        .insert({
+          coach_id: coach.id,
+          metodologia,
+          titulo,
+          data_inicio: dataInicio,
+          duracao_semanas: semanas,
+        })
+        .select("id, titulo")
+        .single();
+      if (error || !prog) throw new Error(error?.message ?? "Falha ao criar rotina");
+
       setKbConfig(cfg.kb ?? null);
       setWlConfig(cfg.wl ?? null);
       setTfConfig(cfg.tf ?? null);
       setCoConfig(cfg.co ?? null);
-      setHibridoConfig(null);
-      setHibridoInstrucoes(cfg.instrucoes ?? "");
       setKbModalOpen(false);
       setIaEscopo({
         label: ESCOPO_LABEL[escopo] ?? escopo,
