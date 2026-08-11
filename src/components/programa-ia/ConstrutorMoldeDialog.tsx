@@ -31,7 +31,14 @@ import type {
 } from "@/lib/hibrido-ia.server";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 
-const EQUIPAMENTO_SUGESTOES = ["kettlebell", "ginastico", "dumbbell", "barbell", "mobilidade", "objetos alternativos"];
+const EQUIPAMENTO_VALORES = [
+  "Kettlebell",
+  "Ginásticos",
+  "Dumbbell",
+  "Barbell",
+  "Mobilidade",
+  "Objetos Alternativos",
+] as const;
 
 const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
   preparacao_movimento: "Mobilidade / Preparação",
@@ -187,60 +194,6 @@ function resumoBloco(b: BlocoTemplate): string {
   return partes.join(" · ");
 }
 
-function TagInput({
-  label,
-  values,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  values: string[];
-  onChange: (v: string[]) => void;
-  placeholder: string;
-}) {
-  const [draft, setDraft] = useState("");
-  function add() {
-    const v = draft.trim();
-    if (v && !values.includes(v)) onChange([...values, v]);
-    setDraft("");
-  }
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex flex-wrap gap-1.5">
-        {values.map((v) => (
-          <Badge key={v} variant="secondary" className="gap-1 pr-1 text-[11px]">
-            {v}
-            <button
-              type="button"
-              onClick={() => onChange(values.filter((x) => x !== v))}
-              className="rounded-full p-0.5 hover:bg-muted-foreground/20"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </Badge>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <Input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              add();
-            }
-          }}
-          placeholder={placeholder}
-          className="h-8 text-xs"
-        />
-        <Button type="button" variant="outline" size="sm" className="h-8" onClick={add}>
-          Adicionar
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 function CampoNumero({
   label,
@@ -445,9 +398,9 @@ function BlocoConfigForm({
         </ToggleGroup>
 
         {bloco.selecaoExercicios === "ia" ? (
-          <div className="grid gap-4">
+          <div className="grid gap-3 sm:grid-cols-1">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Metodologias (Filtro)</Label>
+              <Label className="text-xs text-muted-foreground">Metodologias de origem</Label>
               <div className="flex flex-wrap gap-1.5">
                 {(Object.keys(METHODOLOGY_LABEL) as Methodology[]).map((m) => {
                   const ativo = (bloco.fonteExercicios.metodologias ?? []).includes(m);
@@ -456,7 +409,7 @@ function BlocoConfigForm({
                       key={m}
                       type="button"
                       onClick={() => {
-                        const atuais = (bloco.fonteExercicios.metodologias as Methodology[]) ?? [];
+                        const atuais = bloco.fonteExercicios.metodologias ?? [];
                         const proximo = ativo ? atuais.filter((x) => x !== m) : [...atuais, m];
                         onChange({ fonteExercicios: { ...bloco.fonteExercicios, metodologias: proximo } });
                       }}
@@ -474,35 +427,35 @@ function BlocoConfigForm({
             </div>
 
             <div className="space-y-1.5">
-              <TagInput
-                label="Equipamento"
-                values={bloco.fonteExercicios.equipamento ?? []}
-                onChange={(v) => onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: v } })}
-                placeholder="ex: kettlebell"
-              />
-              <div className="flex flex-wrap gap-1 pt-1">
-                {EQUIPAMENTO_SUGESTOES.map((eq) => (
-                  <button
-                    key={eq}
-                    type="button"
-                    onClick={() => {
-                      const atuais = bloco.fonteExercicios.equipamento ?? [];
-                      if (!atuais.includes(eq)) {
-                        onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: [...atuais, eq] } });
-                      }
-                    }}
-                    className="rounded-full border border-dashed border-border/50 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary/50 hover:text-primary"
-                  >
-                    + {eq}
-                  </button>
-                ))}
+              <Label className="text-xs text-muted-foreground">Equipamento</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {EQUIPAMENTO_VALORES.map((eq) => {
+                  const ativo = (bloco.fonteExercicios.equipamento ?? []).includes(eq);
+                  return (
+                    <button
+                      key={eq}
+                      type="button"
+                      onClick={() => {
+                        const atuais = bloco.fonteExercicios.equipamento ?? [];
+                        const proximo = ativo ? atuais.filter((x) => x !== eq) : [...atuais, eq];
+                        onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: proximo } });
+                      }}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                        ativo
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                      }`}
+                    >
+                      {eq}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground/70">
-              Sugestões não confirmadas contra o banco — se o bloco vier vazio, confira a grafia exata com a query DISTINCT.
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              A IA escolherá {bloco.numeroExercicios} exercício(s) que atendam a pelo menos uma das metodologias e equipamentos selecionados.
+
+            <p className="col-span-full text-[11px] text-muted-foreground">
+              Deixe em branco para não filtrar por essa dimensão. A IA escolherá {bloco.numeroExercicios} exercício(s) só
+              entre os que baterem com esses filtros.
             </p>
           </div>
         ) : (
