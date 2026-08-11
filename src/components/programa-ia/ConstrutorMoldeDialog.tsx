@@ -29,6 +29,7 @@ import type {
   SessaoTemplate,
   SlotPreparacao,
 } from "@/lib/hibrido-ia.server";
+import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 
 const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
   preparacao_movimento: "Mobilidade / Preparação",
