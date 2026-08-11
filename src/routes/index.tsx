@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Mountain } from "lucide-react";
 
-SELECT enum_range(NULL::methodology_key);
+// SELECT enum_range(NULL::methodology_key);
 
 const searchSchema = z.object({ modo: z.enum(["login", "cadastro"]).optional() });
 
