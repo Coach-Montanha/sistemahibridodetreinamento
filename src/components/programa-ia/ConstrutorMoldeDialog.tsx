@@ -398,9 +398,9 @@ function BlocoConfigForm({
         </ToggleGroup>
 
         {bloco.selecaoExercicios === "ia" ? (
-          <div className="grid gap-4">
+          <div className="grid gap-3 sm:grid-cols-1">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Metodologias (Filtro)</Label>
+              <Label className="text-xs text-muted-foreground">Metodologias de origem</Label>
               <div className="flex flex-wrap gap-1.5">
                 {(Object.keys(METHODOLOGY_LABEL) as Methodology[]).map((m) => {
                   const ativo = (bloco.fonteExercicios.metodologias ?? []).includes(m);
@@ -409,7 +409,7 @@ function BlocoConfigForm({
                       key={m}
                       type="button"
                       onClick={() => {
-                        const atuais = (bloco.fonteExercicios.metodologias as Methodology[]) ?? [];
+                        const atuais = bloco.fonteExercicios.metodologias ?? [];
                         const proximo = ativo ? atuais.filter((x) => x !== m) : [...atuais, m];
                         onChange({ fonteExercicios: { ...bloco.fonteExercicios, metodologias: proximo } });
                       }}
@@ -427,35 +427,35 @@ function BlocoConfigForm({
             </div>
 
             <div className="space-y-1.5">
-              <TagInput
-                label="Equipamento"
-                values={bloco.fonteExercicios.equipamento ?? []}
-                onChange={(v) => onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: v } })}
-                placeholder="ex: kettlebell"
-              />
-              <div className="flex flex-wrap gap-1 pt-1">
-                {EQUIPAMENTO_SUGESTOES.map((eq) => (
-                  <button
-                    key={eq}
-                    type="button"
-                    onClick={() => {
-                      const atuais = bloco.fonteExercicios.equipamento ?? [];
-                      if (!atuais.includes(eq)) {
-                        onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: [...atuais, eq] } });
-                      }
-                    }}
-                    className="rounded-full border border-dashed border-border/50 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary/50 hover:text-primary"
-                  >
-                    + {eq}
-                  </button>
-                ))}
+              <Label className="text-xs text-muted-foreground">Equipamento</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {EQUIPAMENTO_VALORES.map((eq) => {
+                  const ativo = (bloco.fonteExercicios.equipamento ?? []).includes(eq);
+                  return (
+                    <button
+                      key={eq}
+                      type="button"
+                      onClick={() => {
+                        const atuais = bloco.fonteExercicios.equipamento ?? [];
+                        const proximo = ativo ? atuais.filter((x) => x !== eq) : [...atuais, eq];
+                        onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: proximo } });
+                      }}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                        ativo
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                      }`}
+                    >
+                      {eq}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground/70">
-              Sugestões não confirmadas contra o banco — se o bloco vier vazio, confira a grafia exata com a query DISTINCT.
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              A IA escolherá {bloco.numeroExercicios} exercício(s) que atendam a pelo menos uma das metodologias e equipamentos selecionados.
+
+            <p className="col-span-full text-[11px] text-muted-foreground">
+              Deixe em branco para não filtrar por essa dimensão. A IA escolherá {bloco.numeroExercicios} exercício(s) só
+              entre os que baterem com esses filtros.
             </p>
           </div>
         ) : (
