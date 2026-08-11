@@ -31,6 +31,8 @@ import type {
 } from "@/lib/hibrido-ia.server";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 
+const EQUIPAMENTO_SUGESTOES = ["kettlebell", "ginastico", "dumbbell", "barbell", "mobilidade", "objetos alternativos"];
+
 const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
   preparacao_movimento: "Mobilidade / Preparação",
   forca_tecnica_pct: "Força/Técnica (%1RM)",
