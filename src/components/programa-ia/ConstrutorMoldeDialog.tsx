@@ -31,6 +31,8 @@ import type {
 } from "@/lib/hibrido-ia.server";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 
+const EQUIPAMENTO_SUGESTOES = ["kettlebell", "ginastico", "dumbbell", "barbell", "mobilidade", "objetos alternativos"];
+
 const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
   preparacao_movimento: "Mobilidade / Preparação",
   forca_tecnica_pct: "Força/Técnica (%1RM)",
@@ -471,12 +473,34 @@ function BlocoConfigForm({
               </div>
             </div>
 
-            <TagInput
-              label="Equipamento"
-              values={bloco.fonteExercicios.equipamento ?? []}
-              onChange={(v) => onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: v } })}
-              placeholder="ex: kettlebell"
-            />
+            <div className="space-y-1.5">
+              <TagInput
+                label="Equipamento"
+                values={bloco.fonteExercicios.equipamento ?? []}
+                onChange={(v) => onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: v } })}
+                placeholder="ex: kettlebell"
+              />
+              <div className="flex flex-wrap gap-1 pt-1">
+                {EQUIPAMENTO_SUGESTOES.map((eq) => (
+                  <button
+                    key={eq}
+                    type="button"
+                    onClick={() => {
+                      const atuais = bloco.fonteExercicios.equipamento ?? [];
+                      if (!atuais.includes(eq)) {
+                        onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: [...atuais, eq] } });
+                      }
+                    }}
+                    className="rounded-full border border-dashed border-border/50 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary/50 hover:text-primary"
+                  >
+                    + {eq}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground/70">
+              Sugestões não confirmadas contra o banco — se o bloco vier vazio, confira a grafia exata com a query DISTINCT.
+            </p>
             <p className="text-[11px] text-muted-foreground">
               A IA escolherá {bloco.numeroExercicios} exercício(s) que atendam a pelo menos uma das metodologias e equipamentos selecionados.
             </p>
