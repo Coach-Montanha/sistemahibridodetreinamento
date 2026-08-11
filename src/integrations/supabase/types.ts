@@ -982,6 +982,7 @@ export type Database = {
         | "bodybuilding_sets"
         | "finalizador"
         | "livre"
+        | "preparacao_movimento"
       coach_plan: "trial" | "individual" | "studio" | "revenda"
       export_format: "pdf" | "xlsx" | "docx"
       media_kind: "video" | "imagem" | "gif"
@@ -1135,6 +1136,7 @@ export const Constants = {
         "bodybuilding_sets",
         "finalizador",
         "livre",
+        "preparacao_movimento",
       ],
       coach_plan: ["trial", "individual", "studio", "revenda"],
       export_format: ["pdf", "xlsx", "docx"],

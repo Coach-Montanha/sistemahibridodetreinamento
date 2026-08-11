@@ -16,7 +16,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const FORMATO = z.enum([
-  "mobilidade",
+  "preparacao_movimento",
   "forca_tecnica_pct",
   "emom",
   "e2mom",
@@ -77,7 +77,7 @@ function configDoBloco(b: BlocoTemplate): Record<string, unknown> {
   const base = { descanso_apos_seg: b.descansoAposSeg };
 
   switch (b.formato) {
-    case "mobilidade":
+    case "preparacao_movimento":
       return { ...base, rounds: b.seriesMin ?? 4, round_min: b.duracaoMin ?? 2, modo_execucao: b.modoExecucao };
     case "forca_tecnica_pct": {
       const reps = typeof b.repsPorExercicio === "number" ? b.repsPorExercicio : Number(b.repsPorExercicio) || 6;
