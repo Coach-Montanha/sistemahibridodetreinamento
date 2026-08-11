@@ -194,60 +194,6 @@ function resumoBloco(b: BlocoTemplate): string {
   return partes.join(" · ");
 }
 
-function TagInput({
-  label,
-  values,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  values: string[];
-  onChange: (v: string[]) => void;
-  placeholder: string;
-}) {
-  const [draft, setDraft] = useState("");
-  function add() {
-    const v = draft.trim();
-    if (v && !values.includes(v)) onChange([...values, v]);
-    setDraft("");
-  }
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex flex-wrap gap-1.5">
-        {values.map((v) => (
-          <Badge key={v} variant="secondary" className="gap-1 pr-1 text-[11px]">
-            {v}
-            <button
-              type="button"
-              onClick={() => onChange(values.filter((x) => x !== v))}
-              className="rounded-full p-0.5 hover:bg-muted-foreground/20"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </Badge>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <Input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              add();
-            }
-          }}
-          placeholder={placeholder}
-          className="h-8 text-xs"
-        />
-        <Button type="button" variant="outline" size="sm" className="h-8" onClick={add}>
-          Adicionar
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 function CampoNumero({
   label,
