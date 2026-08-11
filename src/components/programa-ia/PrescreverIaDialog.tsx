@@ -234,7 +234,7 @@ export function PrescreverIaDialog({
 }) {
   const qc = useQueryClient();
   const gerar = useServerFn(prescribeTrainingWithAi);
-  const [prompt, setPrompt] = useState(promptInicial ?? "");
+  const [prompt, setPrompt] = useState("");
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
 
   const limpar = useCallback(() => {
@@ -255,7 +255,7 @@ export function PrescreverIaDialog({
           wl: wl ?? null,
           tf: tf ?? null,
           co: co ?? null,
-          hibrido: hibrido ?? null,
+          hibrido: null,
         },
       });
     },
