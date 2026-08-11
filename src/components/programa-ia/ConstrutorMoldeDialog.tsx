@@ -29,6 +29,7 @@ import type {
   SessaoTemplate,
   SlotPreparacao,
 } from "@/lib/hibrido-ia.server";
+import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 
 const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
   preparacao_movimento: "Mobilidade / Preparação",
@@ -143,7 +144,7 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
   }
 }
 
-function novoAquecimento(existentes: BlocoTemplate[]): BlocoTemplate {
+function novoAquecimento(existentes: BlocoTemplate[], modalidade: ModalidadeHibrida): BlocoTemplate {
   const chave = gerarChave("circuito", existentes);
   return {
     chave,
@@ -159,7 +160,7 @@ function novoAquecimento(existentes: BlocoTemplate[]): BlocoTemplate {
     descansoEntreSeriesSeg: 30,
     selecaoExercicios: "ia",
     exerciciosFixos: [],
-    fonteExercicios: { metodologias: ["ginastico", "kettlebell"] },
+    fonteExercicios: { metodologias: [modalidade] },
   };
 }
 
@@ -442,16 +443,42 @@ function BlocoConfigForm({
         </ToggleGroup>
 
         {bloco.selecaoExercicios === "ia" ? (
-          <div className="grid gap-3 sm:grid-cols-1">
+          <div className="grid gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Metodologias (Filtro)</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {(Object.keys(METHODOLOGY_LABEL) as Methodology[]).map((m) => {
+                  const ativo = (bloco.fonteExercicios.metodologias ?? []).includes(m);
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        const atuais = (bloco.fonteExercicios.metodologias as Methodology[]) ?? [];
+                        const proximo = ativo ? atuais.filter((x) => x !== m) : [...atuais, m];
+                        onChange({ fonteExercicios: { ...bloco.fonteExercicios, metodologias: proximo } });
+                      }}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                        ativo
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                      }`}
+                    >
+                      {METHODOLOGY_LABEL[m]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <TagInput
               label="Equipamento"
               values={bloco.fonteExercicios.equipamento ?? []}
               onChange={(v) => onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: v } })}
               placeholder="ex: kettlebell"
             />
-            <p className="col-span-full text-[11px] text-muted-foreground">
-              Deixe em branco para não filtrar por essa dimensão. A IA escolherá {bloco.numeroExercicios} exercício(s)
-              só entre os que baterem com esses filtros.
+            <p className="text-[11px] text-muted-foreground">
+              A IA escolherá {bloco.numeroExercicios} exercício(s) que atendam a pelo menos uma das metodologias e equipamentos selecionados.
             </p>
           </div>
         ) : (
@@ -569,7 +596,7 @@ export function ConstrutorMoldeDialog({
   function adicionarBloco(formato: BlockFormatHibrido) {
     if (formato === "preparacao_movimento") {
       const mob = novoBloco("preparacao_movimento", blocos);
-      const aq = novoAquecimento([...blocos, mob]);
+      const aq = novoAquecimento([...blocos, mob], modalidade);
       // Garante que o bloco de mobilidade tenha o nome correto e o aquecimento também
       mob.titulo = "Mobilidade";
       aq.titulo = "Aquecimento";
