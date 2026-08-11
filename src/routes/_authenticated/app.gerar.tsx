@@ -503,8 +503,6 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             wl={wlConfig}
             tf={tfConfig}
             co={coConfig}
-            hibrido={hibridoConfig}
-            promptInicial={hibridoInstrucoes}
             onOpenChange={(o: boolean) => {
               if (!o) {
                 setIaPrograma(null);
@@ -513,8 +511,6 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
                 setWlConfig(null);
                 setTfConfig(null);
                 setCoConfig(null);
-                setHibridoConfig(null);
-                setHibridoInstrucoes("");
                 navigate({ to: "/app/programas" });
               }
             }}
