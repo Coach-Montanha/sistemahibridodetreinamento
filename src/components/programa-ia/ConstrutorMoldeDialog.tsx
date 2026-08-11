@@ -31,7 +31,7 @@ import type {
 } from "@/lib/hibrido-ia.server";
 
 const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
-  mobilidade: "Mobilidade / Preparação",
+  preparacao_movimento: "Mobilidade / Preparação",
   forca_tecnica_pct: "Força/Técnica (%1RM)",
   emom: "EMOM",
   e2mom: "E2MOM",
@@ -45,7 +45,7 @@ const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
 };
 
 const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
-  "mobilidade",
+  "preparacao_movimento",
   "forca_tecnica_pct",
   "emom",
   "e2mom",
@@ -68,10 +68,10 @@ const USA_SERIES: BlockFormatHibrido[] = [
   "finalizador",
 ];
 const USA_INTERVALO: BlockFormatHibrido[] = ["emom", "e2mom"];
-const USA_DURACAO_TOTAL: BlockFormatHibrido[] = ["amrap", "mobilidade"];
+const USA_DURACAO_TOTAL: BlockFormatHibrido[] = ["amrap", "preparacao_movimento"];
 const USA_PERCENTUAL: BlockFormatHibrido[] = ["forca_tecnica_pct"];
 const USA_DESCANSO_ENTRE_SERIES: BlockFormatHibrido[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
-const USA_SLOT: BlockFormatHibrido[] = ["mobilidade"];
+const USA_SLOT: BlockFormatHibrido[] = ["preparacao_movimento"];
 const USA_NUMERO_EXERCICIOS: BlockFormatHibrido[] = FORMATOS_DISPONIVEIS.filter((f) => f !== "kb_timed_sets");
 
 function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
@@ -109,7 +109,7 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
   };
 
   switch (formato) {
-    case "mobilidade":
+    case "preparacao_movimento":
       return { ...base, titulo: "Mobilidade", duracaoMin: 2, numeroExercicios: 1, seriesMin: 4, seriesMax: 4, slot: "mobilidade" };
     case "forca_tecnica_pct":
       return {
