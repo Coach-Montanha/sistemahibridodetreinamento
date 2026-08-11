@@ -91,8 +91,6 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const [wlConfig, setWlConfig] = useState<WlPayload | null>(null);
   const [tfConfig, setTfConfig] = useState<TfPayload | null>(null);
   const [coConfig, setCoConfig] = useState<CorridaPayload | null>(null);
-  const [hibridoConfig, setHibridoConfig] = useState<HibridoPayload | null>(null);
-  const [hibridoInstrucoes, setHibridoInstrucoes] = useState("");
   const [kbModalOpen, setKbModalOpen] = useState(false);
   const [moldeModalOpen, setMoldeModalOpen] = useState(false);
   const isMusculacao = metodologia === "musculacao";
