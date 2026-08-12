@@ -392,7 +392,10 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
           })
         : isHibrido
         ? await (async () => {
-            const weekId = (programa as any).program_weeks?.sort((a: any, b: any) => b.numero_semana - a.numero_semana)[0]?.id;
+            const programWeeks = (programa as any).program_weeks || [];
+            const sortedWeeks = [...programWeeks].sort((a: any, b: any) => b.numero_semana - a.numero_semana);
+            const weekId = sortedWeeks[0]?.id;
+            
             const { data: ultimaSessao } = weekId 
               ? await supabase
                   .from("sessions")
@@ -404,7 +407,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               : { data: null };
 
             const molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
-              chave: b.config?.chave || b.titulo || b.formato,
+              chave: (b.config as any)?.chave || b.titulo || b.formato,
               formato: b.formato,
               titulo: b.titulo,
               duracaoMin: b.duracao_min,
@@ -412,14 +415,14 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               seriesMax: b.session_block_exercises?.[0]?.series || 3,
               numeroExercicios: b.session_block_exercises?.length || 1,
               repsPorExercicio: b.session_block_exercises?.[0]?.reps || "10",
-              modoExecucao: b.config?.modo_execucao || "series_fixas",
-              descansoAposSeg: b.config?.descanso_apos_seg || 60,
+              modoExecucao: (b.config as any)?.modo_execucao || "series_fixas",
+              descansoAposSeg: (b.config as any)?.descanso_apos_seg || 60,
               selecaoExercicios: "ia",
               fonteExercicios: {}
             }));
 
             if (molde.length === 0) {
-              throw new Error("Não foi possível identificar o molde da sessão anterior para continuar a progressão.");
+              throw new Error("Não há treinos anteriores nesta rotina para usar como molde. Por favor, crie o primeiro treino manualmente ou use o gerador de moldes.");
             }
 
             return montarHibridoPrompt({
@@ -456,7 +459,10 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     }
 
     if (isHibrido) {
-      const weekId = (programa as any).program_weeks?.sort((a: any, b: any) => b.numero_semana - a.numero_semana)[0]?.id;
+      const programWeeks = (programa as any).program_weeks || [];
+      const sortedWeeks = [...programWeeks].sort((a: any, b: any) => b.numero_semana - a.numero_semana);
+      const weekId = sortedWeeks[0]?.id;
+
       const { data: ultimaSessao } = weekId
         ? await supabase
             .from("sessions")
@@ -468,7 +474,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         : { data: null };
 
       const molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
-        chave: b.config?.chave || b.titulo || b.formato,
+        chave: (b.config as any)?.chave || b.titulo || b.formato,
         formato: b.formato,
         titulo: b.titulo,
         duracaoMin: b.duracao_min,
@@ -476,8 +482,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         seriesMax: b.session_block_exercises?.[0]?.series || 3,
         numeroExercicios: b.session_block_exercises?.length || 1,
         repsPorExercicio: b.session_block_exercises?.[0]?.reps || "10",
-        modoExecucao: b.config?.modo_execucao || "series_fixas",
-        descansoAposSeg: b.config?.descanso_apos_seg || 60,
+        modoExecucao: (b.config as any)?.modo_execucao || "series_fixas",
+        descansoAposSeg: (b.config as any)?.descanso_apos_seg || 60,
         selecaoExercicios: "ia",
         fonteExercicios: {}
       }));
