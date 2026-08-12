@@ -1,11 +1,20 @@
 // Configuração de layout da imagem de treino: grade de 12 colunas + densidade.
 
 export type FundoImagem = "claro" | "escuro" | "transparente";
+
+/**
+ * Posição predeterminada de um bloco no export de imagem. `chave` liga ao
+ * `BlocoTemplate` do molde (persistida em session_blocks.config.chave pelo
+ * hibrido-gerar.functions.ts). Quando ausente para um bloco, o comportamento
+ * automático por formato (preparacao_movimento/aquecimento → esquerda) é
+ * mantido — retrocompatível com programas gerados antes desta extensão.
+ */
 export type ZonaBloco = "esquerda" | "principal";
 
 export interface PosicaoBloco {
   chave: string;
   zona: ZonaBloco;
+  /** Ordem dentro da própria zona (menor = mais acima/à esquerda). */
   ordem: number;
 }
 
@@ -22,10 +31,9 @@ export interface ImageLayout {
   gap: number;
   escalaTexto: number;
   fundo: FundoImagem;
-  /** Opcional: posições customizadas para blocos de molde IA. */
+  /** Posições manuais por bloco — opcional, retrocompatível. */
   posicoesBlocos?: PosicaoBloco[];
 }
-
 
 export const LAYOUT_PADRAO: ImageLayout = {
   largura: 5760,
