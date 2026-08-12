@@ -392,13 +392,16 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
           })
         : isHibrido
         ? await (async () => {
-            const { data: ultimaSessao } = await supabase
-              .from("sessions")
-              .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
-              .eq("program_week_id", (programa as any).program_weeks?.sort((a: any, b: any) => b.numero_semana - a.numero_semana)[0]?.id)
-              .order("numero_dia", { ascending: false })
-              .limit(1)
-              .maybeSingle();
+            const weekId = (programa as any).program_weeks?.sort((a: any, b: any) => b.numero_semana - a.numero_semana)[0]?.id;
+            const { data: ultimaSessao } = weekId 
+              ? await supabase
+                  .from("sessions")
+                  .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
+                  .eq("program_week_id", weekId)
+                  .order("numero_dia", { ascending: false })
+                  .limit(1)
+                  .maybeSingle()
+              : { data: null };
 
             const molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
               chave: b.config?.chave || b.titulo || b.formato,
@@ -414,6 +417,10 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               selecaoExercicios: "ia",
               fonteExercicios: {}
             }));
+
+            if (molde.length === 0) {
+              throw new Error("Não foi possível identificar o molde da sessão anterior para continuar a progressão.");
+            }
 
             return montarHibridoPrompt({
               payload: { ...data.hibrido, sessaoTemplate: molde },
@@ -449,13 +456,16 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     }
 
     if (isHibrido) {
-      const { data: ultimaSessao } = await supabase
-        .from("sessions")
-        .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
-        .eq("program_week_id", (programa as any).program_weeks?.sort((a: any, b: any) => b.numero_semana - a.numero_semana)[0]?.id)
-        .order("numero_dia", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const weekId = (programa as any).program_weeks?.sort((a: any, b: any) => b.numero_semana - a.numero_semana)[0]?.id;
+      const { data: ultimaSessao } = weekId
+        ? await supabase
+            .from("sessions")
+            .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
+            .eq("program_week_id", weekId)
+            .order("numero_dia", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : { data: null };
 
       const molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
         chave: b.config?.chave || b.titulo || b.formato,
