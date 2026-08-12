@@ -449,10 +449,33 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     }
 
     if (isHibrido) {
+      const { data: ultimaSessao } = await supabase
+        .from("sessions")
+        .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
+        .eq("program_week_id", (programa as any).program_weeks?.sort((a: any, b: any) => b.numero_semana - a.numero_semana)[0]?.id)
+        .order("numero_dia", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
+        chave: b.config?.chave || b.titulo || b.formato,
+        formato: b.formato,
+        titulo: b.titulo,
+        duracaoMin: b.duracao_min,
+        seriesMin: b.session_block_exercises?.[0]?.series || 3,
+        seriesMax: b.session_block_exercises?.[0]?.series || 3,
+        numeroExercicios: b.session_block_exercises?.length || 1,
+        repsPorExercicio: b.session_block_exercises?.[0]?.reps || "10",
+        modoExecucao: b.config?.modo_execucao || "series_fixas",
+        descansoAposSeg: b.config?.descanso_apos_seg || 60,
+        selecaoExercicios: "ia",
+        fonteExercicios: {}
+      }));
+
       return normalizarPrescricaoHibrido(
         conteudo,
-        data.hibrido.sessaoTemplate,
-        await buscarCandidatosDoMolde(supabase, data.hibrido.sessaoTemplate)
+        molde,
+        await buscarCandidatosDoMolde(supabase, molde)
       ) as any;
     }
 
