@@ -93,8 +93,11 @@ export type HibridoPayload = {
   tituloPrograma: string;
   /** Quantas sessões em sequência gerar usando o mesmo molde. */
   numeroSessoes: number;
+  diasPorSemana: number;
+  dataInicio: string | null | undefined;
   sessaoTemplate: SessaoTemplate;
 };
+
 
 export type ExercicioCandidato = { id: string; nome: string };
 

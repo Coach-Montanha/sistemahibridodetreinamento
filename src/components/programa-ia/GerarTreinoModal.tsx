@@ -374,10 +374,13 @@ export function GerarTreinoModal({
         modalidade: modalidade as ModalidadeHibrida,
         tituloPrograma: titulo,
         numeroSessoes: diasPorSemana,
+        diasPorSemana: diasPorSemana,
+        dataInicio: dataInicio,
         sessaoTemplate: [], // O molde deve ser injetado via store ou editor
       });
       return;
     }
+
     if (isTf) {
       onGenerateTf?.({
         escolaMetodologica: escolaTf,

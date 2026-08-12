@@ -620,10 +620,13 @@ export function ConstrutorMoldeDialog({
         tituloPrograma,
         numeroSessoes,
         sessaoTemplate: blocos,
+        diasPorSemana: 1, // Placeholder, app.gerar vai sobrescrever se necessário
+        dataInicio: new Date().toISOString(), // Placeholder
       },
       instrucoes,
     );
   }
+
 
   return (
     <Dialog
