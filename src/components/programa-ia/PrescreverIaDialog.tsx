@@ -428,8 +428,10 @@ export function PrescreverIaDialog({
                       ? "Corrida"
                       : programa?.metodologia === "kettlebell_fitness"
                         ? "Kettlebell Fitness"
+                        : programa?.metodologia === "hibrido"
+                          ? "Treinamento Híbrido"
                           : "Musculação"}
-                    </Badge>
+            </Badge>
                   </DialogTitle>
           <DialogDescription className="text-xs">
             {programa?.titulo
