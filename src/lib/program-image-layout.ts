@@ -1,6 +1,13 @@
 // Configuração de layout da imagem de treino: grade de 12 colunas + densidade.
 
 export type FundoImagem = "claro" | "escuro" | "transparente";
+export type ZonaBloco = "esquerda" | "principal";
+
+export interface PosicaoBloco {
+  chave: string;
+  zona: ZonaBloco;
+  ordem: number;
+}
 
 export interface ImageLayout {
   largura: number;
@@ -15,7 +22,10 @@ export interface ImageLayout {
   gap: number;
   escalaTexto: number;
   fundo: FundoImagem;
+  /** Opcional: posições customizadas para blocos de molde IA. */
+  posicoesBlocos?: PosicaoBloco[];
 }
+
 
 export const LAYOUT_PADRAO: ImageLayout = {
   largura: 5760,
