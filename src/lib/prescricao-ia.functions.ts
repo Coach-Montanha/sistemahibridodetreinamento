@@ -39,6 +39,7 @@ import {
   montarHibridoPrompt,
   normalizarPrescricaoHibrido,
   type HibridoPayload,
+  type SessaoTemplate,
 } from "@/lib/hibrido-ia.server";
 
 const CARGA = z
