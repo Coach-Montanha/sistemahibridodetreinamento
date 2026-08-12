@@ -31,9 +31,10 @@ export function ExercisePicker({
         .from("exercises")
         .select("*, exercise_media(*)")
         .order("nome_pt")
-        .limit(100); // Increased limit to ensure more variety is visible
+        .limit(100);
 
       if (q) {
+        // Busca flexível por nome em PT ou EN
         query = query.or(`nome_pt.ilike.%${q}%,nome_en.ilike.%${q}%`);
       }
 
