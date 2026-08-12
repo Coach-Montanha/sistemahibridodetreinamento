@@ -94,6 +94,7 @@ export function BlockCard({ block }: { block: BuilderBlock }) {
 function BlockBody({ block }: { block: BuilderBlock }) {
   switch (block.formato) {
     case "mobilidade":
+      console.log("Rendering PrepMovimentoForm for block:", block.tempId);
       return <PrepMovimentoForm block={block} />;
     case "e2mom":
     case "emom":
