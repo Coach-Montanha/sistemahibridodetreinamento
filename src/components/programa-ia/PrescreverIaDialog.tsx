@@ -255,7 +255,16 @@ export function PrescreverIaDialog({
           wl: wl ?? null,
           tf: tf ?? null,
           co: co ?? null,
-          hibrido: null,
+          hibrido: programa?.metodologia === "hibrido" || programa?.metodologia === "kettlebell_fitness" 
+            ? { 
+                modalidade: programa.metodologia,
+                tituloPrograma: programa.titulo ?? "Continuar Progressão",
+                numeroSessoes: 1, // Progressão continuada costuma ser 1 a 1 ou por semana
+                diasPorSemana: escopo?.diasPorSemana ?? 1,
+                dataInicio: escopo?.dataInicio ?? new Date().toISOString().slice(0, 10),
+                sessaoTemplate: [] // Será preenchido pelo servidor buscando a última sessão
+              } 
+            : null,
         },
       });
     },
