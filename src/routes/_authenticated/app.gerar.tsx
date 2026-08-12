@@ -153,7 +153,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
           diasPorSemana: escopo === "sessao" ? 1 : dias,
           dataInicio,
         });
-        setIaPrograma({ id: prog.id, titulo: prog.titulo ?? titulo });
+        setIaPrograma({ id: prog.id, titulo: prog.titulo ?? titulo, metodologia: "musculacao" } as any);
         return;
       }
       const res = await gerar({
