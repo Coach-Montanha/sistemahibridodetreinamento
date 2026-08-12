@@ -27,8 +27,17 @@ export function ExercisePicker({
   const { data = [] } = useQuery({
     queryKey: ["exercise-picker", q],
     queryFn: async () => {
-      let query = supabase.from("exercises").select("*, exercise_media(*)").order("nome_pt").limit(30);
-      if (q) query = query.ilike("nome_pt", `%${q}%`);
+      let query = supabase
+        .from("exercises")
+        .select("*, exercise_media(*)")
+        .order("nome_pt")
+        .limit(100);
+
+      if (q) {
+        // Busca flexível por nome em PT ou EN
+        query = query.or(`nome_pt.ilike.%${q}%,nome_en.ilike.%${q}%`);
+      }
+
       const { data, error } = await query;
       if (error) throw error;
       return data;
