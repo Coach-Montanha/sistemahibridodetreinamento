@@ -1,8 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { lazy, Suspense, useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +19,7 @@ import { gerarTreino } from "@/lib/gerador.functions";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { supabase } from "@/integrations/supabase/client";
 import { useCoach } from "@/hooks/use-coach";
+
 
 const PrescreverIaDialog = lazy(() =>
   import("@/components/programa-ia/PrescreverIaDialog").then((m) => ({
@@ -108,6 +107,8 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const isCorrida = metodologia === "corrida";
   const isHibrido = metodologia === "hibrido";
   const isKbFitness = metodologia === "kettlebell_fitness";
+  const [posicionarAberto, setPosicionarAberto] = useState<{ programaId: string } | null>(null);
+
   const isKbFitnessMolde = isKbFitness;
   const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida;
   const usaMolde = isHibrido || isKbFitnessMolde;
@@ -208,10 +209,12 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
           },
         });
         toast.success(`${res.sessoesGeradas} treino(s) gerado(s) com sucesso.`);
+        res.avisos?.forEach((a: string) => toast.warning(a));
         setMoldeModalOpen(false);
-        navigate({ to: "/app/treinos", search: { aba: "programas" } });
+        setPosicionarAberto({ programaId: res.programaId });
         return;
       }
+
 
       // Demais modalidades (KB Sport, WL, Funcional, Corrida, Musculação):
       // criam o programa e abrem o PrescreverIaDialog para revisão da prévia.
@@ -521,6 +524,21 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
                 setCoConfig(null);
                 navigate({ to: "/app/programas" });
               }
+            }}
+          />
+        </Suspense>
+      )}
+
+      {posicionarAberto && (
+        <Suspense fallback={null}>
+          <PosicionarBlocosDialog
+            open={!!posicionarAberto}
+            onOpenChange={(o) => !o && setPosicionarAberto(null)}
+            programaId={posicionarAberto.programaId}
+            modalidade={metodologia as ModalidadeHibrida}
+            onFinish={() => {
+              setPosicionarAberto(null);
+              navigate({ to: "/app/treinos", search: { aba: "programas" } });
             }}
           />
         </Suspense>
