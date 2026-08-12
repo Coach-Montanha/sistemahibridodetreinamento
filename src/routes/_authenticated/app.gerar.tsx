@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Wand2, Settings2, AlertTriangle, ListChecks, Sparkles } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { getGeneratorPrefs } from "@/lib/generator-prefs.functions";
 import { gerarTreino } from "@/lib/gerador.functions";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
@@ -38,6 +39,13 @@ const ConstrutorMoldeDialog = lazy(() =>
     default: m.ConstrutorMoldeDialog,
   })),
 );
+
+const PosicionarBlocosDialog = lazy(() =>
+  import("@/components/programa-ia/PosicionarBlocosDialog").then((m) => ({
+    default: m.PosicionarBlocosDialog,
+  })),
+);
+
 
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
