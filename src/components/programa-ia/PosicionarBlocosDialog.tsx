@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LayoutGrid, ArrowLeftRight, Sparkles, Loader2 } from "lucide-react";
+import { LayoutGrid, ArrowLeftRight, Sparkles, Loader2, Save } from "lucide-react";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import { supabase } from "@/integrations/supabase/client";
 import {
