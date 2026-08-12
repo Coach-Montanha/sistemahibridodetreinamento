@@ -34,10 +34,14 @@ export interface LinhaBloco {
   texto: string;
 }
 export interface BlocoImagem {
+  /** session_blocks.config.chave — presente em blocos gerados pelo motor
+   * de molde (Híbrido/KB Fitness); ausente em blocos de outras modalidades. */
+  chave?: string;
   titulo?: string;
   subtitulo?: string | null;
   linhas: LinhaBloco[];
 }
+
 export interface SessaoImagemInput {
   esquerda: BlocoImagem[];
   principal: BlocoImagem[];

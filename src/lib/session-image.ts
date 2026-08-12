@@ -2,6 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchCoachBranding } from "./session-export";
 import { METHODOLOGY_LABEL, type Methodology } from "./methodology";
 import type { SessaoImagemInput, BlocoImagem, LinhaBloco } from "./image-export";
+import { carregarLayout, type PosicaoBloco } from "@/lib/program-image-layout";
+
 
 const METODOLOGIA_SIGLA: Record<string, string> = {
   hibrido: "TH",
@@ -83,6 +85,7 @@ async function montarInputDeBlocos(
   blocks: any[],
   metodologia: string,
   coachNome: string,
+  posicoesBlocos?: PosicaoBloco[],
 ): Promise<SessaoImagemInput> {
   function linhasExerciciosDe(b: any): LinhaBloco[] {
     const exs = (b.session_block_exercises ?? []).sort(
@@ -93,6 +96,7 @@ async function montarInputDeBlocos(
 
   function blocoParaImagem(b: any, tituloForcado?: string): BlocoImagem {
     return {
+      chave: b.config?.chave, // novo — só existe em blocos do motor de molde
       titulo: (tituloForcado ?? tituloBloco(b)).toUpperCase(),
       subtitulo: subtituloFormato(b),
       linhas: linhasExerciciosDe(b),
@@ -102,15 +106,41 @@ async function montarInputDeBlocos(
   const esquerda: BlocoImagem[] = [];
   const principal: BlocoImagem[] = [];
 
-  for (const b of blocks) {
-    if (b.formato === "mobilidade") {
-      esquerda.push(blocoParaImagem(b, "BLOCO DE MOBILIDADE"));
-    } else if (ehAquecimento(b)) {
-      esquerda.push(blocoParaImagem(b, "AQUECIMENTO"));
-    } else {
-      principal.push(blocoParaImagem(b));
+  // Se HÁ posicoesBlocos E todo bloco com chave tem uma posição definida,
+  // usa a posição manual. Caso contrário (programa antigo, ou modalidade
+  // sem molde), mantém a heurística automática — retrocompatível.
+  const mapaPosicoes = new Map((posicoesBlocos ?? []).map((p) => [p.chave, p]));
+  const todasChaves = blocks.every((b) => !b.config?.chave || mapaPosicoes.has(b.config.chave));
+  const usaPosicaoManual = (posicoesBlocos?.length ?? 0) > 0 && todasChaves;
+
+  if (usaPosicaoManual) {
+    const comPosicao = blocks
+      .map((b) => ({ b, pos: mapaPosicoes.get(b.config?.chave) }))
+      .filter((x): x is { b: any; pos: PosicaoBloco } => !!x.pos)
+      .sort((x, y) => x.pos.ordem - y.pos.ordem);
+
+    for (const { b, pos } of comPosicao) {
+      const tituloForcado =
+        b.formato === "mobilidade"
+          ? "BLOCO DE MOBILIDADE"
+          : ehAquecimento(b)
+            ? "AQUECIMENTO"
+            : undefined;
+      const item = blocoParaImagem(b, tituloForcado);
+      (pos.zona === "esquerda" ? esquerda : principal).push(item);
+    }
+  } else {
+    for (const b of blocks) {
+      if (b.formato === "mobilidade") {
+        esquerda.push(blocoParaImagem(b, "BLOCO DE MOBILIDADE"));
+      } else if (ehAquecimento(b)) {
+        esquerda.push(blocoParaImagem(b, "AQUECIMENTO"));
+      } else {
+        principal.push(blocoParaImagem(b));
+      }
     }
   }
+
 
   return {
     esquerda,
@@ -129,7 +159,7 @@ async function fetchSessionFull(sessionId: string) {
   const { data: session, error } = await supabase
     .from("sessions")
     .select(
-      "id, titulo, numero_dia, data, program_week_id, program_weeks(numero_semana, programs(titulo, metodologia))",
+      "id, titulo, numero_dia, data, program_week_id, program_weeks(numero_semana, programs(id, titulo, metodologia))",
     )
     .eq("id", sessionId)
     .single();
@@ -154,7 +184,9 @@ export async function prepararSessaoParaImagem(
     fetchSessionFull(sessionId),
     fetchCoachBranding(),
   ]);
-  const input = await montarInputDeBlocos(blocks, metodologia, branding.nome);
+  const programId = (session as any).program_weeks?.programs?.id;
+  const { layout } = programId ? carregarLayout(programId, metodologia) : { layout: undefined };
+  const input = await montarInputDeBlocos(blocks, metodologia, branding.nome, layout?.posicoesBlocos);
   return { input, nomeArquivo: nomeArquivoSessao(session, metodologia) };
 }
 
@@ -165,7 +197,9 @@ export async function prepararSessoesParaImagem(
   const out: SessaoImagemPreparada[] = [];
   for (const id of sessionIds) {
     const { session, blocks, metodologia } = await fetchSessionFull(id);
-    const input = await montarInputDeBlocos(blocks, metodologia, branding.nome);
+    const programId = (session as any).program_weeks?.programs?.id;
+    const { layout } = programId ? carregarLayout(programId, metodologia) : { layout: undefined };
+    const input = await montarInputDeBlocos(blocks, metodologia, branding.nome, layout?.posicoesBlocos);
     out.push({ input, nomeArquivo: nomeArquivoSessao(session, metodologia) });
   }
   return out;
