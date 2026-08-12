@@ -19,6 +19,7 @@ export const METHODOLOGY_LABEL: Record<Methodology, string> = {
 
 export type BlockFormat =
   | "mobilidade"
+  | "preparacao_movimento"
   | "forca_tecnica_pct"
   | "emom"
   | "e2mom"
