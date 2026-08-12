@@ -33,6 +33,7 @@ export type BlockFormat =
 
 export const BLOCK_FORMAT_LABEL: Record<BlockFormat, string> = {
   mobilidade: "Bloco de Mobilidade",
+  preparacao_movimento: "Preparação de Movimento",
   forca_tecnica_pct: "Força/Técnica (%1RM)",
   emom: "EMOM",
   e2mom: "E2MOM",
