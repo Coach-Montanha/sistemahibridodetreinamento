@@ -114,7 +114,7 @@ function BlockBody({ block }: { block: BuilderBlock }) {
     default:
       return (
         <p className="text-sm text-muted-foreground">
-          Formato: {block.formato} - Este formato de bloco ainda não tem editor visual — será adicionado nas
+          Este formato de bloco ainda não tem editor visual — será adicionado nas
           próximas entregas.
         </p>
       );
