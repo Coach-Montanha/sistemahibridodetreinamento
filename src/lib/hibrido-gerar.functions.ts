@@ -74,7 +74,8 @@ const INPUT = z.object({
 // ---------------------------------------------------------------------------
 
 function configDoBloco(b: BlocoTemplate): Record<string, unknown> {
-  const base = { descanso_apos_seg: b.descansoAposSeg };
+  const base = { chave: b.chave, descanso_apos_seg: b.descansoAposSeg };
+
 
   switch (b.formato) {
     case "preparacao_movimento":
