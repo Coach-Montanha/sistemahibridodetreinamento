@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -11,9 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { GripVertical, Save, Trash2 } from "lucide-react";
+import { Save } from "lucide-react";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import type { ModalidadeHibrida } from "@/lib/hibrido-ia.server";
+import { arrayMove } from "@dnd-kit/sortable";
 
 interface PosicionarBlocosDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ export function PosicionarBlocosDialog({
 }: PosicionarBlocosDialogProps) {
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [localSessoes, setLocalSessoes] = useState<any[]>([]);
 
   // Busca as sessões do programa recém-criado
   const { data: sessoes = [], isLoading } = useQuery({
@@ -68,22 +70,23 @@ export function PosicionarBlocosDialog({
     enabled: open && !!programaId,
   });
 
-  const [localSessoes, setLocalSessoes] = useState<any[]>([]);
+  useEffect(() => {
+    if (sessoes.length > 0) {
+      setLocalSessoes(sessoes);
+    }
+  }, [sessoes]);
 
-  // Sincroniza estado local quando os dados chegam
-  if (sessoes.length > 0 && localSessoes.length === 0) {
-    setLocalSessoes(sessoes);
-  }
-
-  const handleReorder = (newOrder: any[]) => {
-    setLocalSessoes(newOrder);
+  const handleReorder = (activeId: string, overId: string) => {
+    setLocalSessoes((prev) => {
+      const oldIndex = prev.findIndex((s) => s.id === activeId);
+      const newIndex = prev.findIndex((s) => s.id === overId);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
   };
 
   const salvarMut = useMutation({
     mutationFn: async () => {
       setLoading(true);
-      // Atualiza a ordem das sessões no banco
-      // Aqui simplificamos: apenas reatribuímos o numero_dia baseado na ordem do array
       const promises = localSessoes.map((s, idx) => 
         supabase
           .from("sessions")
@@ -121,25 +124,22 @@ export function PosicionarBlocosDialog({
             <div className="text-center p-8 text-muted-foreground">Nenhuma sessão encontrada.</div>
           ) : (
             <SortableList
-              items={localSessoes}
+              ids={localSessoes.map(s => s.id)}
               onReorder={handleReorder}
-              className="space-y-2"
-              renderItem={(s) => (
-                <SortableRow id={s.id}>
-                  <div className="flex items-center gap-3 w-full bg-card border rounded-lg p-3 hover:border-primary/50 transition-colors group">
-                    <div className="cursor-grab active:cursor-grabbing text-muted-foreground group-hover:text-primary transition-colors">
-                      <GripVertical className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1">
+            >
+              <div className="space-y-2">
+                {localSessoes.map((s) => (
+                  <SortableRow key={s.id} id={s.id}>
+                    <div className="flex-1 py-1">
                       <div className="text-sm font-medium">{s.titulo}</div>
                       <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Dia {s.numero_dia} · {s.session_blocks?.length || 0} blocos
+                        Dia Sugerido {s.numero_dia} · {s.session_blocks?.length || 0} blocos
                       </div>
                     </div>
-                  </div>
-                </SortableRow>
-              )}
-            />
+                  </SortableRow>
+                ))}
+              </div>
+            </SortableList>
           )}
         </div>
 
@@ -156,3 +156,4 @@ export function PosicionarBlocosDialog({
     </Dialog>
   );
 }
+
