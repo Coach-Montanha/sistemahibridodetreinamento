@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { lazy, Suspense, useState, useEffect } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery } from "@tanstack/react-query";
+
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -164,7 +166,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         },
       });
       toast.success(
-        `Gerado: ${res.resultado.reduce((s, r) => s + r.sessoes, 0)} sessão(ões)`,
+        `Gerado: ${res.resultado.reduce((s: number, r: any) => s + (r.sessoes || 0), 0)} sessão(ões)`,
       );
       const list = (res as any).avisos as string[] | undefined;
       if (list && list.length > 0) {
