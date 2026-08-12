@@ -392,10 +392,12 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
           })
         : isHibrido
         ? await (async () => {
+            // Busca o histórico expandido (últimas semanas) para contexto de progressão
             const programWeeks = (programa as any).program_weeks || [];
             const sortedWeeks = [...programWeeks].sort((a: any, b: any) => b.numero_semana - a.numero_semana);
-            const weekId = sortedWeeks[0]?.id;
             
+            // Para o MOLDE, usamos estritamente a última sessão disponível
+            const weekId = sortedWeeks[0]?.id;
             const { data: ultimaSessao } = weekId 
               ? await supabase
                   .from("sessions")
@@ -418,11 +420,11 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               modoExecucao: (b.config as any)?.modo_execucao || "series_fixas",
               descansoAposSeg: (b.config as any)?.descanso_apos_seg || 60,
               selecaoExercicios: "ia",
-              fonteExercicios: {}
+              fonteExercicios: (b.config as any)?.fonte_exercicios || {}
             }));
 
             if (molde.length === 0) {
-              throw new Error("Não há treinos anteriores nesta rotina para usar como molde. Por favor, crie o primeiro treino manualmente ou use o gerador de moldes.");
+              throw new Error("Não foi possível identificar o molde da sessão anterior para continuar a progressão. Verifique se a rotina já possui treinos cadastrados.");
             }
 
             return montarHibridoPrompt({
