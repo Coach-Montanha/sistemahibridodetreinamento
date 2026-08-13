@@ -554,7 +554,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             .maybeSingle()
         : { data: null };
 
-      const molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
+      let molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
         chave: (b.config as any)?.chave || b.titulo || b.formato,
         formato: b.formato,
         titulo: b.titulo,
@@ -566,8 +566,24 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         modoExecucao: (b.config as any)?.modo_execucao || "series_fixas",
         descansoAposSeg: (b.config as any)?.descanso_apos_seg || 60,
         selecaoExercicios: "ia",
-        fonteExercicios: {}
+        fonteExercicios: (b.config as any)?.fonte_exercicios || {}
       }));
+
+      // Fallback para normalização se não houver histórico
+      if (molde.length === 0) {
+        if (programa.metodologia === "kettlebell_fitness") {
+          molde = [
+            { chave: "prep_mobilidade", formato: "preparacao_movimento", titulo: "Mobilidade", duracaoMin: 2, seriesMin: 1, seriesMax: 1, numeroExercicios: 1, repsPorExercicio: "120s", modoExecucao: "series_fixas", descansoAposSeg: 30, selecaoExercicios: "ia", slot: "mobilidade", fonteExercicios: { equipamento: ["mobilidade"] } },
+            { chave: "aquecimento", formato: "circuito", titulo: "Aquecimento", duracaoMin: 5, seriesMin: 4, seriesMax: 4, numeroExercicios: 2, repsPorExercicio: "10", modoExecucao: "circuito", descansoAposSeg: 60, selecaoExercicios: "ia", fonteExercicios: { equipamento: ["kettlebell", "ginastico"] } },
+            { chave: "bloco_principal", formato: "kb_timed_sets", titulo: "Bloco Principal", duracaoMin: 10, seriesMin: 1, seriesMax: 1, numeroExercicios: 1, repsPorExercicio: "AMRAP", modoExecucao: "series_fixas", descansoAposSeg: 120, selecaoExercicios: "ia", fonteExercicios: { metodologias: ["kettlebell_fitness"], equipamento: ["kettlebell"] } }
+          ];
+        } else {
+          molde = [
+            { chave: "prep", formato: "preparacao_movimento", titulo: "Preparação", duracaoMin: 5, seriesMin: 1, seriesMax: 1, numeroExercicios: 2, repsPorExercicio: "10", modoExecucao: "series_fixas", descansoAposSeg: 30, selecaoExercicios: "ia", fonteExercicios: {} },
+            { chave: "principal", formato: "amrap", titulo: "Fitness A", duracaoMin: 12, seriesMin: 1, seriesMax: 1, numeroExercicios: 3, repsPorExercicio: "10", modoExecucao: "circuito", descansoAposSeg: 120, selecaoExercicios: "ia", fonteExercicios: {} }
+          ];
+        }
+      }
 
       return normalizarPrescricaoHibrido(
         conteudo,
