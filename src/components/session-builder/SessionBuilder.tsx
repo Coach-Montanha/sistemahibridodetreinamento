@@ -21,7 +21,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Save, Download, ImageDown, Sparkles } from "lucide-react";
+import { Plus, Save, Download, ImageDown, Sparkles, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useBuilder } from "@/lib/session-builder-store";
@@ -103,6 +103,11 @@ export function SessionBuilder({
   const PrescreverIaDialog = lazy(() =>
     import("@/components/programa-ia/PrescreverIaDialog").then((m) => ({
       default: m.PrescreverIaDialog,
+    })),
+  );
+  const PosicionarBlocosDialog = lazy(() =>
+    import("@/components/programa-ia/PosicionarBlocosDialog").then((m) => ({
+      default: m.PosicionarBlocosDialog,
     })),
   );
 

@@ -537,7 +537,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             open={!!posicionarAberto}
             onOpenChange={(o) => !o && setPosicionarAberto(null)}
             programaId={posicionarAberto.programaId}
-            modalidade={metodologia as ModalidadeHibrida}
+            modalidade={posicionarAberto.modalidade}
             onFinish={() => {
               setPosicionarAberto(null);
               navigate({ to: "/app/treinos", search: { aba: "programas" } });
