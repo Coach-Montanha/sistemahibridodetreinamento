@@ -397,9 +397,15 @@ export function PosicionarBlocosDialog({
         </div>
 
         <DialogFooter className="gap-3 border-t bg-muted/10 px-6 py-4">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="mr-auto">
-            Cancelar
-          </Button>
+          <div className="mr-auto flex items-center gap-2">
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <div className="h-4 w-px bg-border mx-1" />
+            <p className="text-[10px] text-muted-foreground max-w-[200px] leading-tight">
+              Dica: O layout livre (arrastar na imagem) está sendo ativado no Preview de Exportação.
+            </p>
+          </div>
           <Button
             variant="outline"
             onClick={() => salvar(true)}
@@ -415,7 +421,7 @@ export function PosicionarBlocosDialog({
             className="gap-2 px-6"
           >
             {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
-            Confirmar Layout
+            Confirmar Ordem
           </Button>
         </DialogFooter>
       </DialogContent>
