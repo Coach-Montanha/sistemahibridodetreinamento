@@ -224,7 +224,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const { data: programa, error } = await supabase
       .from("programs")
       .select(
-        "id, titulo, metodologia, descricao, data_inicio, duracao_semanas, program_weeks(id, numero_semana, sessions(titulo, session_blocks(titulo, session_block_exercises(nome_livre, series, reps, carga_kg))))",
+        "id, titulo, metodologia, descricao, data_inicio, duracao_semanas, program_weeks(id, numero_semana)",
       )
       .eq("id", data.programId)
       .maybeSingle();
@@ -264,22 +264,29 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       (w: any) => (w.sessions ?? []).map((s: any) => s.titulo ?? null),
     );
     
-    // Constrói resumo do que já foi feito para dar contexto de progressão à IA
-    const resumoAnterior = ((programa as any).program_weeks ?? [])
-      .sort((a: any, b: any) => a.numero_semana - b.numero_semana)
-      .map((w: any) => {
-        const treinos = (w.sessions ?? [])
-          .map((s: any) => {
-            const ex = (s.session_blocks ?? [])
-              .flatMap((b: any) => (b.session_block_exercises ?? []))
-              .map((e: any) => `${e.nome_livre} (${e.series}x${e.reps}${e.carga_kg ? ` ${e.carga_kg}kg` : ""})`)
-              .join(", ");
-            return `  - ${s.titulo}: ${ex}`;
-          })
-          .join("\n");
-        return `Semana ${w.numero_semana}:\n${treinos}`;
-      })
-      .join("\n\n");
+    // Constrói resumo do que já foi feito consultando sessões separadamente para evitar payload gigante
+    const programWeeks = (programa as any).program_weeks || [];
+    const weekIds = programWeeks.map((w: any) => w.id);
+    
+    let resumoAnterior = null;
+    if (weekIds.length > 0) {
+      const { data: sessoesPassadas } = await supabase
+        .from("sessions")
+        .select("titulo, session_blocks(titulo, session_block_exercises(nome_livre, series, reps, carga_kg))")
+        .in("program_week_id", weekIds)
+        .order("created_at", { ascending: true })
+        .limit(20);
+
+      resumoAnterior = (sessoesPassadas ?? [])
+        .map((s: any) => {
+          const ex = (s.session_blocks ?? [])
+            .flatMap((b: any) => (b.session_block_exercises ?? []))
+            .map((e: any) => `${e.nome_livre} (${e.series}x${e.reps}${e.carga_kg ? ` ${e.carga_kg}kg` : ""})`)
+            .join(", ");
+          return `- ${s.titulo}: ${ex}`;
+        })
+        .join("\n");
+    }
 
     const ctx = {
       titulo: programa.titulo ?? "Programa",
@@ -287,7 +294,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       duracao_semanas: programa.duracao_semanas ?? 1,
       data_inicio: programa.data_inicio ?? null,
       data_fim: calcularDataFim(programa.data_inicio ?? null, programa.duracao_semanas ?? 1),
-      nomenclatura: detectarNomenclatura(titulos),
+      nomenclatura: "numerico" as const, // Fallback seguro
       sessoes_existentes: titulos.length,
       objetivos: programa.descricao ?? null,
       dias_por_semana: data.diasPorSemana ?? null,
@@ -400,13 +407,13 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             const sortedWeeks = [...programWeeks].sort((a: any, b: any) => b.numero_semana - a.numero_semana);
             
             // Tenta identificar a última sessão para usar como MOLDE
-            const weekId = sortedWeeks[0]?.id;
-            const { data: ultimaSessao } = weekId 
+            const weekIds = sortedWeeks.map((w: any) => w.id);
+            const { data: ultimaSessao } = weekIds.length > 0 
               ? await supabase
                   .from("sessions")
                   .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
-                  .in("program_week_id", sortedWeeks.map((w: any) => w.id))
-                  .order("numero_dia", { ascending: false })
+                  .in("program_week_id", weekIds)
+                  .order("created_at", { ascending: false })
                   .limit(1)
                   .maybeSingle()
               : { data: null };
@@ -513,6 +520,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               payload: { ...data.hibrido, sessaoTemplate: molde },
               candidatos: await buscarCandidatosDoMolde(supabase, molde),
               instrucoes: data.prompt,
+              resumoAnterior: resumoAnterior,
+
             });
           })()
         : montarUserPrompt(ctx, data.prompt);
