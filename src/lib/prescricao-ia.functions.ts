@@ -294,7 +294,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       duracao_semanas: programa.duracao_semanas ?? 1,
       data_inicio: programa.data_inicio ?? null,
       data_fim: calcularDataFim(programa.data_inicio ?? null, programa.duracao_semanas ?? 1),
-      nomenclatura: "numerico", // Fallback seguro
+      nomenclatura: "numerico" as const, // Fallback seguro
       sessoes_existentes: titulos.length,
       objetivos: programa.descricao ?? null,
       dias_por_semana: data.diasPorSemana ?? null,
