@@ -224,7 +224,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const { data: programa, error } = await supabase
       .from("programs")
       .select(
-        "id, titulo, metodologia, descricao, data_inicio, duracao_semanas, program_weeks(numero_semana, sessions(titulo, session_blocks(titulo, session_block_exercises(nome_livre, series, reps, carga_kg))))",
+        "id, titulo, metodologia, descricao, data_inicio, duracao_semanas, program_weeks(id, numero_semana, sessions(titulo, session_blocks(titulo, session_block_exercises(nome_livre, series, reps, carga_kg))))",
       )
       .eq("id", data.programId)
       .maybeSingle();
@@ -396,19 +396,19 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             const programWeeks = (programa as any).program_weeks || [];
             const sortedWeeks = [...programWeeks].sort((a: any, b: any) => b.numero_semana - a.numero_semana);
             
-            // Para o MOLDE, usamos estritamente a última sessão disponível
+            // Tenta identificar a última sessão para usar como MOLDE
             const weekId = sortedWeeks[0]?.id;
             const { data: ultimaSessao } = weekId 
               ? await supabase
                   .from("sessions")
                   .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
-                  .eq("program_week_id", weekId)
+                  .in("program_week_id", sortedWeeks.map((w: any) => w.id))
                   .order("numero_dia", { ascending: false })
                   .limit(1)
                   .maybeSingle()
               : { data: null };
 
-            const molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
+            let molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
               chave: (b.config as any)?.chave || b.titulo || b.formato,
               formato: b.formato,
               titulo: b.titulo,
@@ -423,8 +423,87 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               fonteExercicios: (b.config as any)?.fonte_exercicios || {}
             }));
 
+            // FALLBACK: Se não houver treino anterior, gera um molde padrão baseado na metodologia
             if (molde.length === 0) {
-              throw new Error("Não foi possível identificar o molde da sessão anterior para continuar a progressão. Verifique se a rotina já possui treinos cadastrados.");
+              if (programa.metodologia === "kettlebell_fitness") {
+                molde = [
+                  {
+                    chave: "prep_mobilidade",
+                    formato: "preparacao_movimento",
+                    titulo: "Mobilidade",
+                    duracaoMin: 2,
+                    seriesMin: 1,
+                    seriesMax: 1,
+                    numeroExercicios: 1,
+                    repsPorExercicio: "120s",
+                    modoExecucao: "series_fixas",
+                    descansoAposSeg: 30,
+                    selecaoExercicios: "ia",
+                    slot: "mobilidade",
+                    fonteExercicios: { equipamento: ["mobilidade"] }
+                  },
+                  {
+                    chave: "aquecimento",
+                    formato: "circuito",
+                    titulo: "Aquecimento",
+                    duracaoMin: 5,
+                    seriesMin: 4,
+                    seriesMax: 4,
+                    numeroExercicios: 2,
+                    repsPorExercicio: "10",
+                    modoExecucao: "circuito",
+                    descansoAposSeg: 60,
+                    selecaoExercicios: "ia",
+                    fonteExercicios: { equipamento: ["kettlebell", "ginastico"] }
+                  },
+                  {
+                    chave: "bloco_principal",
+                    formato: "kb_timed_sets",
+                    titulo: "Bloco Principal",
+                    duracaoMin: 10,
+                    seriesMin: 1,
+                    seriesMax: 1,
+                    numeroExercicios: 1,
+                    repsPorExercicio: "AMRAP",
+                    modoExecucao: "series_fixas",
+                    descansoAposSeg: 120,
+                    selecaoExercicios: "ia",
+                    fonteExercicios: { metodologias: ["kettlebell_fitness"], equipamento: ["kettlebell"] }
+                  }
+                ];
+              } else {
+                // Híbrido Genérico
+                molde = [
+                  {
+                    chave: "prep",
+                    formato: "preparacao_movimento",
+                    titulo: "Preparação",
+                    duracaoMin: 5,
+                    seriesMin: 1,
+                    seriesMax: 1,
+                    numeroExercicios: 2,
+                    repsPorExercicio: "10",
+                    modoExecucao: "series_fixas",
+                    descansoAposSeg: 30,
+                    selecaoExercicios: "ia",
+                    fonteExercicios: {}
+                  },
+                  {
+                    chave: "principal",
+                    formato: "amrap",
+                    titulo: "Fitness A",
+                    duracaoMin: 12,
+                    seriesMin: 1,
+                    seriesMax: 1,
+                    numeroExercicios: 3,
+                    repsPorExercicio: "10",
+                    modoExecucao: "circuito",
+                    descansoAposSeg: 120,
+                    selecaoExercicios: "ia",
+                    fonteExercicios: {}
+                  }
+                ];
+              }
             }
 
             return montarHibridoPrompt({
@@ -469,13 +548,13 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         ? await supabase
             .from("sessions")
             .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
-            .eq("program_week_id", weekId)
+            .in("program_week_id", sortedWeeks.map((w: any) => w.id))
             .order("numero_dia", { ascending: false })
             .limit(1)
             .maybeSingle()
         : { data: null };
 
-      const molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
+      let molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
         chave: (b.config as any)?.chave || b.titulo || b.formato,
         formato: b.formato,
         titulo: b.titulo,
@@ -487,8 +566,24 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         modoExecucao: (b.config as any)?.modo_execucao || "series_fixas",
         descansoAposSeg: (b.config as any)?.descanso_apos_seg || 60,
         selecaoExercicios: "ia",
-        fonteExercicios: {}
+        fonteExercicios: (b.config as any)?.fonte_exercicios || {}
       }));
+
+      // Fallback para normalização se não houver histórico
+      if (molde.length === 0) {
+        if (programa.metodologia === "kettlebell_fitness") {
+          molde = [
+            { chave: "prep_mobilidade", formato: "preparacao_movimento", titulo: "Mobilidade", duracaoMin: 2, seriesMin: 1, seriesMax: 1, numeroExercicios: 1, repsPorExercicio: "120s", modoExecucao: "series_fixas", descansoAposSeg: 30, selecaoExercicios: "ia", slot: "mobilidade", fonteExercicios: { equipamento: ["mobilidade"] } },
+            { chave: "aquecimento", formato: "circuito", titulo: "Aquecimento", duracaoMin: 5, seriesMin: 4, seriesMax: 4, numeroExercicios: 2, repsPorExercicio: "10", modoExecucao: "circuito", descansoAposSeg: 60, selecaoExercicios: "ia", fonteExercicios: { equipamento: ["kettlebell", "ginastico"] } },
+            { chave: "bloco_principal", formato: "kb_timed_sets", titulo: "Bloco Principal", duracaoMin: 10, seriesMin: 1, seriesMax: 1, numeroExercicios: 1, repsPorExercicio: "AMRAP", modoExecucao: "series_fixas", descansoAposSeg: 120, selecaoExercicios: "ia", fonteExercicios: { metodologias: ["kettlebell_fitness"], equipamento: ["kettlebell"] } }
+          ];
+        } else {
+          molde = [
+            { chave: "prep", formato: "preparacao_movimento", titulo: "Preparação", duracaoMin: 5, seriesMin: 1, seriesMax: 1, numeroExercicios: 2, repsPorExercicio: "10", modoExecucao: "series_fixas", descansoAposSeg: 30, selecaoExercicios: "ia", fonteExercicios: {} },
+            { chave: "principal", formato: "amrap", titulo: "Fitness A", duracaoMin: 12, seriesMin: 1, seriesMax: 1, numeroExercicios: 3, repsPorExercicio: "10", modoExecucao: "circuito", descansoAposSeg: 120, selecaoExercicios: "ia", fonteExercicios: {} }
+          ];
+        }
+      }
 
       return normalizarPrescricaoHibrido(
         conteudo,
