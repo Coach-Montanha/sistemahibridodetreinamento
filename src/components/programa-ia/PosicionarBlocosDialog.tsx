@@ -82,9 +82,9 @@ async function buscarBlocosDaPrimeiraSessao(programaId: string): Promise<BlocoPo
   if (blocksErr) throw new Error(blocksErr.message);
 
   return (blocks ?? [])
-    .filter((b: any) => !!b.config?.chave)
-    .map((b: any) => ({
-      chave: b.config.chave as string,
+    // Permite blocos sem chave usando o índice/titulo como fallback seguro
+    .map((b: any, index: number) => ({
+      chave: b.config?.chave || `manual-${b.formato}-${index}`,
       titulo: b.titulo || FORMATO_LABEL_FALLBACK[b.formato] || b.formato,
       formatoLabel: FORMATO_LABEL_FALLBACK[b.formato] ?? b.formato,
     }));
