@@ -21,7 +21,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Save, Download, ImageDown, Sparkles } from "lucide-react";
+import { Plus, Save, Download, ImageDown, Sparkles, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useBuilder } from "@/lib/session-builder-store";
@@ -97,11 +97,17 @@ export function SessionBuilder({
   const sensors = useSortableSensors();
   const { presets } = useFormatRegistry();
   const [imgOpen, setImgOpen] = useState(false);
+  const [posicionarOpen, setPosicionarOpen] = useState(false);
   const [iaPrograma, setIaPrograma] = useState<{ p: any; isContinuation: boolean } | null>(null);
 
   const PrescreverIaDialog = lazy(() =>
     import("@/components/programa-ia/PrescreverIaDialog").then((m) => ({
       default: m.PrescreverIaDialog,
+    })),
+  );
+  const PosicionarBlocosDialog = lazy(() =>
+    import("@/components/programa-ia/PosicionarBlocosDialog").then((m) => ({
+      default: m.PosicionarBlocosDialog,
     })),
   );
 
@@ -378,8 +384,11 @@ export function SessionBuilder({
                   >
                     Excel
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setPosicionarOpen(true)}>
+                    <LayoutGrid className="mr-2 h-4 w-4" /> Organizar Ordem
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setImgOpen(true)}>
-                    <ImageDown className="mr-2 h-4 w-4" /> Imagem (PNG/JPG)
+                    <ImageDown className="mr-2 h-4 w-4" /> Exportar Imagem
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -392,11 +401,23 @@ export function SessionBuilder({
         </div>
       </div>
       {sessionId && (
-        <ExportImageDialog
-          open={imgOpen}
-          onOpenChange={setImgOpen}
-          sessionId={sessionId}
-        />
+        <>
+          <ExportImageDialog
+            open={imgOpen}
+            onOpenChange={setImgOpen}
+            sessionId={sessionId}
+          />
+          <Suspense fallback={null}>
+            <PosicionarBlocosDialog
+              open={posicionarOpen}
+              onOpenChange={setPosicionarOpen}
+              programaId={state.blocks[0]?.id ? state.blocks[0].id : ""} // No Builder, costumamos ter o programa ID acessível via rota ou estado, mas o Dialog busca via programaId. 
+              // Nota: PosicionarBlocosDialog requer programaId. Se o Builder não tiver, precisamos injetar.
+              modalidade="hibrido" 
+              onFinish={() => setPosicionarOpen(false)}
+            />
+          </Suspense>
+        </>
       )}
 
       <Card className="mb-6 p-4">

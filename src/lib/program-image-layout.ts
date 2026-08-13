@@ -16,6 +16,11 @@ export interface PosicaoBloco {
   zona: ZonaBloco;
   /** Ordem dentro da própria zona (menor = mais acima/à esquerda). */
   ordem: number;
+  /** Coordenadas relativas (0-1) dentro do canvas para posicionamento livre. */
+  x?: number;
+  y?: number;
+  largura?: number;
+  altura?: number;
 }
 
 export interface ImageLayout {

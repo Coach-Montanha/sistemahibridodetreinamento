@@ -109,7 +109,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const isCorrida = metodologia === "corrida";
   const isHibrido = metodologia === "hibrido";
   const isKbFitness = metodologia === "kettlebell_fitness";
-  const [posicionarAberto, setPosicionarAberto] = useState<{ programaId: string } | null>(null);
+  const [posicionarAberto, setPosicionarAberto] = useState<{ programaId: string; modalidade: string } | null>(null);
 
   const isKbFitnessMolde = isKbFitness;
   const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida;
@@ -213,7 +213,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         toast.success(`${res.sessoesGeradas} treino(s) gerado(s) com sucesso.`);
         res.avisos?.forEach((a: string) => toast.warning(a));
         setMoldeModalOpen(false);
-        setPosicionarAberto({ programaId: res.programaId });
+        setPosicionarAberto({ programaId: res.programaId, modalidade: metodologia });
         return;
       }
 
@@ -537,7 +537,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
             open={!!posicionarAberto}
             onOpenChange={(o) => !o && setPosicionarAberto(null)}
             programaId={posicionarAberto.programaId}
-            modalidade={metodologia as ModalidadeHibrida}
+            modalidade={posicionarAberto.modalidade}
             onFinish={() => {
               setPosicionarAberto(null);
               navigate({ to: "/app/treinos", search: { aba: "programas" } });
