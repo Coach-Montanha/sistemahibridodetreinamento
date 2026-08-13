@@ -51,6 +51,9 @@ function formatarLinhaExercicio(e: any): string {
 }
 
 function tituloBloco(b: any): string {
+  if (b.formato === "mobilidade") return "BLOCO DE MOBILIDADE" + (b.duracao_min ? ` (${b.duracao_min}')` : "");
+  if (ehAquecimento(b)) return "AQUECIMENTO" + (b.duracao_min ? ` (${b.duracao_min}')` : "");
+  
   const base = (b.titulo ?? b.formato ?? "").toString().toUpperCase();
   const dur = b.duracao_min ? ` (${b.duracao_min}')` : "";
   return `${base}${dur}`;
@@ -110,24 +113,32 @@ async function montarInputDeBlocos(
   // usa a posição manual. Caso contrário (programa antigo, ou modalidade
   // sem molde), mantém a heurística automática — retrocompatível.
   const mapaPosicoes = new Map((posicoesBlocos ?? []).map((p) => [p.chave, p]));
-  const todasChaves = blocks.every((b) => !b.config?.chave || mapaPosicoes.has(b.config.chave));
-  const usaPosicaoManual = (posicoesBlocos?.length ?? 0) > 0 && todasChaves;
+  // Mudança: Consideramos apenas se o bloco tem uma posição definida. 
+  // Se tiver, usa a manual. Se não tiver chave ou não tiver na lista, 
+  // ele cai no fluxo automático dentro do loop.
+  const usaPosicaoManual = (posicoesBlocos?.length ?? 0) > 0;
 
   if (usaPosicaoManual) {
-    const comPosicao = blocks
+    // Primeiro, processamos os blocos que têm posição definida
+    const blocosComPosicao = blocks
       .map((b) => ({ b, pos: mapaPosicoes.get(b.config?.chave) }))
       .filter((x): x is { b: any; pos: PosicaoBloco } => !!x.pos)
       .sort((x, y) => x.pos.ordem - y.pos.ordem);
 
-    for (const { b, pos } of comPosicao) {
-      const tituloForcado =
-        b.formato === "mobilidade"
-          ? "BLOCO DE MOBILIDADE"
-          : ehAquecimento(b)
-            ? "AQUECIMENTO"
-            : undefined;
-      const item = blocoParaImagem(b, tituloForcado);
+    for (const { b, pos } of blocosComPosicao) {
+      const item = blocoParaImagem(b);
       (pos.zona === "esquerda" ? esquerda : principal).push(item);
+    }
+
+    // Agora, processamos os blocos que NÃO têm posição definida (ex: adicionados manualmente)
+    // usando a heurística automática para não sumirem da imagem.
+    const blocosSemPosicao = blocks.filter(b => !b.config?.chave || !mapaPosicoes.has(b.config.chave));
+    for (const b of blocosSemPosicao) {
+      if (b.formato === "mobilidade" || ehAquecimento(b)) {
+        esquerda.push(blocoParaImagem(b));
+      } else {
+        principal.push(blocoParaImagem(b));
+      }
     }
   } else {
     for (const b of blocks) {

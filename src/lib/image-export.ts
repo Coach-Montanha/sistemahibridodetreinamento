@@ -171,10 +171,10 @@ function calcularPitchAdaptado(input: SessaoImagemInput, g: Geometria): number {
   for (let i = 0; i < input.principal.length; i += cols) {
     linhas.push(input.principal.slice(i, i + cols));
   }
-  const alturaMain = linhas.reduce((acc, linha, i) => {
+  const alturaMain = linhas.reduce((acc, linha) => {
     const alturaLinha = Math.max(...linha.map((b) => alturaBloco(b, base)));
-    return acc + alturaLinha + (i > 0 ? L.gap : 0);
-  }, 0);
+    return acc + alturaLinha;
+  }, 0) + (linhas.length > 0 ? (linhas.length - 1) * L.gap : 0);
 
   const alturaCritica = Math.max(alturaEsq, alturaMain);
   if (alturaCritica <= alturaDisponivel) return base;
