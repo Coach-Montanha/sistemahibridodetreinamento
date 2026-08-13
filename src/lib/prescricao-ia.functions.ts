@@ -520,6 +520,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               payload: { ...data.hibrido, sessaoTemplate: molde },
               candidatos: await buscarCandidatosDoMolde(supabase, molde),
               instrucoes: data.prompt,
+              resumoAnterior: resumoAnterior,
+
             });
           })()
         : montarUserPrompt(ctx, data.prompt);
