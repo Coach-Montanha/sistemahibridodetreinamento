@@ -218,6 +218,12 @@ export async function renderizarSessaoCanvas(
   if (temEsquerda) {
     let y = L.margemTopo;
     input.esquerda.forEach((bloco, i) => {
+      const manual = L.posicoesBlocos?.find(p => p.chave === bloco.chave);
+      if (manual?.y != null && manual?.x != null) {
+        desenharBloco(ctx, bloco, manual.x * L.largura, manual.y * L.altura, pitch, corTexto, corMuted, g);
+        return;
+      }
+
       if (i > 0) {
         y += DIVIDER_GAP;
         ctx.fillStyle = corDivisor;
@@ -250,9 +256,13 @@ export async function renderizarSessaoCanvas(
     if (li > 0) y += L.gap;
     let alturaLinha = 0;
     linha.forEach((bloco, ci) => {
-      const x = mainX + ci * (colW + L.gap);
-      const h = desenharBloco(ctx, bloco, x, y, pitch, corTexto, corMuted, g);
-      if (h > alturaLinha) alturaLinha = h;
+      // Prioriza posição manual se existir
+      const manual = L.posicoesBlocos?.find(p => p.chave === bloco.chave);
+      const x = manual?.x != null ? manual.x * L.largura : mainX + ci * (colW + L.gap);
+      const startY = manual?.y != null ? manual.y * L.altura : y;
+
+      const h = desenharBloco(ctx, bloco, x, startY, pitch, corTexto, corMuted, g);
+      if (manual == null && h > alturaLinha) alturaLinha = h;
     });
     y += alturaLinha;
   });
