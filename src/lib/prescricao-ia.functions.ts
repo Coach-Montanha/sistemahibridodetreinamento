@@ -402,7 +402,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               ? await supabase
                   .from("sessions")
                   .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
-                  .eq("program_week_id", weekId)
+                  .in("program_week_id", sortedWeeks.map((w: any) => w.id))
                   .order("numero_dia", { ascending: false })
                   .limit(1)
                   .maybeSingle()
