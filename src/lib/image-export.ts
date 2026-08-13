@@ -218,10 +218,12 @@ export async function renderizarSessaoCanvas(
   if (temEsquerda) {
     let y = L.margemTopo;
     input.esquerda.forEach((bloco, i) => {
+      const manual = bloco.chave ? L.posicoesBlocos?.find(p => p.chave === bloco.chave) : null;
       if (manual?.y != null && manual?.x != null) {
         desenharBloco(ctx, bloco, manual.x * L.largura, manual.y * L.altura, pitch, corTexto, corMuted, g);
         return;
       }
+
 
 
       if (i > 0) {
