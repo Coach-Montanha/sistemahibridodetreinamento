@@ -224,7 +224,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const { data: programa, error } = await supabase
       .from("programs")
       .select(
-        "id, titulo, metodologia, descricao, data_inicio, duracao_semanas, program_weeks(numero_semana, sessions(titulo, session_blocks(titulo, session_block_exercises(nome_livre, series, reps, carga_kg))))",
+        "id, titulo, metodologia, descricao, data_inicio, duracao_semanas, program_weeks(id, numero_semana, sessions(titulo, session_blocks(titulo, session_block_exercises(nome_livre, series, reps, carga_kg))))",
       )
       .eq("id", data.programId)
       .maybeSingle();
