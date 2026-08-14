@@ -108,7 +108,7 @@ import {
 } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, ListChecks } from "lucide-react";
+import { Search, ListChecks, Check, Wrench } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Dumbbell, Activity, Wrench, Wind } from "lucide-react";
