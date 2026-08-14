@@ -603,24 +603,43 @@ export function PrescreverIaDialog({
               {gerarMut.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Gerando prescrição...
+                  Gerando periodização...
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Gerar prescrição
+                  Gerar periodização em bloco
                 </>
               )}
             </Button>
           </div>
 
+          {gerarMut.isPending && progresso.length > 0 && (
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-medium text-primary">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Processando evolução...
+                </div>
+                <div className="space-y-1">
+                  {progresso.map((p, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[10px] text-muted-foreground animate-in fade-in slide-in-from-left-1">
+                      <div className="h-1 w-1 rounded-full bg-primary/40" />
+                      {p}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {previa ? (
             <div className="space-y-4">
               {previa.notes && (
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                   <h5 className="mb-2 flex items-center gap-2 text-sm font-bold text-primary">
-                    <Info className="h-4 w-4" />
-                    Relatório de Evolução
+                    <Sparkles className="h-4 w-4" />
+                    Estratégia de Periodização do Bloco
                   </h5>
                   <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
                     {previa.notes}
@@ -634,7 +653,7 @@ export function PrescreverIaDialog({
                     Sessões Geradas ({previa.days.length})
                   </h5>
                   <Badge variant="outline" className="text-[10px] uppercase">
-                    Modo: Evolução Silenciosa
+                    Modo: Evolução em Bloco
                   </Badge>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -651,7 +670,7 @@ export function PrescreverIaDialog({
                   Nenhuma prescrição gerada ainda.
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground/80">
-                  Descreva a divisão desejada e clique em “Gerar prescrição”.
+                  Descreva a divisão desejada e clique em “Gerar periodização em bloco”.
                 </p>
               </div>
             )
