@@ -17,19 +17,7 @@ export const METHODOLOGY_LABEL: Record<Methodology, string> = {
   corrida: "Corrida",
 };
 
-export type BlockFormat =
-  | "mobilidade"
-  | "preparacao_movimento"
-  | "forca_tecnica_pct"
-  | "emom"
-  | "e2mom"
-  | "amrap"
-  | "circuito"
-  | "kb_timed_sets"
-  | "metcon"
-  | "bodybuilding_sets"
-  | "finalizador"
-  | "livre";
+export type BlockFormat = string;
 
 export const BLOCK_FORMAT_LABEL: Record<BlockFormat, string> = {
   mobilidade: "Bloco de Mobilidade",
