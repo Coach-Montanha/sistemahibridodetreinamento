@@ -240,6 +240,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const isWl = metodologiaEfetiva === "levantamento_peso";
     const isTf = metodologiaEfetiva === "treinamento_funcional";
     const isCo = metodologiaEfetiva === "corrida";
+    const isHibrido = metodologiaEfetiva === "hibrido" || metodologiaEfetiva === "kettlebell_fitness";
 
     if (metodologiaEfetiva !== "musculacao" && 
         !isHibrido && 
