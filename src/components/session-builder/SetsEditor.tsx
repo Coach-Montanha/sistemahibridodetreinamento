@@ -29,57 +29,12 @@ import {
   type SetPreset,
 } from "@/lib/exercise-set-presets";
 
-const TYPE_OPTIONS: { value: SetType; label: string }[] = [
-  { value: "reps_carga", label: "Repetições e carga" },
-  { value: "reps_carga_tempo", label: "Repetições, carga e tempo" },
-  { value: "reps_tempo", label: "Repetições e tempo" },
-  { value: "tempo_inclinacao", label: "Tempo e inclinação" },
-  { value: "corrida", label: "Corrida" },
-  { value: "cadencia", label: "Cadência" },
-  { value: "observacoes", label: "Observações" },
-];
+import { useSetTypeRegistry, type SetFieldKey } from "@/lib/set-type-registry";
 
-const TYPE_LABEL: Record<SetType, string> = Object.fromEntries(
-  TYPE_OPTIONS.map((t) => [t.value, t.label])
-) as Record<SetType, string>;
-
-/** Campos exibidos por tipo. Cada key mapeia para um label curto. */
-const FIELDS_BY_TYPE: Record<SetType, { key: keyof BuilderSet; label: string; placeholder?: string; wide?: boolean }[]> = {
-  reps_carga: [
-    { key: "serie_rep", label: "Série/rep", placeholder: "3x15" },
-    { key: "carga", label: "Carga (kg)", placeholder: "0" },
-    { key: "intervalo_seg", label: "Intervalo (s)", placeholder: "60" },
-  ],
-  reps_carga_tempo: [
-    { key: "serie_rep", label: "Série/rep", placeholder: "3x15" },
-    { key: "carga", label: "Carga (kg)", placeholder: "0" },
-    { key: "tempo_seg", label: "Tempo (s)", placeholder: "30" },
-    { key: "intervalo_seg", label: "Intervalo (s)", placeholder: "60" },
-  ],
-  reps_tempo: [
-    { key: "serie_rep", label: "Série/rep", placeholder: "3x15" },
-    { key: "tempo_seg", label: "Tempo (s)", placeholder: "30" },
-    { key: "intervalo_seg", label: "Intervalo (s)", placeholder: "60" },
-  ],
-  tempo_inclinacao: [
-    { key: "tempo_seg", label: "Tempo (s)", placeholder: "60" },
-    { key: "inclinacao_pct", label: "Inclinação (%)", placeholder: "5" },
-    { key: "intervalo_seg", label: "Intervalo (s)", placeholder: "60" },
-  ],
-  corrida: [
-    { key: "distancia", label: "Distância", placeholder: "1 km" },
-    { key: "ritmo", label: "Ritmo (min/km)", placeholder: "5:30" },
-    { key: "intervalo_seg", label: "Intervalo (s)", placeholder: "120" },
-  ],
-  cadencia: [
-    { key: "serie_rep", label: "Série/rep", placeholder: "3x8" },
-    { key: "cadencia", label: "Cadência", placeholder: "3-1-2-0" },
-    { key: "intervalo_seg", label: "Intervalo (s)", placeholder: "60" },
-  ],
-  observacoes: [
-    { key: "obs", label: "Observações", placeholder: "Ex: foco na descida", wide: true },
-  ],
-};
+function useSetTypeInfo(typeId: string) {
+  const presets = useSetTypeRegistry((s) => s.presets);
+  return presets.find((p) => p.id === typeId) || presets[0];
+}
 
 export function SetsEditor({
   block,
@@ -254,7 +209,9 @@ function SetRow({
   onChange: (patch: Partial<BuilderSet>) => void;
   onRemove: () => void;
 }) {
-  const fields = FIELDS_BY_TYPE[set.tipo];
+  const { presets } = useSetTypeRegistry();
+  const info = presets.find(p => p.id === set.tipo) || presets[0];
+  const fields = info.fields;
 
   return (
     <div className="group grid grid-cols-[1fr_auto] items-end gap-2 rounded-md border border-border/60 bg-background/70 p-2 transition-colors hover:border-border">
@@ -269,8 +226,8 @@ function SetRow({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {TYPE_OPTIONS.map((t) => (
-                <SelectItem key={t.value} value={t.value} className="text-xs">
+              {presets.map((t) => (
+                <SelectItem key={t.id} value={t.id} className="text-xs">
                   {t.label}
                 </SelectItem>
               ))}
@@ -318,9 +275,10 @@ function AddSetForm({
   defaultType: SetType;
   onSubmit: (draft: Partial<BuilderSet>) => void;
 }) {
+  const presets = useSetTypeRegistry((s) => s.presets);
   const [tipo, setTipo] = useState<SetType>(defaultType);
   const [values, setValues] = useState<Record<string, string>>({});
-  const fields = FIELDS_BY_TYPE[tipo];
+  const fields = presets.find(p => p.id === tipo)?.fields || presets[0].fields;
 
   return (
     <div className="space-y-3">
@@ -337,8 +295,8 @@ function AddSetForm({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {TYPE_OPTIONS.map((t) => (
-              <SelectItem key={t.value} value={t.value}>
+            {presets.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
                 {t.label}
               </SelectItem>
             ))}
@@ -401,7 +359,7 @@ function PresetList({
             <div className="truncate text-sm font-medium text-foreground">{p.name}</div>
             <div className="truncate text-[11px] text-muted-foreground">
               {p.sets.length} {p.sets.length === 1 ? "série" : "séries"} ·{" "}
-              {TYPE_LABEL[p.sets[0]?.tipo ?? "reps_carga"]}
+              {useSetTypeRegistry.getState().presets.find(t => t.id === (p.sets[0]?.tipo))?.label || "Desconhecido"}
             </div>
           </button>
           <Button

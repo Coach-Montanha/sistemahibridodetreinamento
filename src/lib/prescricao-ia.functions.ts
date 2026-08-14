@@ -41,6 +41,7 @@ import {
   type HibridoPayload,
   type SessaoTemplate,
 } from "@/lib/hibrido-ia.server";
+import { BUILTIN_SET_TYPES } from "@/lib/set-type-registry";
 
 const CARGA = z
   .object({
@@ -531,10 +532,10 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
             return montarHibridoPrompt({
               payload: { ...data.hibrido, sessaoTemplate: molde },
-              candidatos: await buscarCandidatosDoMolde(supabase, molde),
+               candidatos: await buscarCandidatosDoMolde(supabase, molde),
               instrucoes: data.prompt,
               resumoAnterior: resumoAnterior,
-
+              setTypeRegistry: BUILTIN_SET_TYPES // Nota: No servidor usamos os builtins como base segura, o cliente pode enviar customizados se necessário via prompt
             });
           })()
         : montarUserPrompt(ctx, data.prompt);

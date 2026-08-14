@@ -162,8 +162,9 @@ export function montarHibridoPrompt(args: {
   candidatos: CandidatosPorBloco;
   instrucoes: string;
   resumoAnterior?: string | null;
+  setTypeRegistry?: any[];
 }): string {
-  const { payload, candidatos, instrucoes, resumoAnterior } = args;
+  const { payload, candidatos, instrucoes, resumoAnterior, setTypeRegistry } = args;
 
   const filosofia =
     payload.modalidade === "kettlebell_fitness" ? FILOSOFIA_KETTLEBELL_FITNESS : FILOSOFIA_HIBRIDO;
@@ -196,6 +197,7 @@ export function montarHibridoPrompt(args: {
     `SUA TAREFA É ESTREITA E ESPECÍFICA: a estrutura de cada bloco (formato, duração, séries, número de exercícios, reps, descanso) JÁ ESTÁ DEFINIDA pelo treinador e não pode ser alterada. Você só escolhe QUAIS exercícios preenchem cada bloco marcado como "selecao_exercicios": "ia" — e só entre os IDs listados em "candidatos_permitidos" daquele bloco. NUNCA invente um ID ou nome de exercício. NUNCA use um ID de outro bloco. NUNCA repita o mesmo ID duas vezes dentro do mesmo bloco.`,
     `Blocos marcados como "selecao_exercicios": "manual" já vêm com "exercicios_fixos" definido — apenas repita esses IDs na sua resposta, sem alterar.`,
     `Gere ${payload.numeroSessoes} sessão(ões). O objetivo central é VARIAÇÃO: priorize exercícios que NÃO aparecem na lista de exercícios já utilizados recentemente abaixo. Se o pool de candidatos for limitado, priorize a segurança e a eficácia do movimento.`,
+    setTypeRegistry ? `TIPOS DE SÉRIES DISPONÍVEIS (use apenas estes IDs no campo "tipo" de cada série): ${setTypeRegistry.map(t => `${t.label} (ID: ${t.id}, Campos: ${t.fields.map((f: any) => f.key).join(", ")})`).join(" | ")}` : "",
     resumoAnterior ? `\nCONTEXTO DE VARIAÇÃO:\n${resumoAnterior}` : "",
 
     "",
