@@ -12,6 +12,7 @@ import {
   type BuilderBlock,
 } from "@/lib/session-builder-store";
 import { BLOCK_FORMAT_LABEL, useFormatLabel } from "@/lib/methodology";
+import { useFormatRegistry } from "@/lib/format-registry";
 import {
   PrepMovimentoForm,
   TimedForm,
@@ -92,7 +93,11 @@ export function BlockCard({ block }: { block: BuilderBlock }) {
 }
 
 function BlockBody({ block }: { block: BuilderBlock }) {
-  switch (block.formato) {
+  const { presets } = useFormatRegistry();
+  const format = block.formato;
+  const base = format.startsWith("custom:") ? presets.find(p => p.id === format)?.base : format;
+
+  switch (base) {
     case "mobilidade":
     case "preparacao_movimento":
       return <PrepMovimentoForm block={block} />;
