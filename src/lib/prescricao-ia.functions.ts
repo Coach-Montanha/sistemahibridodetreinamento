@@ -9,6 +9,7 @@ import {
   montarUserPrompt,
   normalizarPrescricao,
   type AiPrescription,
+  type RotinaContexto,
 } from "@/lib/prescricao-ia.server";
 import {
   KB_SPORT_SYSTEM_PROMPT,
