@@ -30,6 +30,7 @@ import type {
   SlotPreparacao,
 } from "@/lib/hibrido-ia.server";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
+import { useFormatRegistry } from "@/lib/format-registry";
 
 const EQUIPAMENTO_VALORES = [
   "Kettlebell",
@@ -55,20 +56,9 @@ const FORMATO_LABEL: Record<string, string> = {
   livre: "Bloco livre",
 };
 
-const FORMATOS_DISPONIVEIS: string[] = [
-  "mobilidade",
-  "preparacao_movimento",
-  "forca_tecnica_pct",
-  "emom",
-  "e2mom",
-  "amrap",
-  "circuito",
-  "kb_timed_sets",
-  "metcon",
-  "bodybuilding_sets",
-  "finalizador",
-  "livre",
-];
+function getFormatosDisponiveis(presets: any[]): string[] {
+  return presets.map(p => p.id);
+}
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
 const USA_SERIES: string[] = [
@@ -84,7 +74,7 @@ const USA_DURACAO_TOTAL: string[] = ["amrap", "preparacao_movimento", "mobilidad
 const USA_PERCENTUAL: string[] = ["forca_tecnica_pct"];
 const USA_DESCANSO_ENTRE_SERIES: string[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
 const USA_SLOT: string[] = ["preparacao_movimento"];
-const USA_NUMERO_EXERCICIOS: string[] = FORMATOS_DISPONIVEIS.filter((f) => f !== "kb_timed_sets");
+const USA_NUMERO_EXERCICIOS = (formato: string) => formato !== "kb_timed_sets";
 
 function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
   const base = formato.split("_")[0];
@@ -234,9 +224,11 @@ function CampoNumero({
 function BlocoConfigForm({
   bloco,
   onChange,
+  formatLabel,
 }: {
   bloco: BlocoTemplate;
   onChange: (patch: Partial<BlocoTemplate>) => void;
+  formatLabel: (f: string) => string;
 }) {
   return (
     <div className="space-y-4 border-t border-border/60 pt-4">
@@ -245,7 +237,7 @@ function BlocoConfigForm({
           <Label className="text-xs text-muted-foreground">Título do bloco — opcional</Label>
           <Input
             className="h-9"
-            placeholder={FORMATO_LABEL[bloco.formato] ?? bloco.formato}
+            placeholder={formatLabel(bloco.formato)}
             value={bloco.titulo ?? ""}
             onChange={(e) => onChange({ titulo: e.target.value || null })}
           />
@@ -299,7 +291,7 @@ function BlocoConfigForm({
           />
         )}
 
-        {USA_NUMERO_EXERCICIOS.includes(bloco.formato) && (
+        {USA_NUMERO_EXERCICIOS(bloco.formato) && (
           <CampoNumero
             label="Número de exercícios"
             value={bloco.numeroExercicios}
@@ -733,7 +725,7 @@ export function ConstrutorMoldeDialog({
                       onClick={() => adicionarBloco(f)}
                       className="rounded-md px-2.5 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
                     >
-                      {FORMATO_LABEL[f] ?? f}
+                      {getFormatLabel(f)}
                     </button>
                   ))}
                 </div>

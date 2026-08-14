@@ -39,7 +39,8 @@ Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, se
   ],
   "notes": "Observações finais do plano"
 }
-Regras: 4 a 8 exercícios por dia; 'load' e 'observations' podem ser vazios; 'day_label' segue o tipo de nomenclatura da rotina.`;
+Regras: 4 a 8 exercícios por dia; 'load' e 'observations' podem ser vazios; 'day_label' segue o tipo de nomenclatura da rotina.
+Se você for informado sobre 'TIPOS DE SÉRIES DISPONÍVEIS', utilize preferencialmente esses formatos e nomenclaturas no campo 'load' ou 'observations' conforme adequado ao contexto.`;
 
 export type RotinaContexto = {
   titulo: string;
@@ -53,6 +54,7 @@ export type RotinaContexto = {
   dias_por_semana: number | null;
   escopo_label: string | null;
   resumo_anterior?: string | null;
+  set_types?: any[];
 };
 
 export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): string {
@@ -71,6 +73,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     `- Sessões já existentes: ${ctx.sessoes_existentes}`,
     ctx.resumo_anterior ? `- CONTEXTO DA PROGRAMAÇÃO ATUAL (O que já foi feito):\n${ctx.resumo_anterior}` : null,
     ctx.objetivos ? `- Objetivos: ${ctx.objetivos}` : null,
+    ctx.set_types ? `- TIPOS DE SÉRIES DISPONÍVEIS: ${ctx.set_types.map(t => `${t.label} (ID: ${t.id})`).join(", ")}` : null,
     "",
     dias
       ? `OBRIGATÓRIO: gere exatamente ${dias} dia(s) de treino distintos. Se houver um contexto anterior, evolua a estrutura didática baseada no que já foi executado, mantendo a coerência metodológica.`
