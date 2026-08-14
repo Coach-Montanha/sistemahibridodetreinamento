@@ -987,7 +987,7 @@ function FormatosPanel() {
     toggleBuiltin,
     addCustom,
     updateCustom,
-    removeCustom,
+    removePreset,
     duplicatePreset,
     reorderPresets,
   } = useFormatRegistry();
@@ -1629,7 +1629,6 @@ function SetTypesPanel() {
                   ))}
                 </div>
               </div>
-              {!p.builtin && (
                 <div className="flex gap-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(p)}>
                     <Wrench className="h-4 w-4 text-muted-foreground" />
@@ -1638,7 +1637,6 @@ function SetTypesPanel() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-              )}
             </div>
             {p.builtin && (
               <Badge variant="secondary" className="absolute right-2 top-2 h-5 text-[9px] uppercase tracking-tighter opacity-40">
