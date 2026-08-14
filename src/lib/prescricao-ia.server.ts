@@ -15,6 +15,8 @@ export type AiDay = {
   name: string;
   day_label: string;
   description: string;
+  /** O número da semana a que este dia pertence (ex: 1, 2, 3...) */
+  week_number?: number;
   exercises: AiExercise[];
 };
 
@@ -39,6 +41,7 @@ Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, se
   "days": [
     { "name": "Treino 1",
       "day_label": "Dia A",
+      "week_number": 1,
       "description": "Foco muscular / observações gerais",
       "exercises": [
         { "name": "Supino reto", "sets_reps": "4x10", "load": "60kg",
@@ -46,7 +49,7 @@ Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, se
           "group": "", "group_type": "individual" }
       ] }
   ],
-  "notes": "RELATÓRIO DE EVOLUÇÃO: Descreva detalhadamente o que foi modificado em relação ao histórico anterior e por que (ex: aumentamos carga no agachamento, trocamos leg press por agachamento búlgaro para variação, etc)."
+  "notes": "RELATÓRIO DE EVOLUÇÃO: Descreva detalhadamente a estratégia de periodização usada para todo o bloco gerado (ex: Semana 1 adaptação, Semana 2 sobrecarga, Semana 3 pico, Semana 4 deload/regeneração) e as modificações específicas em relação ao histórico."
 }
 Regras: 4 a 8 exercícios por dia; 'load' e 'observations' podem ser vazios; 'day_label' segue o tipo de nomenclatura da rotina.
 Se você for informado sobre 'TIPOS DE SÉRIES DISPONÍVEIS', utilize preferencialmente esses formatos e nomenclaturas no campo 'load' ou 'observations' conforme adequado ao contexto.`;
@@ -85,7 +88,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     ctx.set_types ? `- TIPOS DE SÉRIES DISPONÍVEIS: ${ctx.set_types.map(t => `${t.label} (ID: ${t.id})`).join(", ")}` : null,
     "",
     dias
-      ? `OBRIGATÓRIO: gere exatamente ${dias} dia(s) de treino distintos. Se houver um contexto anterior, evolua a estrutura didática baseada no que já foi executado, mantendo a coerência metodológica.`
+      ? `OBRIGATÓRIO: gere o programa completo conforme o escopo selecionado (${ctx.escopo_label ?? `${ctx.duracao_semanas} semanas`}). Se o escopo for de múltiplas semanas, gere exatamente ${dias} dia(s) distintos PARA CADA SEMANA, garantindo a evolução entre elas (ex: se gerar 2 semanas com 3 dias/sem, gere 6 dias no total, identificando "week_number" de 1 a 2).`
       : "OBRIGATÓRIO: gere exatamente 1 dia de treino.",
     "",
     "INSTRUÇÕES DO TREINADOR:",
@@ -146,6 +149,7 @@ export function normalizarPrescricao(bruto: string): AiPrescription {
     return {
       name: texto(d?.name, `Treino ${i + 1}`),
       day_label: texto(d?.day_label),
+      week_number: typeof d?.week_number === "number" ? d.week_number : undefined,
       description: texto(d?.description),
       exercises: exRaw
         .map((e: any) => {
