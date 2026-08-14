@@ -271,7 +271,7 @@ export function SessionBuilder({
           .insert({
             session_id: currentSessionId,
             ordem: b.ordem,
-            formato: b.formato,
+            formato: b.formato as any,
             titulo: b.titulo || null,
             duracao_min: b.duracao_min ?? null,
             config: configToSave,
