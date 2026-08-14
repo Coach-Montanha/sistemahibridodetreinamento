@@ -426,6 +426,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
             instrucoes: data.prompt,
+            resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isTf && tf && linhaTf
         ? montarFuncionalPrompt({
@@ -436,6 +437,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
             instrucoes: data.prompt,
+            resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isWl && wl && linhaWl
         ? montarWlPrompt({
@@ -446,6 +448,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
             instrucoes: data.prompt,
+            resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isKbSport && kb && linha
         ? montarKbSportPrompt({
@@ -456,6 +459,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
             instrucoes: data.prompt,
+            resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isHibrido
         ? await (async () => {
