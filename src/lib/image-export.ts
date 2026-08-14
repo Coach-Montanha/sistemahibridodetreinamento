@@ -210,36 +210,42 @@ export async function renderizarSessaoCanvas(
 
   const pitch = calcularPitchAdaptado(input, g);
 
-  // ── Coluna esquerda (Preparação + Aquecimento) ────────────────────────────
-  const temEsquerda = input.esquerda.length > 0 && L.esquerdaSpan > 0;
-  let mainX = g.mainX;
-  let mainW = g.mainW;
+  // ── Renderização com Prioridade em Coordenadas Manuais ─────────────────────
+  // Se houver coordenadas manuais, desenhamos tudo via manual e ignoramos o layout automático de colunas.
+  const temPosicoesManuais = (L.posicoesBlocos ?? []).length > 0;
 
-  if (temEsquerda) {
-    let y = L.margemTopo;
-    input.esquerda.forEach((bloco, i) => {
-      const manual = bloco.chave ? L.posicoesBlocos?.find(p => p.chave === bloco.chave) : null;
-      if (manual?.y != null && manual?.x != null) {
-        desenharBloco(ctx, bloco, manual.x * L.largura, manual.y * L.altura, pitch, corTexto, corMuted, g);
-        return;
+  if (temPosicoesManuais) {
+    const todosOsBlocos = [...input.esquerda, ...input.principal];
+    todosOsBlocos.forEach((bloco) => {
+      const pos = L.posicoesBlocos?.find((p) => p.chave === bloco.chave);
+      if (pos && pos.x != null && pos.y != null) {
+        desenharBloco(ctx, bloco, pos.x * L.largura, pos.y * L.altura, pitch, corTexto, corMuted, g);
       }
-
-
-
-      if (i > 0) {
-        y += DIVIDER_GAP;
-        ctx.fillStyle = corDivisor;
-        ctx.fillRect(g.leftX, y, g.leftW, 2);
-        y += 2 + DIVIDER_GAP;
-      }
-      y += desenharBloco(ctx, bloco, g.leftX, y, pitch, corTexto, corMuted, g);
-      y += BLOCK_INNER_GAP;
     });
+    // Se algum bloco do input não tiver posição manual mas o modo manual estiver ativo,
+    // ele é omitido por segurança (layout controlado).
   } else {
-    // Sem faixa esquerda: a área principal ocupa toda a largura útil
-    mainX = L.margemX;
-    mainW = L.largura - L.margemX * 2;
-  }
+    // ── Layout Automático Retrocompatível ───────────────────────────────────
+    const temEsquerda = input.esquerda.length > 0 && L.esquerdaSpan > 0;
+    let mainX = g.mainX;
+    let mainW = g.mainW;
+
+    if (temEsquerda) {
+      let y = L.margemTopo;
+      input.esquerda.forEach((bloco, i) => {
+        if (i > 0) {
+          y += DIVIDER_GAP;
+          ctx.fillStyle = corDivisor;
+          ctx.fillRect(g.leftX, y, g.leftW, 2);
+          y += 2 + DIVIDER_GAP;
+        }
+        y += desenharBloco(ctx, bloco, g.leftX, y, pitch, corTexto, corMuted, g);
+        y += BLOCK_INNER_GAP;
+      });
+    } else {
+      mainX = L.margemX;
+      mainW = L.largura - L.margemX * 2;
+    }
 
   // ── Área principal (Meio + Direita) ───────────────────────────────────────
   const blocosPrincipais = temEsquerda
@@ -253,22 +259,18 @@ export async function renderizarSessaoCanvas(
     linhas.push(blocosPrincipais.slice(i, i + cols));
   }
 
-  let y = L.margemTopo;
-  linhas.forEach((linha, li) => {
-    if (li > 0) y += L.gap;
-    let alturaLinha = 0;
-    linha.forEach((bloco, ci) => {
-      // Prioriza posição manual se existir
-      const manual = bloco.chave ? L.posicoesBlocos?.find(p => p.chave === bloco.chave) : null;
-
-      const x = manual?.x != null ? manual.x * L.largura : mainX + ci * (colW + L.gap);
-      const startY = manual?.y != null ? manual.y * L.altura : y;
-
-      const h = desenharBloco(ctx, bloco, x, startY, pitch, corTexto, corMuted, g);
-      if (manual == null && h > alturaLinha) alturaLinha = h;
+    let y = L.margemTopo;
+    linhas.forEach((linha, li) => {
+      if (li > 0) y += L.gap;
+      let alturaLinha = 0;
+      linha.forEach((bloco, ci) => {
+        const x = mainX + ci * (colW + L.gap);
+        const h = desenharBloco(ctx, bloco, x, y, pitch, corTexto, corMuted, g);
+        if (h > alturaLinha) alturaLinha = h;
+      });
+      y += alturaLinha;
     });
-    y += alturaLinha;
-  });
+  }
 
   // ── Assinatura (Metodologia + Coach) ──────────────────────────────────────
   const baseY = L.altura - L.margemBase;
