@@ -161,8 +161,9 @@ export function montarFuncionalPrompt(args: {
   dataInicio: string | null;
   escopoLabel: string | null;
   instrucoes: string;
+  resumoAnterior?: string | null;
 }): string {
-  const { tf, linha, semanas, diasPorSemana, dataInicio, escopoLabel } = args;
+  const { tf, linha, semanas, diasPorSemana, dataInicio, escopoLabel, resumoAnterior } = args;
   const dias = diasPorSemana && diasPorSemana > 0 ? diasPorSemana : 1;
   const dados = {
     escola_metodologica: linha,
@@ -195,6 +196,12 @@ export function montarFuncionalPrompt(args: {
     "",
     "Dados do aluno e da geração:",
     JSON.stringify(dados, null, 2),
+    "",
+    resumoAnterior ? `HISTÓRICO DA PROGRAMAÇÃO ATUAL:\n${resumoAnterior}\n` : null,
+    "",
+    `Sua tarefa é planejar a CONTINUIDADE e PERIODIZAÇÃO EM BLOCO da programação.`,
+    `Analise o HISTÓRICO acima para projetar a sobrecarga progressiva e PERIODIZAÇÃO ONDULATÓRIA.`,
+    `OBRIGATÓRIO: Identifique corretamente o "week_number" (1, 2, 3...) para cada sessão gerada.`,
     "",
     `Gere um programa de ${semanas} semana(s), ${dias} sessão(ões)/semana, iniciando em ${
       dataInicio ?? "data não informada"
