@@ -15,6 +15,8 @@ export type AiDay = {
   name: string;
   day_label: string;
   description: string;
+  /** O número da semana a que este dia pertence (ex: 1, 2, 3...) */
+  week_number?: number;
   exercises: AiExercise[];
 };
 
