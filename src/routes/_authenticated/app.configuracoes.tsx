@@ -437,6 +437,10 @@ function ConfiguracoesPage() {
             </Fold>
 
             <Fold>
+              <SetTypesPanel />
+            </Fold>
+
+            <Fold>
               <FormatosPanel />
             </Fold>
 
