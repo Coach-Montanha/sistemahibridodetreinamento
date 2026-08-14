@@ -433,7 +433,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
             let molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
               chave: (b.config as any)?.chave || b.titulo || b.formato,
-              formato: b.formato,
+              formato: b.formato as string,
               titulo: b.titulo,
               duracaoMin: b.duracao_min,
               seriesMin: b.session_block_exercises?.[0]?.series || 3,
@@ -581,7 +581,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
       let molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
         chave: (b.config as any)?.chave || b.titulo || b.formato,
-        formato: b.formato,
+        formato: b.formato as string,
         titulo: b.titulo,
         duracaoMin: b.duracao_min,
         seriesMin: b.session_block_exercises?.[0]?.series || 3,
