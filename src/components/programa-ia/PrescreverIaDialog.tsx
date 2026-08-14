@@ -209,11 +209,11 @@ const DiaCard = memo(function DiaCard({ dia, index }: { dia: AiDay; index: numbe
 
 export function PrescreverIaDialog({
   programa,
-  escopo,
-  kb,
-  wl,
-  tf,
-  co,
+  escopo: escopoInicial,
+  kb: kbInicial,
+  wl: wlInicial,
+  tf: tfInicial,
+  co: coInicial,
   onOpenChange,
 }: {
   programa: { id: string; titulo?: string | null; metodologia?: string | null } | null;
@@ -236,6 +236,9 @@ export function PrescreverIaDialog({
   const qc = useQueryClient();
   const gerar = useServerFn(prescribeTrainingWithAi);
   const [prompt, setPrompt] = useState("");
+  const [metodologia, setMetodologia] = useState<Methodology | string>(programa?.metodologia || "musculacao");
+  const [semanas, setSemanas] = useState(escopoInicial?.semanas || 1);
+  const [diasPorSemana, setDiasPorSemana] = useState(escopoInicial?.diasPorSemana || 3);
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
   const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
@@ -248,31 +251,31 @@ export function PrescreverIaDialog({
   const gerarMut = useMutation({
     mutationFn: async () => {
       if (!programa) throw new Error("Programa não selecionado");
-      setProgresso(["Analisando histórico e metodologia..."]);
+      setProgresso(["Analisando histórico, limitações e metodologia..."]);
       
-      const totalSemanas = escopo?.semanas || 1;
-      const totalSessoes = totalSemanas * (escopo?.diasPorSemana || 1);
+      const totalSessoes = semanas * diasPorSemana;
       
-      setProgresso(prev => [...prev, `Projetando periodização para ${totalSemanas} semana(s) (${totalSessoes} treinos)...`]);
+      setProgresso(prev => [...prev, `Projetando periodização para ${semanas} semana(s) (${totalSessoes} treinos)...`]);
       
       try {
         const res = await gerar({
           data: {
             programId: programa.id,
             prompt: prompt.trim(),
-            diasPorSemana: escopo?.diasPorSemana ?? null,
-            escopoLabel: escopo?.label ?? null,
-            kb: kb ?? null,
-            wl: wl ?? null,
-            tf: tf ?? null,
-            co: co ?? null,
-            hibrido: programa?.metodologia === "hibrido" || programa?.metodologia === "kettlebell_fitness" 
+            diasPorSemana: diasPorSemana,
+            escopoLabel: `${semanas} semanas`,
+            metodologiaOverride: metodologia as Methodology,
+            kb: kbInicial ?? null,
+            wl: wlInicial ?? null,
+            tf: tfInicial ?? null,
+            co: coInicial ?? null,
+            hibrido: metodologia === "hibrido" || metodologia === "kettlebell_fitness" 
               ? { 
-                  modalidade: programa.metodologia,
+                  modalidade: metodologia,
                   tituloPrograma: programa.titulo ?? "Continuar Progressão",
                   numeroSessoes: totalSessoes,
-                  diasPorSemana: escopo?.diasPorSemana ?? 1,
-                  dataInicio: escopo?.dataInicio ?? new Date().toISOString().slice(0, 10),
+                  diasPorSemana: diasPorSemana,
+                  dataInicio: escopoInicial?.dataInicio ?? new Date().toISOString().slice(0, 10),
                   sessaoTemplate: [] 
                 } 
               : null,
@@ -464,26 +467,14 @@ export function PrescreverIaDialog({
             </span>
             Prescrever com IA
             <Badge variant="secondary" className="ml-1 text-[10px] uppercase tracking-wide">
-              {kb
-                ? "Kettlebell Sport"
-                : wl
-                  ? "Levantamento de Peso"
-                  : tf
-                    ? "Treinamento Funcional"
-                    : co
-                      ? "Corrida"
-                      : programa?.metodologia === "kettlebell_fitness"
-                        ? "Kettlebell Fitness"
-                        : programa?.metodologia === "hibrido"
-                          ? "Treinamento Híbrido"
-                          : "Musculação"}
+              {METHODOLOGY_LABEL[metodologia as Methodology] || metodologia}
             </Badge>
-                  </DialogTitle>
+          </DialogTitle>
           <DialogDescription className="text-xs">
             {programa?.titulo
               ? `Gerando para "${programa.titulo}".`
               : "Gere uma prescrição estruturada."}{" "}
-            Motor de IA (Variação): a IA analisa os exercícios usados recentemente para sugerir uma nova sessão com estímulos variados. Descreva o objetivo da nova sessão.
+            Motor de IA (Variação): a IA analisa o histórico e as limitações do aluno para evoluir a periodização.
           </DialogDescription>
         </DialogHeader>
 

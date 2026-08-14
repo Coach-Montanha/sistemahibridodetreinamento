@@ -208,6 +208,7 @@ const INPUT = z.object({
   prompt: z.string().max(4000).default(""),
   diasPorSemana: z.number().int().min(1).max(7).nullable().optional(),
   escopoLabel: z.string().max(80).nullable().optional(),
+  metodologiaOverride: z.string().nullable().optional(),
   kb: KB,
   wl: WL,
   tf: TF,
@@ -234,13 +235,15 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
     if (!programa) throw new Error("Programa não encontrado ou sem permissão de acesso");
-    const isKbSport = programa.metodologia === "kettlebell_sport";
-    const isWl = programa.metodologia === "levantamento_peso";
-    const isTf = programa.metodologia === "treinamento_funcional";
-    const isCo = programa.metodologia === "corrida";
-    if (programa.metodologia !== "musculacao" && 
-        programa.metodologia !== "hibrido" && 
-        programa.metodologia !== "kettlebell_fitness" && 
+    const metodologiaEfetiva = data.metodologiaOverride || programa.metodologia;
+    const isKbSport = metodologiaEfetiva === "kettlebell_sport";
+    const isWl = metodologiaEfetiva === "levantamento_peso";
+    const isTf = metodologiaEfetiva === "treinamento_funcional";
+    const isCo = metodologiaEfetiva === "corrida";
+    const isHibrido = metodologiaEfetiva === "hibrido" || metodologiaEfetiva === "kettlebell_fitness";
+
+    if (metodologiaEfetiva !== "musculacao" && 
+        !isHibrido && 
         !isKbSport && !isWl && !isTf && !isCo) {
       throw new Error(
         "Prescrever com IA está disponível apenas para Musculação, Híbrido, Kettlebell Fitness, Kettlebell Sport, Levantamento de Peso, Treinamento Funcional e Corrida",
@@ -342,7 +345,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     const ctx: RotinaContexto = {
       titulo: programa.titulo ?? "Programa",
-      metodologia: programa.metodologia,
+      metodologia: metodologiaEfetiva as string,
       duracao_semanas: data.hibrido?.numeroSessoes && data.diasPorSemana 
         ? Math.ceil(data.hibrido.numeroSessoes / data.diasPorSemana) 
         : (programa.duracao_semanas ?? 1),
@@ -354,6 +357,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       dias_por_semana: data.diasPorSemana ?? null,
       escopo_label: data.escopoLabel ?? null,
       resumo_anterior: resumoAnterior || null,
+      aluno_info: programa.descricao ?? null, // Usamos a descrição do programa como info do aluno por enquanto
     };
 
     const apiKey = process.env.LOVABLE_API_KEY;
