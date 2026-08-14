@@ -79,12 +79,12 @@ const USA_SERIES: string[] = [
   "metcon",
   "finalizador",
 ];
-const USA_INTERVALO: BlockFormatHibrido[] = ["emom", "e2mom"];
-const USA_DURACAO_TOTAL: BlockFormatHibrido[] = ["amrap", "preparacao_movimento"];
-const USA_PERCENTUAL: BlockFormatHibrido[] = ["forca_tecnica_pct"];
-const USA_DESCANSO_ENTRE_SERIES: BlockFormatHibrido[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
-const USA_SLOT: BlockFormatHibrido[] = ["preparacao_movimento"];
-const USA_NUMERO_EXERCICIOS: BlockFormatHibrido[] = FORMATOS_DISPONIVEIS.filter((f) => f !== "kb_timed_sets");
+const USA_INTERVALO: string[] = ["emom", "e2mom"];
+const USA_DURACAO_TOTAL: string[] = ["amrap", "preparacao_movimento", "mobilidade"];
+const USA_PERCENTUAL: string[] = ["forca_tecnica_pct"];
+const USA_DESCANSO_ENTRE_SERIES: string[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
+const USA_SLOT: string[] = ["preparacao_movimento"];
+const USA_NUMERO_EXERCICIOS: string[] = FORMATOS_DISPONIVEIS.filter((f) => f !== "kb_timed_sets");
 
 function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
   const base = formato.split("_")[0];
@@ -245,7 +245,7 @@ function BlocoConfigForm({
           <Label className="text-xs text-muted-foreground">Título do bloco — opcional</Label>
           <Input
             className="h-9"
-            placeholder={FORMATO_LABEL[bloco.formato]}
+            placeholder={FORMATO_LABEL[bloco.formato] ?? bloco.formato}
             value={bloco.titulo ?? ""}
             onChange={(e) => onChange({ titulo: e.target.value || null })}
           />
@@ -520,7 +520,7 @@ function BlocoCard({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-semibold">{bloco.titulo || FORMATO_LABEL[bloco.formato]}</span>
                   <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                    {FORMATO_LABEL[bloco.formato]}
+                    {FORMATO_LABEL[bloco.formato] ?? bloco.formato}
                   </Badge>
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{resumoBloco(bloco)}</p>
