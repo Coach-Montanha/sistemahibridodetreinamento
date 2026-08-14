@@ -387,9 +387,11 @@ export function PrescreverIaDialog({
               ? "kb_timed_sets"
               : metodologia === "levantamento_peso"
                 ? "forca_tecnica_pct"
-                : metodologia === "corrida"
-                  ? "livre"
-                  : "bodybuilding_sets",
+                  : metodologia === "corrida"
+                    ? "corrida"
+                    : metodologia === "treinamento_funcional"
+                      ? "circuito"
+                      : "bodybuilding_sets",
             titulo: dia.day_label || dia.description || "Bloco principal",
             config: gruposDoDia(dia),
           })
