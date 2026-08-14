@@ -437,7 +437,7 @@ export function PrescreverIaDialog({
             {programa?.titulo
               ? `Gerando para "${programa.titulo}".`
               : "Gere uma prescrição estruturada."}{" "}
-            Motor de IA: a IA já analisa o histórico da rotina (se houver) para propor a continuidade didática. Descreva a próxima fase ou evolução desejada.
+            Motor de IA (Variação): a IA analisa os exercícios usados recentemente para sugerir uma nova sessão com estímulos variados. Descreva o objetivo da nova sessão.
           </DialogDescription>
         </DialogHeader>
 

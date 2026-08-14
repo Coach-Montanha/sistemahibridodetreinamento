@@ -204,8 +204,8 @@ export function montarHibridoPrompt(args: {
     "",
     `SUA TAREFA É ESTREITA E ESPECÍFICA: a estrutura de cada bloco (formato, duração, séries, número de exercícios, reps, descanso) JÁ ESTÁ DEFINIDA pelo treinador e não pode ser alterada. Você só escolhe QUAIS exercícios preenchem cada bloco marcado como "selecao_exercicios": "ia" — e só entre os IDs listados em "candidatos_permitidos" daquele bloco. NUNCA invente um ID ou nome de exercício. NUNCA use um ID de outro bloco. NUNCA repita o mesmo ID duas vezes dentro do mesmo bloco.`,
     `Blocos marcados como "selecao_exercicios": "manual" já vêm com "exercicios_fixos" definido — apenas repita esses IDs na sua resposta, sem alterar.`,
-    `Gere ${payload.numeroSessoes} sessão(ões) em sequência usando exatamente este mesmo molde de blocos em todas elas. Ao longo da sequência, varie a escolha de exercícios entre as sessões sempre que o pool de candidatos permitir (priorize sugerir NOVOS exercícios e variações em relação ao que já foi feito, se o pool oferecer alternativas viáveis). Dentro de cada bloco, prefira exercícios que se complementem (evite dois exercícios muito parecidos no mesmo bloco quando o pool oferece alternativas diferentes).`,
-    resumoAnterior ? `\nHISTÓRICO DE TREINOS ANTERIORES (EVITE REPETIÇÕES IDÊNTICAS E BUSQUE EVOLUÇÃO):\n${resumoAnterior}` : "",
+    `Gere ${payload.numeroSessoes} sessão(ões). O objetivo central é VARIAÇÃO: priorize exercícios que NÃO aparecem na lista de exercícios já utilizados recentemente abaixo. Se o pool de candidatos for limitado, priorize a segurança e a eficácia do movimento.`,
+    resumoAnterior ? `\nCONTEXTO DE VARIAÇÃO:\n${resumoAnterior}` : "",
 
     "",
     "Molde estrutural (aplica-se a todas as sessões da sequência):",

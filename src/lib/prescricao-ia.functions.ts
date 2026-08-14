@@ -264,28 +264,30 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       (w: any) => (w.sessions ?? []).map((s: any) => s.titulo ?? null),
     );
     
-    // Constrói resumo do que já foi feito consultando sessões separadamente para evitar payload gigante
+    // Busca apenas nomes dos exercícios usados nas últimas 4 semanas para evitar repetição
     const programWeeks = (programa as any).program_weeks || [];
     const weekIds = programWeeks.map((w: any) => w.id);
     
     let resumoAnterior = null;
     if (weekIds.length > 0) {
       const { data: sessoesPassadas } = await supabase
-        .from("sessions")
-        .select("titulo, session_blocks(titulo, session_block_exercises(nome_livre, series, reps, carga_kg))")
-        .in("program_week_id", weekIds)
-        .order("created_at", { ascending: true })
-        .limit(20);
+        .from("session_block_exercises")
+        .select("nome_livre")
+        .in("session_block_id", 
+          supabase.from("session_blocks")
+            .select("id")
+            .in("session_id", 
+              supabase.from("sessions")
+                .select("id")
+                .in("program_week_id", weekIds)
+            )
+        )
+        .limit(50);
 
-      resumoAnterior = (sessoesPassadas ?? [])
-        .map((s: any) => {
-          const ex = (s.session_blocks ?? [])
-            .flatMap((b: any) => (b.session_block_exercises ?? []))
-            .map((e: any) => `${e.nome_livre} (${e.series}x${e.reps}${e.carga_kg ? ` ${e.carga_kg}kg` : ""})`)
-            .join(", ");
-          return `- ${s.titulo}: ${ex}`;
-        })
-        .join("\n");
+      const nomesUsados = Array.from(new Set((sessoesPassadas ?? []).map((e: any) => e.nome_livre)));
+      resumoAnterior = nomesUsados.length > 0 
+        ? `Exercícios já utilizados recentemente (EVITE-OS para gerar VARIAÇÃO): ${nomesUsados.join(", ")}`
+        : "Nenhum histórico encontrado. Gere uma sessão inicial sólida.";
     }
 
     const ctx = {

@@ -111,16 +111,27 @@ export function ExportImageDialog({
 
   const handleDrag = (e: React.MouseEvent, canvasRect: DOMRect) => {
     if (!draggingBlock || !payload) return;
-    const x = (e.clientX - canvasRect.left) / canvasRect.width;
-    const y = (e.clientY - canvasRect.top) / canvasRect.height;
     
-    const newPosicoes = (payload.input.layout?.posicoesBlocos || []).map(p => 
-      p.chave === draggingBlock ? { ...p, x, y } : p
-    );
+    // Calcula coordenadas normalizadas (0-1)
+    const x = Math.max(0, Math.min(1, (e.clientX - canvasRect.left) / canvasRect.width));
+    const y = Math.max(0, Math.min(1, (e.clientY - canvasRect.top) / canvasRect.height));
     
-    if (!newPosicoes.find(p => p.chave === draggingBlock)) {
-      const zona = payload.input.esquerda.some(b => b.chave === draggingBlock) ? 'esquerda' : 'principal';
-      newPosicoes.push({ chave: draggingBlock, zona: zona as any, ordem: 99, x, y });
+    const currentPosicoes = payload.input.layout?.posicoesBlocos || [];
+    const existingIndex = currentPosicoes.findIndex(p => p.chave === draggingBlock);
+    
+    let newPosicoes: PosicaoBloco[];
+    if (existingIndex >= 0) {
+      newPosicoes = currentPosicoes.map((p, i) => 
+        i === existingIndex ? { ...p, x, y } : p
+      );
+    } else {
+      newPosicoes = [...currentPosicoes, { 
+        chave: draggingBlock, 
+        zona: 'principal', 
+        ordem: currentPosicoes.length, 
+        x, 
+        y 
+      }];
     }
     
     const nextLayout = { ...payload.input.layout!, posicoesBlocos: newPosicoes };
@@ -130,7 +141,7 @@ export function ExportImageDialog({
   const handleSaveLayout = () => {
     if (!payload?.input.layout) return;
     salvarLayout(sessionId, payload.input.layout as ImageLayout);
-    toast.success("Layout salvo com sucesso");
+    toast.success("Posições do canvas salvas!");
     setDragMode(false);
   };
 
@@ -195,13 +206,31 @@ export function ExportImageDialog({
                 />
                 
                 {dragMode && (
-                   <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(circle,currentColor_1px,transparent_1px)] bg-[size:20px_20px]" />
+                   <div className="absolute inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle,currentColor_1px,transparent_1px)] bg-[size:40px_40px]" />
                 )}
 
-                {dragMode && blocks.map(b => {
-                   // Apenas visual para indicar onde clicar, as coordenadas reais são no canvas
-                   // Mas para facilitar, podemos deixar botões flutuantes sobre a imagem
-                   return null; 
+                {dragMode && blocks.map((b, i) => {
+                  const pos = payload.input.layout?.posicoesBlocos?.find(p => p.chave === b.chave);
+                  return (
+                    <div
+                      key={b.chave || i}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        setDraggingBlock(b.chave || `bloco-${i}`);
+                      }}
+                      className={cn(
+                        "absolute z-10 cursor-move rounded border border-primary bg-primary/20 p-2 text-[10px] font-bold uppercase text-primary shadow-lg backdrop-blur-sm transition-transform hover:scale-105",
+                        draggingBlock === b.chave && "scale-110 ring-2 ring-primary"
+                      )}
+                      style={{
+                        left: `${(pos?.x ?? 0.1 + (i * 0.1)) * 100}%`,
+                        top: `${(pos?.y ?? 0.1 + (i * 0.05)) * 100}%`,
+                        transform: 'translate(-50%, -50%)'
+                      }}
+                    >
+                      {b.titulo || "Bloco"}
+                    </div>
+                  );
                 })}
               </div>
             )}
