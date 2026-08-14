@@ -1155,7 +1155,7 @@ function FormatosPanel() {
         onOpenChange={(v) => !v && setEditing(null)}
         onSave={handleSave}
         onDelete={(id) => {
-          const p = presets.find(x => x.id === id);
+          const p = presets.find(x => x.id === id) || builtins.find(x => x.id === id);
           if (p) setConfirmDelete(p);
         }}
       />
