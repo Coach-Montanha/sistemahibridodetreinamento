@@ -9,6 +9,8 @@ import {
   Sparkles,
   Timer,
   Weight,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -27,9 +29,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { prescribeTrainingWithAi } from "@/lib/prescricao-ia.functions";
 import { useSetTypeRegistry } from "@/lib/set-type-registry";
+import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
@@ -209,11 +219,11 @@ const DiaCard = memo(function DiaCard({ dia, index }: { dia: AiDay; index: numbe
 
 export function PrescreverIaDialog({
   programa,
-  escopo,
-  kb,
-  wl,
-  tf,
-  co,
+  escopo: escopoInicial,
+  kb: kbInicial,
+  wl: wlInicial,
+  tf: tfInicial,
+  co: coInicial,
   onOpenChange,
 }: {
   programa: { id: string; titulo?: string | null; metodologia?: string | null } | null;
@@ -236,6 +246,9 @@ export function PrescreverIaDialog({
   const qc = useQueryClient();
   const gerar = useServerFn(prescribeTrainingWithAi);
   const [prompt, setPrompt] = useState("");
+  const [metodologia, setMetodologia] = useState<Methodology | string>(programa?.metodologia || "musculacao");
+  const [semanas, setSemanas] = useState(escopoInicial?.semanas || 1);
+  const [diasPorSemana, setDiasPorSemana] = useState(escopoInicial?.diasPorSemana || 3);
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
   const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
@@ -248,31 +261,31 @@ export function PrescreverIaDialog({
   const gerarMut = useMutation({
     mutationFn: async () => {
       if (!programa) throw new Error("Programa não selecionado");
-      setProgresso(["Analisando histórico e metodologia..."]);
+      setProgresso(["Analisando histórico, limitações e metodologia..."]);
       
-      const totalSemanas = escopo?.semanas || 1;
-      const totalSessoes = totalSemanas * (escopo?.diasPorSemana || 1);
+      const totalSessoes = semanas * diasPorSemana;
       
-      setProgresso(prev => [...prev, `Projetando periodização para ${totalSemanas} semana(s) (${totalSessoes} treinos)...`]);
+      setProgresso(prev => [...prev, `Projetando periodização para ${semanas} semana(s) (${totalSessoes} treinos)...`]);
       
       try {
         const res = await gerar({
           data: {
             programId: programa.id,
             prompt: prompt.trim(),
-            diasPorSemana: escopo?.diasPorSemana ?? null,
-            escopoLabel: escopo?.label ?? null,
-            kb: kb ?? null,
-            wl: wl ?? null,
-            tf: tf ?? null,
-            co: co ?? null,
-            hibrido: programa?.metodologia === "hibrido" || programa?.metodologia === "kettlebell_fitness" 
+            diasPorSemana: diasPorSemana,
+            escopoLabel: `${semanas} semanas`,
+            metodologiaOverride: metodologia as Methodology,
+            kb: kbInicial ?? null,
+            wl: wlInicial ?? null,
+            tf: tfInicial ?? null,
+            co: coInicial ?? null,
+            hibrido: metodologia === "hibrido" || metodologia === "kettlebell_fitness" 
               ? { 
-                  modalidade: programa.metodologia,
+                  modalidade: metodologia,
                   tituloPrograma: programa.titulo ?? "Continuar Progressão",
                   numeroSessoes: totalSessoes,
-                  diasPorSemana: escopo?.diasPorSemana ?? 1,
-                  dataInicio: escopo?.dataInicio ?? new Date().toISOString().slice(0, 10),
+                  diasPorSemana: diasPorSemana,
+                  dataInicio: escopoInicial?.dataInicio ?? new Date().toISOString().slice(0, 10),
                   sessaoTemplate: [] 
                 } 
               : null,
@@ -370,13 +383,15 @@ export function PrescreverIaDialog({
           .insert({
             session_id: sess.id,
             ordem: 1,
-            formato: kb
+            formato: metodologia === "kettlebell_sport"
               ? "kb_timed_sets"
-              : wl
+              : metodologia === "levantamento_peso"
                 ? "forca_tecnica_pct"
-                : co
-                  ? "livre"
-                  : "bodybuilding_sets",
+                  : metodologia === "corrida"
+                    ? "livre"
+                    : metodologia === "treinamento_funcional"
+                      ? "circuito"
+                      : "bodybuilding_sets",
             titulo: dia.day_label || dia.description || "Bloco principal",
             config: gruposDoDia(dia),
           })
@@ -464,26 +479,14 @@ export function PrescreverIaDialog({
             </span>
             Prescrever com IA
             <Badge variant="secondary" className="ml-1 text-[10px] uppercase tracking-wide">
-              {kb
-                ? "Kettlebell Sport"
-                : wl
-                  ? "Levantamento de Peso"
-                  : tf
-                    ? "Treinamento Funcional"
-                    : co
-                      ? "Corrida"
-                      : programa?.metodologia === "kettlebell_fitness"
-                        ? "Kettlebell Fitness"
-                        : programa?.metodologia === "hibrido"
-                          ? "Treinamento Híbrido"
-                          : "Musculação"}
+              {METHODOLOGY_LABEL[metodologia as Methodology] || metodologia}
             </Badge>
-                  </DialogTitle>
+          </DialogTitle>
           <DialogDescription className="text-xs">
             {programa?.titulo
               ? `Gerando para "${programa.titulo}".`
               : "Gere uma prescrição estruturada."}{" "}
-            Motor de IA (Variação): a IA analisa os exercícios usados recentemente para sugerir uma nova sessão com estímulos variados. Descreva o objetivo da nova sessão.
+            Motor de IA (Variação): a IA analisa o histórico e as limitações do aluno para evoluir a periodização.
           </DialogDescription>
         </DialogHeader>
 
@@ -491,14 +494,14 @@ export function PrescreverIaDialog({
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[
               { label: "Rotina alvo", value: programa?.titulo ?? "—" },
-              { label: "Escopo", value: escopo?.label ?? "—" },
+              { label: "Metodologia", value: METHODOLOGY_LABEL[metodologia as Methodology] ?? metodologia },
               {
                 label: "Duração",
-                value: escopo?.semanas ? `${escopo.semanas} semana(s)` : "—",
+                value: `${semanas} semana(s)`,
               },
               {
                 label: "Dias/semana",
-                value: escopo?.diasPorSemana ? `${escopo.diasPorSemana}` : "—",
+                value: `${diasPorSemana}`,
               },
             ].map((k) => (
               <div
@@ -515,23 +518,79 @@ export function PrescreverIaDialog({
             ))}
           </div>
 
-          {escopo && (
-            <p className="rounded-lg border-primary/25 bg-primary/[0.06] p-3 text-xs leading-relaxed text-muted-foreground">
-              <span className="mb-1 block font-semibold text-primary">Contexto Automático</span>
-              A IA já recebe:{" "}
-              <strong className="text-foreground">
-                {escopo.label ?? "escopo selecionado"}
-              </strong>
-              {escopo.semanas ? ` · ${escopo.semanas} sem` : ""}
-              {escopo.diasPorSemana ? ` · ${escopo.diasPorSemana} treinos/sem` : ""}
-              {escopo.dataInicio ? ` · início ${escopo.dataInicio}` : ""}.
-              {escopo.label?.toLowerCase().includes("continuação") && (
-                <span className="mt-1 block border-t border-primary/10 pt-1 italic">
-                  O histórico das sessões anteriores foi enviado para garantir a progressão didática.
-                </span>
-              )}
-            </p>
-          )}
+          <div className="grid grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Metodologia
+              </label>
+              <Select value={metodologia} onValueChange={setMetodologia} disabled={gerarMut.isPending}>
+                <SelectTrigger className="h-9 bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(METHODOLOGY_LABEL).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Semanas
+              </label>
+              <div className="flex h-9 items-center justify-between rounded-md border bg-background px-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setSemanas(Math.max(1, semanas - 1))}
+                  disabled={gerarMut.isPending || semanas <= 1}
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <span className="text-sm font-medium tabular-nums">{semanas}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setSemanas(Math.min(12, semanas + 1))}
+                  disabled={gerarMut.isPending || semanas >= 12}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Dias/Semana
+              </label>
+              <div className="flex h-9 items-center justify-between rounded-md border bg-background px-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setDiasPorSemana(Math.max(1, diasPorSemana - 1))}
+                  disabled={gerarMut.isPending || diasPorSemana <= 1}
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <span className="text-sm font-medium tabular-nums">{diasPorSemana}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setDiasPorSemana(Math.min(7, diasPorSemana + 1))}
+                  disabled={gerarMut.isPending || diasPorSemana >= 7}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          </div>
 
           <Collapsible>
             <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs font-medium transition-colors duration-200 hover:bg-muted/40">
@@ -603,12 +662,12 @@ export function PrescreverIaDialog({
               {gerarMut.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Gerando periodização...
+                  Gerando {semanas} semana(s)...
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Gerar periodização em bloco
+                  Gerar periodização ({semanas} sem)
                 </>
               )}
             </Button>

@@ -24,14 +24,17 @@ export type AiPrescription = { days: AiDay[]; notes: string };
 
 export const SYSTEM_PROMPT = `Você é um Personal Trainer experiente em MUSCULAÇÃO (treinamento resistido com pesos), atendendo atletas, pessoas comuns e pessoas com necessidades especiais. Este motor é exclusivo de musculação: monte divisões de treino (A/B/C/D...), com foco muscular por dia, exercícios de sala de musculação, séries, repetições, carga e descanso.
 
-Sua tarefa é planejar a CONTINUIDADE e PERIODIZAÇÃO EM BLOCO da programação.
+Sua tarefa é planejar a CONTINUIDADE e PERIODIZAÇÃO EM BLOCO da programação, respeitando estritamente o HISTÓRICO e as LIMITAÇÕES DO ALUNO.
+
 Se o treinador fornecer o "CONTEXTO DA PROGRAMAÇÃO ATUAL" ou "HISTÓRICO COMPLETO":
 1. Analise meticulosamente o que já foi executado (exercícios, séries, repetições, cargas).
-2. Projete a progressão completa para o BLOCO solicitado (ex: 4 semanas):
+2. Identifique limitações físicas, lesões ou restrições mencionadas nos objetivos/resumo e NUNCA prescreva movimentos que as violem.
+3. Projete a progressão completa para o BLOCO solicitado (ex: 4 semanas):
    - Utilize a estratégia de PERIODIZAÇÃO ONDULATÓRIA: alterne volume, intensidade e complexidade técnica de forma não linear entre as semanas para maximizar a adaptação e evitar o platô.
    - Você tem LIBERDADE TOTAL para evoluir o programa: pode manter exercícios chave progredindo carga, substituir movimentos por variantes mais complexas ou introduzir novos estímulos (ex: troca de isoladores por compostos ou vice-versa).
-3. O objetivo é EXPANDIR o programa, criando sessões/semanas que são a continuação lógica e estratégica do que veio antes.
-4. OBRIGATÓRIO: Identifique corretamente o "week_number" (1, 2, 3...) para cada sessão gerada, garantindo que elas sejam agrupadas nas semanas corretas.
+4. O objetivo é EXPANDIR o programa, criando sessões/semanas que são a continuação lógica e estratégica do que veio antes.
+5. OBRIGATÓRIO: Identifique corretamente o "week_number" (1, 2, 3...) para cada sessão gerada, garantindo que elas sejam agrupadas nas semanas corretas.
+6. ATENÇÃO AOS DETALHES: Siga rigorosamente as "INSTRUÇÕES DO TREINADOR" para esta fase. Se ele pedir foco em um músculo, ou mudança de objetivo, priorize isso acima da lógica padrão.
 
 PROIBIDO usar movimentos de kettlebell (swing, snatch, jerk, turkish get-up), levantamento de peso olímpico (clean, arranco, arremesso), ginásticos (muscle-up, handstand), CrossFit/MetCon (burpee, wall ball, box jump, thruster) ou qualquer condicionamento metabólico. Use apenas exercícios clássicos de sala de musculação com barra, halteres, polias, máquinas e peso corporal guiado.
 
@@ -69,6 +72,7 @@ export type RotinaContexto = {
   escopo_label: string | null;
   resumo_anterior?: string | null;
   set_types?: any[];
+  aluno_info?: string | null;
 };
 
 export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): string {
@@ -86,6 +90,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     `- Nomenclatura dos dias: ${ctx.nomenclatura} (ex.: ${exemplo})`,
     `- Sessões já existentes: ${ctx.sessoes_existentes}`,
     ctx.resumo_anterior ? `- CONTEXTO DA PROGRAMAÇÃO ATUAL (O que já foi feito):\n${ctx.resumo_anterior}` : null,
+    ctx.aluno_info ? `- LIMITAÇÕES E INFO DO ALUNO: ${ctx.aluno_info}` : null,
     ctx.objetivos ? `- Objetivos: ${ctx.objetivos}` : null,
     ctx.set_types ? `- TIPOS DE SÉRIES DISPONÍVEIS: ${ctx.set_types.map(t => `${t.label} (ID: ${t.id})`).join(", ")}` : null,
     "",

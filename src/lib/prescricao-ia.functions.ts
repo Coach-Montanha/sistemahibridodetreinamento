@@ -208,6 +208,7 @@ const INPUT = z.object({
   prompt: z.string().max(4000).default(""),
   diasPorSemana: z.number().int().min(1).max(7).nullable().optional(),
   escopoLabel: z.string().max(80).nullable().optional(),
+  metodologiaOverride: z.string().nullable().optional(),
   kb: KB,
   wl: WL,
   tf: TF,
@@ -234,13 +235,15 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
     if (!programa) throw new Error("Programa não encontrado ou sem permissão de acesso");
-    const isKbSport = programa.metodologia === "kettlebell_sport";
-    const isWl = programa.metodologia === "levantamento_peso";
-    const isTf = programa.metodologia === "treinamento_funcional";
-    const isCo = programa.metodologia === "corrida";
-    if (programa.metodologia !== "musculacao" && 
-        programa.metodologia !== "hibrido" && 
-        programa.metodologia !== "kettlebell_fitness" && 
+    const metodologiaEfetiva = data.metodologiaOverride || programa.metodologia;
+    const isKbSport = metodologiaEfetiva === "kettlebell_sport";
+    const isWl = metodologiaEfetiva === "levantamento_peso";
+    const isTf = metodologiaEfetiva === "treinamento_funcional";
+    const isCo = metodologiaEfetiva === "corrida";
+    const isHibrido = metodologiaEfetiva === "hibrido" || metodologiaEfetiva === "kettlebell_fitness";
+
+    if (metodologiaEfetiva !== "musculacao" && 
+        !isHibrido && 
         !isKbSport && !isWl && !isTf && !isCo) {
       throw new Error(
         "Prescrever com IA está disponível apenas para Musculação, Híbrido, Kettlebell Fitness, Kettlebell Sport, Levantamento de Peso, Treinamento Funcional e Corrida",
@@ -266,7 +269,6 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     if (isCo && !data.co) {
       throw new Error("Configuração da Corrida ausente");
     }
-    const isHibrido = programa.metodologia === "hibrido" || programa.metodologia === "kettlebell_fitness";
     if (isHibrido && !data.hibrido) {
       throw new Error("Configuração do motor Híbrido/KB Fitness ausente");
     }
@@ -342,7 +344,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     const ctx: RotinaContexto = {
       titulo: programa.titulo ?? "Programa",
-      metodologia: programa.metodologia,
+      metodologia: metodologiaEfetiva as string,
       duracao_semanas: data.hibrido?.numeroSessoes && data.diasPorSemana 
         ? Math.ceil(data.hibrido.numeroSessoes / data.diasPorSemana) 
         : (programa.duracao_semanas ?? 1),
@@ -354,6 +356,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       dias_por_semana: data.diasPorSemana ?? null,
       escopo_label: data.escopoLabel ?? null,
       resumo_anterior: resumoAnterior || null,
+      aluno_info: programa.descricao ?? null,
     };
 
     const apiKey = process.env.LOVABLE_API_KEY;
@@ -423,6 +426,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
             instrucoes: data.prompt,
+            resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isTf && tf && linhaTf
         ? montarFuncionalPrompt({
@@ -433,6 +437,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
             instrucoes: data.prompt,
+            resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isWl && wl && linhaWl
         ? montarWlPrompt({
@@ -443,6 +448,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
             instrucoes: data.prompt,
+            resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isKbSport && kb && linha
         ? montarKbSportPrompt({
@@ -453,6 +459,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
             instrucoes: data.prompt,
+            resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isHibrido
         ? await (async () => {
@@ -622,14 +629,14 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     if (isHibrido) {
       const programWeeks = (programa as any).program_weeks || [];
       const sortedWeeks = [...programWeeks].sort((a: any, b: any) => b.numero_semana - a.numero_semana);
-      const weekId = sortedWeeks[0]?.id;
-
-      const { data: ultimaSessao } = weekId
+      
+      const weekIds = sortedWeeks.map((w: any) => w.id);
+      const { data: ultimaSessao } = weekIds.length > 0 
         ? await supabase
             .from("sessions")
             .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
-            .in("program_week_id", sortedWeeks.map((w: any) => w.id))
-            .order("numero_dia", { ascending: false })
+            .in("program_week_id", weekIds)
+            .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle()
         : { data: null };
@@ -651,7 +658,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
       // Fallback para normalização se não houver histórico
       if (molde.length === 0) {
-        if (programa.metodologia === "kettlebell_fitness") {
+        if (metodologiaEfetiva === "kettlebell_fitness") {
           molde = [
             { chave: "prep_mobilidade", formato: "preparacao_movimento", titulo: "Mobilidade", duracaoMin: 2, seriesMin: 1, seriesMax: 1, numeroExercicios: 1, repsPorExercicio: "120s", modoExecucao: "series_fixas", descansoAposSeg: 30, selecaoExercicios: "ia", slot: "mobilidade", fonteExercicios: { equipamento: ["mobilidade"] } },
             { chave: "aquecimento", formato: "circuito", titulo: "Aquecimento", duracaoMin: 5, seriesMin: 4, seriesMax: 4, numeroExercicios: 2, repsPorExercicio: "10", modoExecucao: "circuito", descansoAposSeg: 60, selecaoExercicios: "ia", fonteExercicios: { equipamento: ["kettlebell", "ginastico"] } },
