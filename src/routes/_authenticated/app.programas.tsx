@@ -751,7 +751,6 @@ function ProgramaCard({
                 <Sparkles className="h-4 w-4" />
                 Continuar gerando
               </Button>
-            </div>
               <Button
                 size="sm"
                 variant="outline"
