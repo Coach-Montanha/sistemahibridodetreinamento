@@ -246,7 +246,7 @@ export const gerarSessoesHibrido = createServerFn({ method: "POST" })
           .insert({
             session_id: sess.id,
             ordem: ordemBloco,
-            formato: blocoTpl.formato,
+            formato: blocoTpl.formato as any,
             titulo: blocoTpl.titulo ?? null,
             duracao_min: blocoTpl.duracaoMin,
             config: configDoBloco(blocoTpl) as any,

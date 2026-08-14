@@ -97,6 +97,18 @@ export async function prepararTreinoPdf(sessionIds: string[]): Promise<TreinoPdf
       const exs = (b.session_block_exercises ?? []).sort(
         (a: any, z: any) => (a.ordem ?? 0) - (z.ordem ?? 0),
       );
+      
+      // Adiciona uma linha de cabeçalho do bloco se houver exercícios
+      if (exs.length > 0) {
+        linhas.push({
+          nome: b.titulo || "Bloco",
+          seriesReps: "",
+          carga: "",
+          descanso: "",
+          observacoes: "BLOCO_HEADER", // Marcador interno para estilo
+        });
+      }
+
       for (const e of exs) {
         linhas.push({
           nome: nomeExercicio(e),
@@ -200,8 +212,19 @@ export async function exportarTreinoPdf(treino: TreinoPdf, nomeArquivo = "treino
       head: [["Exercício", "Séries x Reps", "Carga", "Descanso", "Observações"]],
       body:
         s.linhas.length > 0
-          ? s.linhas.map((l) => [l.nome, l.seriesReps, l.carga, l.descanso, l.observacoes])
+          ? s.linhas.map((l) => [l.nome, l.seriesReps, l.carga, l.descanso, l.observacoes === "BLOCO_HEADER" ? "" : l.observacoes])
           : [["Sem exercícios cadastrados", "", "", "", ""]],
+      didParseCell: (data) => {
+        const linha = s.linhas[data.row.index];
+        if (linha && linha.observacoes === "BLOCO_HEADER") {
+          if (data.section === "body") {
+            data.cell.styles.fillColor = [240, 240, 240];
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.textColor = [20, 20, 20];
+            data.cell.styles.fontSize = 9.5;
+          }
+        }
+      },
       styles: { font: "helvetica", fontSize: 9, cellPadding: 2, textColor: [40, 40, 40] },
       headStyles: { fillColor: [26, 26, 26], textColor: [255, 255, 255], fontStyle: "bold" },
       alternateRowStyles: { fillColor: [245, 245, 245] },

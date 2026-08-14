@@ -1151,6 +1151,10 @@ function FormatosPanel() {
         preset={editing}
         onOpenChange={(v) => !v && setEditing(null)}
         onSave={handleSave}
+        onDelete={(id) => {
+          const p = presets.find(x => x.id === id);
+          if (p) setConfirmDelete(p);
+        }}
       />
 
       <DeleteFormatDialog
@@ -1190,6 +1194,7 @@ function FormatoCard({
   if (defaults.intervalo_min) chips.push({ label: "Int", value: `${defaults.intervalo_min}′` });
   if (defaults.reps) chips.push({ label: "Reps", value: String(defaults.reps) });
   if (defaults.tempo_seg) chips.push({ label: "Tempo", value: `${defaults.tempo_seg}s` });
+  if (defaults.estacoes) chips.push({ label: "Estações", value: String(defaults.estacoes) });
 
   const sortable = useSortable({ id: preset.id, disabled: hidden });
   const {
@@ -1403,11 +1408,13 @@ function FormatoEditorDialog({
   preset,
   onOpenChange,
   onSave,
+  onDelete,
 }: {
   open: boolean;
   preset: FormatPreset | null;
   onOpenChange: (v: boolean) => void;
   onSave: (next: FormatPreset) => void;
+  onDelete?: (id: string) => void;
 }) {
   const [draft, setDraft] = useState<FormatPreset | null>(null);
 
@@ -1526,13 +1533,31 @@ function FormatoEditorDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 border-t border-border/60 px-6 py-4">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={() => onSave(draft)} disabled={!draft.label.trim()}>
-            Salvar
-          </Button>
+        <DialogFooter className="flex items-center justify-between gap-2 border-t border-border/60 px-6 py-4">
+          <div className="flex items-center gap-2">
+            {!draft.builtin && draft.id && onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => {
+                  onDelete(draft.id);
+                  onOpenChange(false);
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir formato
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => onSave(draft)} disabled={!draft.label.trim()}>
+              Salvar
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -271,7 +271,7 @@ export function SessionBuilder({
           .insert({
             session_id: currentSessionId,
             ordem: b.ordem,
-            formato: b.formato,
+            formato: b.formato as any,
             titulo: b.titulo || null,
             duracao_min: b.duracao_min ?? null,
             config: configToSave,
@@ -472,7 +472,7 @@ export function SessionBuilder({
               <DropdownMenuItem
                 key={p.id}
                 onClick={() =>
-                  state.addBlock(p.base as BlockFormat, {
+                  state.addBlock(p.builtin ? p.base : p.id, {
                     titulo: p.builtin ? null : p.label,
                     config: p.defaults,
                   })

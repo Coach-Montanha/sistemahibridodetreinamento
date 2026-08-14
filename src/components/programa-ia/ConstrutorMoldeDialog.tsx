@@ -40,8 +40,9 @@ const EQUIPAMENTO_VALORES = [
   "Objetos Alternativos",
 ] as const;
 
-const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
-  preparacao_movimento: "Mobilidade / Preparação",
+const FORMATO_LABEL: Record<string, string> = {
+  mobilidade: "Bloco de Mobilidade",
+  preparacao_movimento: "Preparação de Movimento",
   forca_tecnica_pct: "Força/Técnica (%1RM)",
   emom: "EMOM",
   e2mom: "E2MOM",
@@ -49,27 +50,28 @@ const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
   circuito: "Circuito",
   kb_timed_sets: "Kettlebell Sport (AQ/TR)",
   metcon: "MetCon",
-  bodybuilding_sets: "Séries × Reps",
+  bodybuilding_sets: "Musculação (séries × reps)",
   finalizador: "Finalizador",
   livre: "Bloco livre",
 };
 
-const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
+const FORMATOS_DISPONIVEIS: string[] = [
+  "mobilidade",
   "preparacao_movimento",
   "forca_tecnica_pct",
   "emom",
   "e2mom",
   "amrap",
   "circuito",
-  "bodybuilding_sets",
-  "metcon",
-  "finalizador",
   "kb_timed_sets",
+  "metcon",
+  "bodybuilding_sets",
+  "finalizador",
   "livre",
 ];
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
-const USA_SERIES: BlockFormatHibrido[] = [
+const USA_SERIES: string[] = [
   "emom",
   "e2mom",
   "circuito",
@@ -77,12 +79,12 @@ const USA_SERIES: BlockFormatHibrido[] = [
   "metcon",
   "finalizador",
 ];
-const USA_INTERVALO: BlockFormatHibrido[] = ["emom", "e2mom"];
-const USA_DURACAO_TOTAL: BlockFormatHibrido[] = ["amrap", "preparacao_movimento"];
-const USA_PERCENTUAL: BlockFormatHibrido[] = ["forca_tecnica_pct"];
-const USA_DESCANSO_ENTRE_SERIES: BlockFormatHibrido[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
-const USA_SLOT: BlockFormatHibrido[] = ["preparacao_movimento"];
-const USA_NUMERO_EXERCICIOS: BlockFormatHibrido[] = FORMATOS_DISPONIVEIS.filter((f) => f !== "kb_timed_sets");
+const USA_INTERVALO: string[] = ["emom", "e2mom"];
+const USA_DURACAO_TOTAL: string[] = ["amrap", "preparacao_movimento", "mobilidade"];
+const USA_PERCENTUAL: string[] = ["forca_tecnica_pct"];
+const USA_DESCANSO_ENTRE_SERIES: string[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
+const USA_SLOT: string[] = ["preparacao_movimento"];
+const USA_NUMERO_EXERCICIOS: string[] = FORMATOS_DISPONIVEIS.filter((f) => f !== "kb_timed_sets");
 
 function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
   const base = formato.split("_")[0];
@@ -243,7 +245,7 @@ function BlocoConfigForm({
           <Label className="text-xs text-muted-foreground">Título do bloco — opcional</Label>
           <Input
             className="h-9"
-            placeholder={FORMATO_LABEL[bloco.formato]}
+            placeholder={FORMATO_LABEL[bloco.formato] ?? bloco.formato}
             value={bloco.titulo ?? ""}
             onChange={(e) => onChange({ titulo: e.target.value || null })}
           />
@@ -518,7 +520,7 @@ function BlocoCard({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-semibold">{bloco.titulo || FORMATO_LABEL[bloco.formato]}</span>
                   <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                    {FORMATO_LABEL[bloco.formato]}
+                    {FORMATO_LABEL[bloco.formato] ?? bloco.formato}
                   </Badge>
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{resumoBloco(bloco)}</p>
@@ -700,7 +702,7 @@ export function ConstrutorMoldeDialog({
               <SortableList ids={blocos.map((b) => b.chave)} label="Bloco" onReorder={reordenar}>
                 <div className="space-y-2">
                   {blocos.map((b) => (
-                    <SortableRow key={b.chave} id={b.chave} handleLabel={`Reordenar ${FORMATO_LABEL[b.formato]}`}>
+                    <SortableRow key={b.chave} id={b.chave} handleLabel={`Reordenar ${FORMATO_LABEL[b.formato] ?? b.formato}`}>
                       <div className="flex-1 min-w-0 pr-3 py-1">
                         <BlocoCard
                           bloco={b}
@@ -731,7 +733,7 @@ export function ConstrutorMoldeDialog({
                       onClick={() => adicionarBloco(f)}
                       className="rounded-md px-2.5 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
                     >
-                      {FORMATO_LABEL[f]}
+                      {FORMATO_LABEL[f] ?? f}
                     </button>
                   ))}
                 </div>

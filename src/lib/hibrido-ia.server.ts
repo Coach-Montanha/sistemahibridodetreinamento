@@ -34,18 +34,7 @@
 export type ModalidadeHibrida = "hibrido" | "kettlebell_fitness";
 
 /** Mesmo vocabulário do BlockFormat já usado em session-builder/BlockFormats.tsx. */
-export type BlockFormatHibrido =
-  | "preparacao_movimento"
-  | "forca_tecnica_pct"
-  | "emom"
-  | "e2mom"
-  | "amrap"
-  | "circuito"
-  | "kb_timed_sets"
-  | "metcon"
-  | "bodybuilding_sets"
-  | "finalizador"
-  | "livre";
+export type BlockFormatHibrido = string;
 
 export type ModoExecucao = "circuito" | "series_fixas";
 export type SlotPreparacao = "mobilidade" | "aquecimento";
@@ -124,9 +113,11 @@ export async function buscarCandidatosDoMolde(
     const metodologias = [...(bloco.fonteExercicios.metodologias ?? [])];
     const equipamentos = [...(bloco.fonteExercicios.equipamento ?? [])];
 
-    if (bloco.formato === "preparacao_movimento" && bloco.slot === "mobilidade") {
-      // Bloco de mobilidade só consegue solicitar e selecionar movimentos do equipamento mobilidade.
-      equipamentos.push("mobilidade");
+    if (bloco.formato === "preparacao_movimento" || bloco.formato === "mobilidade") {
+      if (bloco.slot === "mobilidade") {
+        // Bloco de mobilidade só consegue solicitar e selecionar movimentos do equipamento mobilidade.
+        equipamentos.push("mobilidade");
+      }
     } else if (bloco.titulo?.toLowerCase() === "aquecimento" || bloco.chave.includes("aquecimento")) {
       // Bloco de aquecimento só consegue solicitar e selecionar movimentos do bloco kettlebell e ginástico.
       equipamentos.push("kettlebell", "ginastico");

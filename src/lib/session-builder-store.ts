@@ -117,7 +117,7 @@ function mapExerciseSets(
   };
 }
 
-const DEFAULT_CONFIG: Record<BlockFormat, Record<string, any>> = {
+export const DEFAULT_CONFIG: Record<string, Record<string, any>> = {
   mobilidade: { rounds: 4, round_min: 5, modo_execucao: "circuito" },
   preparacao_movimento: { rounds: 4, round_min: 5, modo_execucao: "circuito" },
   e2mom: { rounds: 8, intervalo_min: 2, rest_after_min: 3, modo_execucao: "circuito" },
@@ -156,7 +156,7 @@ export const useBuilder = create<State>((set) => ({
           formato,
           ordem: s.blocks.length,
           titulo: extras?.titulo ?? null,
-          config: { ...DEFAULT_CONFIG[formato], ...(extras?.config ?? {}) },
+          config: { ...DEFAULT_CONFIG[formato as string], ...(extras?.config ?? {}) },
           exercises: [],
         },
       ],

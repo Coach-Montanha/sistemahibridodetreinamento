@@ -17,19 +17,7 @@ export const METHODOLOGY_LABEL: Record<Methodology, string> = {
   corrida: "Corrida",
 };
 
-export type BlockFormat =
-  | "mobilidade"
-  | "preparacao_movimento"
-  | "forca_tecnica_pct"
-  | "emom"
-  | "e2mom"
-  | "amrap"
-  | "circuito"
-  | "kb_timed_sets"
-  | "metcon"
-  | "bodybuilding_sets"
-  | "finalizador"
-  | "livre";
+export type BlockFormat = string;
 
 export const BLOCK_FORMAT_LABEL: Record<BlockFormat, string> = {
   mobilidade: "Bloco de Mobilidade",
@@ -60,3 +48,16 @@ export const ENABLED_FORMATS: BlockFormat[] = [
   "finalizador",
   "livre",
 ];
+
+/** Lê o label efetivo de um formato (respeitando renomeações do coach). */
+export function useFormatLabel(base: string): string {
+  if (typeof window === "undefined") return BLOCK_FORMAT_LABEL[base] ?? base;
+  try {
+    const raw = window.localStorage.getItem("shdt.format-registry.v1");
+    if (!raw) return BLOCK_FORMAT_LABEL[base] ?? base;
+    const parsed = JSON.parse(raw);
+    return parsed.labels?.[base] ?? BLOCK_FORMAT_LABEL[base] ?? base;
+  } catch {
+    return BLOCK_FORMAT_LABEL[base] ?? base;
+  }
+}
