@@ -149,6 +149,7 @@ export function normalizarPrescricao(bruto: string): AiPrescription {
     return {
       name: texto(d?.name, `Treino ${i + 1}`),
       day_label: texto(d?.day_label),
+      week_number: typeof d?.week_number === "number" ? d.week_number : undefined,
       description: texto(d?.description),
       exercises: exRaw
         .map((e: any) => {
