@@ -48,3 +48,16 @@ export const ENABLED_FORMATS: BlockFormat[] = [
   "finalizador",
   "livre",
 ];
+
+/** Lê o label efetivo de um formato (respeitando renomeações do coach). */
+export function useFormatLabel(base: string): string {
+  if (typeof window === "undefined") return BLOCK_FORMAT_LABEL[base] ?? base;
+  try {
+    const raw = window.localStorage.getItem("shdt.format-registry.v1");
+    if (!raw) return BLOCK_FORMAT_LABEL[base] ?? base;
+    const parsed = JSON.parse(raw);
+    return parsed.labels?.[base] ?? BLOCK_FORMAT_LABEL[base] ?? base;
+  } catch {
+    return BLOCK_FORMAT_LABEL[base] ?? base;
+  }
+}
