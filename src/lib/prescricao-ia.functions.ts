@@ -269,7 +269,6 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     if (isCo && !data.co) {
       throw new Error("Configuração da Corrida ausente");
     }
-    const isHibrido = programa.metodologia === "hibrido" || programa.metodologia === "kettlebell_fitness";
     if (isHibrido && !data.hibrido) {
       throw new Error("Configuração do motor Híbrido/KB Fitness ausente");
     }
@@ -357,7 +356,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       dias_por_semana: data.diasPorSemana ?? null,
       escopo_label: data.escopoLabel ?? null,
       resumo_anterior: resumoAnterior || null,
-      aluno_info: programa.descricao ?? null, // Usamos a descrição do programa como info do aluno por enquanto
+      aluno_info: programa.descricao ?? null,
     };
 
     const apiKey = process.env.LOVABLE_API_KEY;

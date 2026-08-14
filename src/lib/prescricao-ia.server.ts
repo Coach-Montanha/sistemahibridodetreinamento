@@ -72,6 +72,7 @@ export type RotinaContexto = {
   escopo_label: string | null;
   resumo_anterior?: string | null;
   set_types?: any[];
+  aluno_info?: string | null;
 };
 
 export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): string {
@@ -89,6 +90,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     `- Nomenclatura dos dias: ${ctx.nomenclatura} (ex.: ${exemplo})`,
     `- Sessões já existentes: ${ctx.sessoes_existentes}`,
     ctx.resumo_anterior ? `- CONTEXTO DA PROGRAMAÇÃO ATUAL (O que já foi feito):\n${ctx.resumo_anterior}` : null,
+    ctx.aluno_info ? `- LIMITAÇÕES E INFO DO ALUNO: ${ctx.aluno_info}` : null,
     ctx.objetivos ? `- Objetivos: ${ctx.objetivos}` : null,
     ctx.set_types ? `- TIPOS DE SÉRIES DISPONÍVEIS: ${ctx.set_types.map(t => `${t.label} (ID: ${t.id})`).join(", ")}` : null,
     "",
