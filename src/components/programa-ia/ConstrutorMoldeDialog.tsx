@@ -40,8 +40,9 @@ const EQUIPAMENTO_VALORES = [
   "Objetos Alternativos",
 ] as const;
 
-const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
-  preparacao_movimento: "Mobilidade / Preparação",
+const FORMATO_LABEL: Record<string, string> = {
+  mobilidade: "Bloco de Mobilidade",
+  preparacao_movimento: "Preparação de Movimento",
   forca_tecnica_pct: "Força/Técnica (%1RM)",
   emom: "EMOM",
   e2mom: "E2MOM",
@@ -49,27 +50,28 @@ const FORMATO_LABEL: Record<BlockFormatHibrido, string> = {
   circuito: "Circuito",
   kb_timed_sets: "Kettlebell Sport (AQ/TR)",
   metcon: "MetCon",
-  bodybuilding_sets: "Séries × Reps",
+  bodybuilding_sets: "Musculação (séries × reps)",
   finalizador: "Finalizador",
   livre: "Bloco livre",
 };
 
-const FORMATOS_DISPONIVEIS: BlockFormatHibrido[] = [
+const FORMATOS_DISPONIVEIS: string[] = [
+  "mobilidade",
   "preparacao_movimento",
   "forca_tecnica_pct",
   "emom",
   "e2mom",
   "amrap",
   "circuito",
-  "bodybuilding_sets",
-  "metcon",
-  "finalizador",
   "kb_timed_sets",
+  "metcon",
+  "bodybuilding_sets",
+  "finalizador",
   "livre",
 ];
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
-const USA_SERIES: BlockFormatHibrido[] = [
+const USA_SERIES: string[] = [
   "emom",
   "e2mom",
   "circuito",
