@@ -279,36 +279,59 @@ export function PrescreverIaDialog({
     mutationFn: async () => {
       if (!programa || !previa) throw new Error("Nada para salvar");
 
-      // Semana alvo: a última existente, ou cria a primeira.
-      const { data: semanas, error: we } = await supabase
+      // Semana inicial: a última existente + 1, ou 1.
+      const { data: semanasExistentes, error: we } = await supabase
         .from("program_weeks")
-        .select("id, numero_semana")
+        .select("numero_semana")
         .eq("program_id", programa.id)
         .order("numero_semana", { ascending: false })
         .limit(1);
       if (we) throw we;
 
-      let weekId = semanas?.[0]?.id as string | undefined;
-      if (!weekId) {
-        const { data: nova, error } = await supabase
-          .from("program_weeks")
-          .insert({ program_id: programa.id, numero_semana: 1 })
-          .select("id")
-          .single();
-        if (error) throw error;
-        weekId = nova.id;
-      }
-
-      const { data: ultimas, error: se } = await supabase
-        .from("sessions")
-        .select("numero_dia")
-        .eq("program_week_id", weekId)
-        .order("numero_dia", { ascending: false })
-        .limit(1);
-      if (se) throw se;
-      let proximoDia = (ultimas?.[0]?.numero_dia ?? 0) + 1;
+      const ultimaSemanaReal = semanasExistentes?.[0]?.numero_semana ?? 0;
+      
+      // Mapeia semanas do JSON para IDs no banco
+      const weekMap = new Map<number, string>();
 
       for (const dia of previa.days) {
+        // Se a IA não mandou week_number, assume que tudo vai pra próxima semana
+        const weekOffset = dia.week_number || 1;
+        const targetWeekNum = ultimaSemanaReal + weekOffset;
+
+        if (!weekMap.has(targetWeekNum)) {
+          // Busca se já existe essa semana (caso a IA esteja preenchendo algo existente)
+          const { data: existente } = await supabase
+            .from("program_weeks")
+            .select("id")
+            .eq("program_id", programa.id)
+            .eq("numero_semana", targetWeekNum)
+            .maybeSingle();
+
+          if (existente) {
+            weekMap.set(targetWeekNum, existente.id);
+          } else {
+            const { data: nova, error } = await supabase
+              .from("program_weeks")
+              .insert({ program_id: programa.id, numero_semana: targetWeekNum })
+              .select("id")
+              .single();
+            if (error) throw error;
+            weekMap.set(targetWeekNum, nova.id);
+          }
+        }
+
+        const weekId = weekMap.get(targetWeekNum)!;
+
+        // Descobre o próximo dia dentro desta semana específica
+        const { data: ultimas, error: se } = await supabase
+          .from("sessions")
+          .select("numero_dia")
+          .eq("program_week_id", weekId)
+          .order("numero_dia", { ascending: false })
+          .limit(1);
+        if (se) throw se;
+        const proximoDia = (ultimas?.[0]?.numero_dia ?? 0) + 1;
+
         const { data: sess, error: ie } = await supabase
           .from("sessions")
           .insert({
@@ -320,7 +343,6 @@ export function PrescreverIaDialog({
           .select("id")
           .single();
         if (ie) throw ie;
-        proximoDia += 1;
 
         const { data: bloco, error: be } = await supabase
           .from("session_blocks")
