@@ -41,6 +41,7 @@ Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, se
   "days": [
     { "name": "Treino 1",
       "day_label": "Dia A",
+      "week_number": 1,
       "description": "Foco muscular / observações gerais",
       "exercises": [
         { "name": "Supino reto", "sets_reps": "4x10", "load": "60kg",
@@ -48,7 +49,7 @@ Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, se
           "group": "", "group_type": "individual" }
       ] }
   ],
-  "notes": "RELATÓRIO DE EVOLUÇÃO: Descreva detalhadamente o que foi modificado em relação ao histórico anterior e por que (ex: aumentamos carga no agachamento, trocamos leg press por agachamento búlgaro para variação, etc)."
+  "notes": "RELATÓRIO DE EVOLUÇÃO: Descreva detalhadamente a estratégia de periodização usada para todo o bloco gerado (ex: Semana 1 adaptação, Semana 2 sobrecarga, Semana 3 pico, Semana 4 deload/regeneração) e as modificações específicas em relação ao histórico."
 }
 Regras: 4 a 8 exercícios por dia; 'load' e 'observations' podem ser vazios; 'day_label' segue o tipo de nomenclatura da rotina.
 Se você for informado sobre 'TIPOS DE SÉRIES DISPONÍVEIS', utilize preferencialmente esses formatos e nomenclaturas no campo 'load' ou 'observations' conforme adequado ao contexto.`;
