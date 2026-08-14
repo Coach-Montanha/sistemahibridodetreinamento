@@ -625,14 +625,14 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     if (isHibrido) {
       const programWeeks = (programa as any).program_weeks || [];
       const sortedWeeks = [...programWeeks].sort((a: any, b: any) => b.numero_semana - a.numero_semana);
-      const weekId = sortedWeeks[0]?.id;
-
-      const { data: ultimaSessao } = weekId
+      
+      const weekIds = sortedWeeks.map((w: any) => w.id);
+      const { data: ultimaSessao } = weekIds.length > 0 
         ? await supabase
             .from("sessions")
             .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
-            .in("program_week_id", sortedWeeks.map((w: any) => w.id))
-            .order("numero_dia", { ascending: false })
+            .in("program_week_id", weekIds)
+            .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle()
         : { data: null };
@@ -654,7 +654,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
       // Fallback para normalização se não houver histórico
       if (molde.length === 0) {
-        if (programa.metodologia === "kettlebell_fitness") {
+        if (metodologiaEfetiva === "kettlebell_fitness") {
           molde = [
             { chave: "prep_mobilidade", formato: "preparacao_movimento", titulo: "Mobilidade", duracaoMin: 2, seriesMin: 1, seriesMax: 1, numeroExercicios: 1, repsPorExercicio: "120s", modoExecucao: "series_fixas", descansoAposSeg: 30, selecaoExercicios: "ia", slot: "mobilidade", fonteExercicios: { equipamento: ["mobilidade"] } },
             { chave: "aquecimento", formato: "circuito", titulo: "Aquecimento", duracaoMin: 5, seriesMin: 4, seriesMax: 4, numeroExercicios: 2, repsPorExercicio: "10", modoExecucao: "circuito", descansoAposSeg: 60, selecaoExercicios: "ia", fonteExercicios: { equipamento: ["kettlebell", "ginastico"] } },
