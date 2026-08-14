@@ -702,7 +702,7 @@ export function ConstrutorMoldeDialog({
               <SortableList ids={blocos.map((b) => b.chave)} label="Bloco" onReorder={reordenar}>
                 <div className="space-y-2">
                   {blocos.map((b) => (
-                    <SortableRow key={b.chave} id={b.chave} handleLabel={`Reordenar ${FORMATO_LABEL[b.formato]}`}>
+                    <SortableRow key={b.chave} id={b.chave} handleLabel={`Reordenar ${FORMATO_LABEL[b.formato] ?? b.formato}`}>
                       <div className="flex-1 min-w-0 pr-3 py-1">
                         <BlocoCard
                           bloco={b}
@@ -733,7 +733,7 @@ export function ConstrutorMoldeDialog({
                       onClick={() => adicionarBloco(f)}
                       className="rounded-md px-2.5 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
                     >
-                      {FORMATO_LABEL[f]}
+                      {FORMATO_LABEL[f] ?? f}
                     </button>
                   ))}
                 </div>
