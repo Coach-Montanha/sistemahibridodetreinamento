@@ -165,8 +165,9 @@ export function montarCorridaPrompt(args: {
   dataInicio: string | null;
   escopoLabel: string | null;
   instrucoes: string;
+  resumoAnterior?: string | null;
 }): string {
-  const { co, linha, semanas, diasPorSemana, dataInicio, escopoLabel } = args;
+  const { co, linha, semanas, diasPorSemana, dataInicio, escopoLabel, resumoAnterior } = args;
   const dias = diasPorSemana && diasPorSemana > 0 ? diasPorSemana : 1;
   const dados = {
     linha_metodologica: linha,
@@ -200,6 +201,12 @@ export function montarCorridaPrompt(args: {
     "",
     "DADOS DO ATLETA (JSON):",
     JSON.stringify(dados, null, 2),
+    "",
+    resumoAnterior ? `HISTÓRICO DA PROGRAMAÇÃO ATUAL:\n${resumoAnterior}\n` : null,
+    "",
+    `Sua tarefa é planejar a CONTINUIDADE e PERIODIZAÇÃO EM BLOCO da programação.`,
+    `Analise o HISTÓRICO acima para projetar a sobrecarga progressiva e PERIODIZAÇÃO ONDULATÓRIA.`,
+    `OBRIGATÓRIO: Identifique corretamente o "week_number" (1, 2, 3...) para cada sessão gerada.`,
     "",
     `OBRIGATÓRIO: gere exatamente ${dias} sessão(ões) distintas, formando a semana-padrão a ser repetida/progredida ao longo das ${semanas} semana(s).`,
     co.marcaRecenteDistancia && co.marcaRecenteTempo

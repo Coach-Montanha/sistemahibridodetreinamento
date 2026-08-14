@@ -83,8 +83,9 @@ export function montarKbSportPrompt(args: {
   dataInicio: string | null;
   escopoLabel: string | null;
   instrucoes: string;
+  resumoAnterior?: string | null;
 }): string {
-  const { kb, linha, semanas, diasPorSemana, dataInicio, escopoLabel } = args;
+  const { kb, linha, semanas, diasPorSemana, dataInicio, escopoLabel, resumoAnterior } = args;
   const dias = diasPorSemana && diasPorSemana > 0 ? diasPorSemana : 1;
   const dados = {
     escola_metodologica: linha,
@@ -106,6 +107,12 @@ export function montarKbSportPrompt(args: {
     "",
     "Dados do atleta e da geração:",
     JSON.stringify(dados, null, 2),
+    "",
+    resumoAnterior ? `HISTÓRICO DA PROGRAMAÇÃO ATUAL:\n${resumoAnterior}\n` : null,
+    "",
+    `Sua tarefa é planejar a CONTINUIDADE e PERIODIZAÇÃO EM BLOCO da programação.`,
+    `Analise o HISTÓRICO acima para projetar a sobrecarga progressiva e PERIODIZAÇÃO ONDULATÓRIA.`,
+    `OBRIGATÓRIO: Identifique corretamente o "week_number" (1, 2, 3...) para cada sessão gerada.`,
     "",
     `Gere um programa de ${semanas} semana(s), ${dias} sessão(ões)/semana, iniciando em ${
       dataInicio ?? "data não informada"
