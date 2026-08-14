@@ -739,22 +739,18 @@ function ProgramaCard({
               </SortableList>
             )}
             <div className="mt-5 flex flex-wrap justify-end gap-2">
-              {["musculacao", "hibrido", "kettlebell_sport", "weightlifting", "funcional", "corrida"].includes(
-                programa.metodologia,
-              ) && (
-                <Button
-                  size="sm"
-                  className="gap-2 bg-primary/90 hover:bg-primary"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onOpenContinuar();
-                  }}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Continuar progressão
-                </Button>
-              )}
+              <Button
+                size="sm"
+                className="gap-2 bg-primary/90 hover:bg-primary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenContinuar();
+                }}
+              >
+                <Sparkles className="h-4 w-4" />
+                Continuar gerando
+              </Button>
               <Button
                 size="sm"
                 variant="outline"

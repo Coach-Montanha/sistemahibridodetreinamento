@@ -252,7 +252,15 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       throw new Error("Configuração do Levantamento de Peso ausente");
     }
     if (isTf && !data.tf) {
-      throw new Error("Configuração do Treinamento Funcional ausente");
+      // Se não enviou configuração explícita, usa um fallback básico para não quebrar a chamada
+      data.tf = { 
+        escolaMetodologica: "auto", 
+        nivelAtleta: "intermediario", 
+        objetivo: "condicionamento_geral", 
+        equipamento: "academia_completa", 
+        sedentarismoProlongado: false, 
+        lesoes: [] 
+      };
     }
     if (isCo && !data.co) {
       throw new Error("Configuração da Corrida ausente");
