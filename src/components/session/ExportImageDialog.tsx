@@ -209,7 +209,7 @@ export function ExportImageDialog({
                    <div className="absolute inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle,currentColor_1px,transparent_1px)] bg-[size:40px_40px]" />
                 )}
 
-                {dragMode && blocks.map((b, i) => {
+                {dragMode && payload && blocks.map((b, i) => {
                   const pos = payload.input.layout?.posicoesBlocos?.find(p => p.chave === b.chave);
                   return (
                     <div

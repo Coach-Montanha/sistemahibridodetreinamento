@@ -270,24 +270,35 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     
     let resumoAnterior = null;
     if (weekIds.length > 0) {
-      const { data: sessoesPassadas } = await supabase
-        .from("session_block_exercises")
-        .select("nome_livre")
-        .in("session_block_id", 
-          supabase.from("session_blocks")
-            .select("id")
-            .in("session_id", 
-              supabase.from("sessions")
-                .select("id")
-                .in("program_week_id", weekIds)
-            )
-        )
-        .limit(50);
+      // Busca sessões das semanas para extrair blocos
+      const { data: sessoes } = await supabase
+        .from("sessions")
+        .select("id")
+        .in("program_week_id", weekIds);
+      
+      const sessaoIds = (sessoes ?? []).map((s: any) => s.id);
+      
+      if (sessaoIds.length > 0) {
+        const { data: blocosSessao } = await supabase
+          .from("session_blocks")
+          .select("id")
+          .in("session_id", sessaoIds);
+        
+        const blocoIds = (blocosSessao ?? []).map((b: any) => b.id);
+        
+        if (blocoIds.length > 0) {
+          const { data: sessoesPassadas } = await supabase
+            .from("session_block_exercises")
+            .select("nome_livre")
+            .in("session_block_id", blocoIds)
+            .limit(50);
 
-      const nomesUsados = Array.from(new Set((sessoesPassadas ?? []).map((e: any) => e.nome_livre)));
-      resumoAnterior = nomesUsados.length > 0 
-        ? `Exercícios já utilizados recentemente (EVITE-OS para gerar VARIAÇÃO): ${nomesUsados.join(", ")}`
-        : "Nenhum histórico encontrado. Gere uma sessão inicial sólida.";
+          const nomesUsados = Array.from(new Set((sessoesPassadas ?? []).map((e: any) => e.nome_livre)));
+          resumoAnterior = nomesUsados.length > 0 
+            ? `Exercícios já utilizados recentemente (EVITE-OS para gerar VARIAÇÃO): ${nomesUsados.join(", ")}`
+            : "Nenhum histórico encontrado. Gere uma sessão inicial sólida.";
+        }
+      }
     }
 
     const ctx = {

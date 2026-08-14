@@ -41,21 +41,30 @@ export function PosicionarBlocosDialog({
     setCarregando(true);
     (async () => {
       try {
-        // Busca primeira sessão para servir de molde
-        const { data: sessao } = await supabase
-          .from("sessions")
-          .select("id, session_blocks(ordem, formato, titulo, config)")
-          .eq("program_week_id", 
-            supabase.from("program_weeks").select("id").eq("program_id", programaId).limit(1)
-          )
+        // Busca a primeira semana para pegar a primeira sessão
+        const { data: week } = await supabase
+          .from("program_weeks")
+          .select("id")
+          .eq("program_id", programaId)
+          .order("numero_semana", { ascending: true })
           .limit(1)
           .maybeSingle();
 
-        const items = (sessao?.session_blocks ?? []).map((b: any, i: number) => ({
-          chave: b.config?.chave || `bloco-${i}`,
-          titulo: b.titulo || b.formato,
-        }));
-        setBlocos(items);
+        if (week) {
+          const { data: sessao } = await supabase
+            .from("sessions")
+            .select("id, session_blocks(ordem, formato, titulo, config)")
+            .eq("program_week_id", week.id)
+            .order("numero_dia", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+
+          const items = (sessao?.session_blocks ?? []).map((b: any, i: number) => ({
+            chave: b.config?.chave || `bloco-${i}`,
+            titulo: b.titulo || b.formato,
+          }));
+          setBlocos(items);
+        }
 
         const { layout } = carregarLayout(programaId, modalidade);
         setPosicoes(layout.posicoesBlocos ?? []);
