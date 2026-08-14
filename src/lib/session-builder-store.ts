@@ -1,14 +1,7 @@
 import { create } from "zustand";
 import type { BlockFormat } from "./methodology";
 
-export type SetType =
-  | "reps_carga"
-  | "reps_carga_tempo"
-  | "reps_tempo"
-  | "tempo_inclinacao"
-  | "corrida"
-  | "cadencia"
-  | "observacoes";
+export type SetType = string;
 
 export type BuilderSet = {
   id: string;
