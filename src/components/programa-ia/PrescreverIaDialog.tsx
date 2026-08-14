@@ -237,6 +237,7 @@ export function PrescreverIaDialog({
   const gerar = useServerFn(prescribeTrainingWithAi);
   const [prompt, setPrompt] = useState("");
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
+  const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
 
   const limpar = useCallback(() => {
@@ -247,32 +248,52 @@ export function PrescreverIaDialog({
   const gerarMut = useMutation({
     mutationFn: async () => {
       if (!programa) throw new Error("Programa não selecionado");
-      return gerar({
-        data: {
-          programId: programa.id,
-          prompt: prompt.trim(),
-          diasPorSemana: escopo?.diasPorSemana ?? null,
-          escopoLabel: escopo?.label ?? null,
-          kb: kb ?? null,
-          wl: wl ?? null,
-          tf: tf ?? null,
-          co: co ?? null,
-          hibrido: programa?.metodologia === "hibrido" || programa?.metodologia === "kettlebell_fitness" 
-            ? { 
-                modalidade: programa.metodologia,
-                tituloPrograma: programa.titulo ?? "Continuar Progressão",
-                numeroSessoes: escopo?.semanas ? (escopo.semanas * (escopo.diasPorSemana || 1)) : 1,
-                diasPorSemana: escopo?.diasPorSemana ?? 1,
-                dataInicio: escopo?.dataInicio ?? new Date().toISOString().slice(0, 10),
-                sessaoTemplate: [] // O servidor buscará a última sessão como base para o molde de evolução
-              } 
-            : null,
-          setTypes: setTypes,
-        },
-      });
+      setProgresso(["Analisando histórico e metodologia..."]);
+      
+      const totalSemanas = escopo?.semanas || 1;
+      const totalSessoes = totalSemanas * (escopo?.diasPorSemana || 1);
+      
+      setProgresso(prev => [...prev, `Projetando periodização para ${totalSemanas} semana(s) (${totalSessoes} treinos)...`]);
+      
+      try {
+        const res = await gerar({
+          data: {
+            programId: programa.id,
+            prompt: prompt.trim(),
+            diasPorSemana: escopo?.diasPorSemana ?? null,
+            escopoLabel: escopo?.label ?? null,
+            kb: kb ?? null,
+            wl: wl ?? null,
+            tf: tf ?? null,
+            co: co ?? null,
+            hibrido: programa?.metodologia === "hibrido" || programa?.metodologia === "kettlebell_fitness" 
+              ? { 
+                  modalidade: programa.metodologia,
+                  tituloPrograma: programa.titulo ?? "Continuar Progressão",
+                  numeroSessoes: totalSessoes,
+                  diasPorSemana: escopo?.diasPorSemana ?? 1,
+                  dataInicio: escopo?.dataInicio ?? new Date().toISOString().slice(0, 10),
+                  sessaoTemplate: [] 
+                } 
+              : null,
+            setTypes: setTypes,
+          },
+        });
+        setProgresso(prev => [...prev, "Gerando relatório de evolução...", "Finalizando prescrição em bloco!"]);
+        return res;
+      } catch (e) {
+        setProgresso([]);
+        throw e;
+      }
     },
-    onSuccess: (res) => setPrevia(res),
-    onError: (e: any) => toast.error(e?.message ?? "Falha ao gerar a prescrição"),
+    onSuccess: (res) => {
+      setPrevia(res);
+      setTimeout(() => setProgresso([]), 1000);
+    },
+    onError: (e: any) => {
+      setProgresso([]);
+      toast.error(e?.message ?? "Falha ao gerar a prescrição");
+    },
   });
 
   const salvarMut = useMutation({
@@ -582,24 +603,43 @@ export function PrescreverIaDialog({
               {gerarMut.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Gerando prescrição...
+                  Gerando periodização...
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Gerar prescrição
+                  Gerar periodização em bloco
                 </>
               )}
             </Button>
           </div>
 
+          {gerarMut.isPending && progresso.length > 0 && (
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-medium text-primary">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Processando evolução...
+                </div>
+                <div className="space-y-1">
+                  {progresso.map((p, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[10px] text-muted-foreground animate-in fade-in slide-in-from-left-1">
+                      <div className="h-1 w-1 rounded-full bg-primary/40" />
+                      {p}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {previa ? (
             <div className="space-y-4">
               {previa.notes && (
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                   <h5 className="mb-2 flex items-center gap-2 text-sm font-bold text-primary">
-                    <Info className="h-4 w-4" />
-                    Relatório de Evolução
+                    <Sparkles className="h-4 w-4" />
+                    Estratégia de Periodização do Bloco
                   </h5>
                   <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
                     {previa.notes}
@@ -613,7 +653,7 @@ export function PrescreverIaDialog({
                     Sessões Geradas ({previa.days.length})
                   </h5>
                   <Badge variant="outline" className="text-[10px] uppercase">
-                    Modo: Evolução Silenciosa
+                    Modo: Evolução em Bloco
                   </Badge>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -630,7 +670,7 @@ export function PrescreverIaDialog({
                   Nenhuma prescrição gerada ainda.
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground/80">
-                  Descreva a divisão desejada e clique em “Gerar prescrição”.
+                  Descreva a divisão desejada e clique em “Gerar periodização em bloco”.
                 </p>
               </div>
             )

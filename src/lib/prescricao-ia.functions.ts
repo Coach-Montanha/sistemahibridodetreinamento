@@ -9,6 +9,7 @@ import {
   montarUserPrompt,
   normalizarPrescricao,
   type AiPrescription,
+  type RotinaContexto,
 } from "@/lib/prescricao-ia.server";
 import {
   KB_SPORT_SYSTEM_PROMPT,
@@ -339,10 +340,12 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       }
     }
 
-    const ctx = {
+    const ctx: RotinaContexto = {
       titulo: programa.titulo ?? "Programa",
       metodologia: programa.metodologia,
-      duracao_semanas: programa.duracao_semanas ?? 1,
+      duracao_semanas: data.hibrido?.numeroSessoes && data.diasPorSemana 
+        ? Math.ceil(data.hibrido.numeroSessoes / data.diasPorSemana) 
+        : (programa.duracao_semanas ?? 1),
       data_inicio: programa.data_inicio ?? null,
       data_fim: calcularDataFim(programa.data_inicio ?? null, programa.duracao_semanas ?? 1),
       nomenclatura: "numerico" as const, // Fallback seguro
@@ -457,6 +460,16 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             const programWeeks = (programa as any).program_weeks || [];
             const sortedWeeks = [...programWeeks].sort((a: any, b: any) => b.numero_semana - a.numero_semana);
             
+            const totalSemanasAlvo = data.hibrido?.numeroSessoes && data.diasPorSemana 
+              ? Math.ceil(data.hibrido.numeroSessoes / data.diasPorSemana)
+              : 1;
+            
+            const hibridoPayloadComSemanas = {
+              ...data.hibrido,
+              numeroSessoes: data.hibrido.numeroSessoes,
+              diasPorSemana: data.diasPorSemana || 1
+            };
+            
             // Tenta identificar a última sessão para usar como MOLDE
             const weekIds = sortedWeeks.map((w: any) => w.id);
             const { data: ultimaSessao } = weekIds.length > 0 
@@ -568,7 +581,11 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             }
 
             return montarHibridoPrompt({
-              payload: { ...data.hibrido, sessaoTemplate: molde },
+              payload: { 
+                ...data.hibrido, 
+                sessaoTemplate: molde,
+                numeroSessoes: data.hibrido.numeroSessoes
+              },
               candidatos: await buscarCandidatosDoMolde(supabase, molde),
               instrucoes: data.prompt,
               resumoAnterior: resumoAnterior,
