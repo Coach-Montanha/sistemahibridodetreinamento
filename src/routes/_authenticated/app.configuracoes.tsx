@@ -1011,8 +1011,7 @@ function FormatosPanel() {
 
   function confirmedDelete() {
     if (!confirmDelete) return;
-    if (confirmDelete.builtin) toggleBuiltin(confirmDelete.base, false);
-    else removeCustom(confirmDelete.id);
+    removePreset(confirmDelete.id);
     setConfirmDelete(null);
   }
 
