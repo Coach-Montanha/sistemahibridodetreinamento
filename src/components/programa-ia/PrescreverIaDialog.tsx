@@ -601,7 +601,7 @@ export function PrescreverIaDialog({
                 </div>
               </div>
             </div>
-          )}
+          ) : (
             !gerarMut.isPending && (
               <div className="rounded-xl border border-dashed border-border/70 p-6 text-center">
                 <p className="text-sm text-muted-foreground">
