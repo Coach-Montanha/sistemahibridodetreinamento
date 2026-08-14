@@ -261,10 +261,10 @@ export function PrescreverIaDialog({
             ? { 
                 modalidade: programa.metodologia,
                 tituloPrograma: programa.titulo ?? "Continuar Progressão",
-                numeroSessoes: 1, // Progressão continuada costuma ser 1 a 1 ou por semana
+                numeroSessoes: escopo?.semanas ? (escopo.semanas * (escopo.diasPorSemana || 1)) : 1,
                 diasPorSemana: escopo?.diasPorSemana ?? 1,
                 dataInicio: escopo?.dataInicio ?? new Date().toISOString().slice(0, 10),
-                sessaoTemplate: [] // Será preenchido pelo servidor buscando a última sessão
+                sessaoTemplate: [] // O servidor buscará a última sessão como base para o molde de evolução
               } 
             : null,
           setTypes: setTypes,
