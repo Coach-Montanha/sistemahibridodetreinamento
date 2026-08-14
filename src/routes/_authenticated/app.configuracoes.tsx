@@ -1553,6 +1553,20 @@ function FormatoEditorDialog({
                 Excluir formato
               </Button>
             )}
+            {draft.builtin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => {
+                  onDelete!(draft.id);
+                  onOpenChange(false);
+                }}
+              >
+                <EyeOff className="mr-2 h-4 w-4" />
+                Desativar formato
+              </Button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
@@ -1573,7 +1587,7 @@ function FormatoEditorDialog({
 import { useSetTypeRegistry, type SetFieldKey, type SetFieldConfig, type SetTypePreset } from "@/lib/set-type-registry";
 
 function SetTypesPanel() {
-  const { presets, addCustom, updateCustom, removeCustom } = useSetTypeRegistry();
+  const { presets, addCustom, updateCustom, removePreset } = useSetTypeRegistry();
   const [editing, setEditing] = useState<SetTypePreset | null>(null);
 
   function handleSave(next: SetTypePreset) {
@@ -1620,7 +1634,7 @@ function SetTypesPanel() {
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(p)}>
                     <Wrench className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => removeCustom(p.id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => removePreset(p.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

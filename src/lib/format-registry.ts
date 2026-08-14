@@ -146,6 +146,16 @@ export function useFormatRegistry() {
       const builtinDefaults = { ...registry.builtinDefaults }; delete builtinDefaults[base];
       write({ ...registry, labels, descriptions, builtinDefaults, hidden: registry.hidden.filter((h) => h !== base) });
     },
+    removePreset(id: string) {
+      if (id.startsWith("builtin:")) {
+        const base = id.replace("builtin:", "") as BlockFormat;
+        const set = new Set(registry.hidden);
+        set.add(base);
+        write({ ...registry, hidden: Array.from(set) });
+      } else {
+        write({ ...registry, custom: registry.custom.filter((p) => p.id !== id) });
+      }
+    },
     toggleBuiltin(base: BlockFormat, visible: boolean) {
       const set = new Set(registry.hidden);
       if (visible) set.delete(base);
@@ -174,9 +184,6 @@ export function useFormatRegistry() {
       };
       write({ ...registry, custom: [...registry.custom, clone] });
       return id;
-    },
-    removeCustom(id: string) {
-      write({ ...registry, custom: registry.custom.filter((p) => p.id !== id) });
     },
     reorderPresets(activeId: string, overId: string) {
       const ids = presets.map((p) => p.id);
