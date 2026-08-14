@@ -472,7 +472,7 @@ export function SessionBuilder({
               <DropdownMenuItem
                 key={p.id}
                 onClick={() =>
-                  state.addBlock(p.builtin ? p.base : (p.id.startsWith('custom:') ? p.id.replace('custom:', '') : p.id), {
+                  state.addBlock(p.builtin ? p.base : p.id, {
                     titulo: p.builtin ? null : p.label,
                     config: p.defaults,
                   })
