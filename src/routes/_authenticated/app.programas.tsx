@@ -377,7 +377,7 @@ export function ProgramasPanel({
         <Suspense fallback={null}>
           <PrescreverIaDialog
             programa={iaPrograma.p}
-            escopo={iaPrograma.isContinuation ? { label: "Continuação de Programação" } : null}
+            escopo={iaPrograma.isContinuation ? { label: "Continuação de Programação", semanas: 4, diasPorSemana: 3 } : null}
             onOpenChange={(o) => !o && setIaPrograma(null)}
           />
         </Suspense>
