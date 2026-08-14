@@ -108,7 +108,7 @@ export function PosicionarBlocosDialog({
               <MousePointer2 className="h-10 w-10 text-muted-foreground/40 mb-4" />
               <p className="text-sm font-medium mb-1">O arraste agora é feito diretamente no Preview de Exportação.</p>
               <p className="text-xs text-muted-foreground max-w-sm">
-                Vá em Exportar > Posicionamento Livre para organizar visualmente seus {blocos.length} blocos sobre o canvas final.
+                Vá em Exportar {" > "} Posicionamento Livre para organizar visualmente seus {blocos.length} blocos sobre o canvas final.
               </p>
             </>
           )}
