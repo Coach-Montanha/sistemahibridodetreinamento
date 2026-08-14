@@ -41,7 +41,7 @@ import {
   type HibridoPayload,
   type SessaoTemplate,
 } from "@/lib/hibrido-ia.server";
-import { BUILTIN_SET_TYPES } from "@/lib/set-type-registry";
+import { BUILTIN_SET_TYPES, type SetTypePreset } from "@/lib/set-type-registry";
 
 const CARGA = z
   .object({
@@ -212,6 +212,7 @@ const INPUT = z.object({
   tf: TF,
   co: CO,
   hibrido: z.any().optional(),
+  setTypes: z.array(z.any()).optional(),
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
@@ -532,13 +533,13 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
             return montarHibridoPrompt({
               payload: { ...data.hibrido, sessaoTemplate: molde },
-               candidatos: await buscarCandidatosDoMolde(supabase, molde),
+              candidatos: await buscarCandidatosDoMolde(supabase, molde),
               instrucoes: data.prompt,
               resumoAnterior: resumoAnterior,
-              setTypeRegistry: BUILTIN_SET_TYPES // Nota: No servidor usamos os builtins como base segura, o cliente pode enviar customizados se necessário via prompt
+              setTypeRegistry: data.setTypes || BUILTIN_SET_TYPES
             });
           })()
-        : montarUserPrompt(ctx, data.prompt);
+        : montarUserPrompt({ ...ctx, set_types: data.setTypes || BUILTIN_SET_TYPES }, data.prompt);
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

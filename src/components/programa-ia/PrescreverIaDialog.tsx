@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { prescribeTrainingWithAi } from "@/lib/prescricao-ia.functions";
+import { useSetTypeRegistry } from "@/lib/set-type-registry";
 import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
@@ -236,6 +237,7 @@ export function PrescreverIaDialog({
   const gerar = useServerFn(prescribeTrainingWithAi);
   const [prompt, setPrompt] = useState("");
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
+  const { presets: setTypes } = useSetTypeRegistry();
 
   const limpar = useCallback(() => {
     setPrompt("");
@@ -265,6 +267,7 @@ export function PrescreverIaDialog({
                 sessaoTemplate: [] // Será preenchido pelo servidor buscando a última sessão
               } 
             : null,
+          setTypes: setTypes,
         },
       });
     },

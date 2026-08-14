@@ -30,6 +30,7 @@ import type {
   SlotPreparacao,
 } from "@/lib/hibrido-ia.server";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
+import { useFormatRegistry } from "@/lib/format-registry";
 
 const EQUIPAMENTO_VALORES = [
   "Kettlebell",
@@ -55,20 +56,9 @@ const FORMATO_LABEL: Record<string, string> = {
   livre: "Bloco livre",
 };
 
-const FORMATOS_DISPONIVEIS: string[] = [
-  "mobilidade",
-  "preparacao_movimento",
-  "forca_tecnica_pct",
-  "emom",
-  "e2mom",
-  "amrap",
-  "circuito",
-  "kb_timed_sets",
-  "metcon",
-  "bodybuilding_sets",
-  "finalizador",
-  "livre",
-];
+function getFormatosDisponiveis(presets: any[]): string[] {
+  return presets.map(p => p.id);
+}
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
 const USA_SERIES: string[] = [
@@ -84,7 +74,7 @@ const USA_DURACAO_TOTAL: string[] = ["amrap", "preparacao_movimento", "mobilidad
 const USA_PERCENTUAL: string[] = ["forca_tecnica_pct"];
 const USA_DESCANSO_ENTRE_SERIES: string[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
 const USA_SLOT: string[] = ["preparacao_movimento"];
-const USA_NUMERO_EXERCICIOS: string[] = FORMATOS_DISPONIVEIS.filter((f) => f !== "kb_timed_sets");
+const USA_NUMERO_EXERCICIOS = (formato: string) => formato !== "kb_timed_sets";
 
 function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
   const base = formato.split("_")[0];
@@ -187,7 +177,7 @@ function resumoBloco(b: BlocoTemplate): string {
   if (USA_PERCENTUAL.includes(b.formato) && b.percentual1rm != null) {
     partes.push(`${b.percentual1rm}% 1RM`);
   }
-  if (USA_NUMERO_EXERCICIOS.includes(b.formato)) {
+  if (USA_NUMERO_EXERCICIOS(b.formato)) {
     partes.push(`${b.numeroExercicios} exerc.`);
   }
   if (b.repsPorExercicio) partes.push(`${b.repsPorExercicio} reps`);
@@ -234,9 +224,11 @@ function CampoNumero({
 function BlocoConfigForm({
   bloco,
   onChange,
+  formatLabel,
 }: {
   bloco: BlocoTemplate;
   onChange: (patch: Partial<BlocoTemplate>) => void;
+  formatLabel: (f: string) => string;
 }) {
   return (
     <div className="space-y-4 border-t border-border/60 pt-4">
@@ -245,7 +237,7 @@ function BlocoConfigForm({
           <Label className="text-xs text-muted-foreground">Título do bloco — opcional</Label>
           <Input
             className="h-9"
-            placeholder={FORMATO_LABEL[bloco.formato] ?? bloco.formato}
+            placeholder={formatLabel(bloco.formato)}
             value={bloco.titulo ?? ""}
             onChange={(e) => onChange({ titulo: e.target.value || null })}
           />
@@ -299,7 +291,7 @@ function BlocoConfigForm({
           />
         )}
 
-        {USA_NUMERO_EXERCICIOS.includes(bloco.formato) && (
+        {USA_NUMERO_EXERCICIOS(bloco.formato) && (
           <CampoNumero
             label="Número de exercícios"
             value={bloco.numeroExercicios}
@@ -500,12 +492,14 @@ function BlocoCard({
   onToggle,
   onChange,
   onRemove,
+  formatLabel,
 }: {
   bloco: BlocoTemplate;
   aberto: boolean;
   onToggle: () => void;
   onChange: (patch: Partial<BlocoTemplate>) => void;
   onRemove: () => void;
+  formatLabel: (f: string) => string;
 }) {
   return (
     <div className="w-full">
@@ -518,9 +512,9 @@ function BlocoCard({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold">{bloco.titulo || FORMATO_LABEL[bloco.formato]}</span>
+                  <span className="text-sm font-semibold">{bloco.titulo || formatLabel(bloco.formato)}</span>
                   <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                    {FORMATO_LABEL[bloco.formato] ?? bloco.formato}
+                    {formatLabel(bloco.formato)}
                   </Badge>
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{resumoBloco(bloco)}</p>
@@ -538,7 +532,7 @@ function BlocoCard({
           </Button>
         </div>
         <CollapsibleContent className="px-3 pb-3">
-          <BlocoConfigForm bloco={bloco} onChange={onChange} />
+          <BlocoConfigForm bloco={bloco} onChange={onChange} formatLabel={formatLabel} />
         </CollapsibleContent>
       </Collapsible>
     </div>
@@ -630,6 +624,14 @@ export function ConstrutorMoldeDialog({
   }
 
 
+  const { presets: allPresets } = useFormatRegistry();
+  const formatosDisponiveis = getFormatosDisponiveis(allPresets);
+
+  const getFormatLabel = (f: string) => {
+    const p = allPresets.find(p => p.id === f || `builtin:${p.base}` === f);
+    return p?.label ?? f;
+  };
+
   return (
     <Dialog
       open={open}
@@ -702,7 +704,7 @@ export function ConstrutorMoldeDialog({
               <SortableList ids={blocos.map((b) => b.chave)} label="Bloco" onReorder={reordenar}>
                 <div className="space-y-2">
                   {blocos.map((b) => (
-                    <SortableRow key={b.chave} id={b.chave} handleLabel={`Reordenar ${FORMATO_LABEL[b.formato] ?? b.formato}`}>
+                    <SortableRow key={b.chave} id={b.chave} handleLabel={`Reordenar ${getFormatLabel(b.formato)}`}>
                       <div className="flex-1 min-w-0 pr-3 py-1">
                         <BlocoCard
                           bloco={b}
@@ -710,6 +712,7 @@ export function ConstrutorMoldeDialog({
                           onToggle={() => setAbertoChave((prev) => (prev === b.chave ? null : b.chave))}
                           onChange={(patch) => atualizarBloco(b.chave, patch)}
                           onRemove={() => removerBloco(b.chave)}
+                          formatLabel={getFormatLabel}
                         />
                       </div>
                     </SortableRow>
@@ -726,14 +729,14 @@ export function ConstrutorMoldeDialog({
               </PopoverTrigger>
               <PopoverContent align="start" className="w-64 p-1">
                 <div className="grid gap-0.5">
-                  {FORMATOS_DISPONIVEIS.map((f) => (
+                  {formatosDisponiveis.map((f: any) => (
                     <button
                       key={f}
                       type="button"
                       onClick={() => adicionarBloco(f)}
                       className="rounded-md px-2.5 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
                     >
-                      {FORMATO_LABEL[f] ?? f}
+                      {getFormatLabel(f)}
                     </button>
                   ))}
                 </div>
