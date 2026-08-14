@@ -388,7 +388,7 @@ export function PrescreverIaDialog({
               : metodologia === "levantamento_peso"
                 ? "forca_tecnica_pct"
                   : metodologia === "corrida"
-                    ? "corrida"
+                    ? "livre"
                     : metodologia === "treinamento_funcional"
                       ? "circuito"
                       : "bodybuilding_sets",
