@@ -987,7 +987,7 @@ function FormatosPanel() {
     toggleBuiltin,
     addCustom,
     updateCustom,
-    removeCustom,
+    removePreset,
     duplicatePreset,
     reorderPresets,
   } = useFormatRegistry();
@@ -1011,8 +1011,7 @@ function FormatosPanel() {
 
   function confirmedDelete() {
     if (!confirmDelete) return;
-    if (confirmDelete.builtin) toggleBuiltin(confirmDelete.base, false);
-    else removeCustom(confirmDelete.id);
+    removePreset(confirmDelete.id);
     setConfirmDelete(null);
   }
 
@@ -1156,7 +1155,7 @@ function FormatosPanel() {
         onOpenChange={(v) => !v && setEditing(null)}
         onSave={handleSave}
         onDelete={(id) => {
-          const p = presets.find(x => x.id === id);
+          const p = presets.find(x => x.id === id) || builtins.find(x => x.id === id);
           if (p) setConfirmDelete(p);
         }}
       />
@@ -1553,6 +1552,20 @@ function FormatoEditorDialog({
                 Excluir formato
               </Button>
             )}
+            {draft.builtin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => {
+                  onDelete!(draft.id);
+                  onOpenChange(false);
+                }}
+              >
+                <EyeOff className="mr-2 h-4 w-4" />
+                Desativar formato
+              </Button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
@@ -1573,7 +1586,7 @@ function FormatoEditorDialog({
 import { useSetTypeRegistry, type SetFieldKey, type SetFieldConfig, type SetTypePreset } from "@/lib/set-type-registry";
 
 function SetTypesPanel() {
-  const { presets, addCustom, updateCustom, removeCustom } = useSetTypeRegistry();
+  const { presets, addCustom, updateCustom, removePreset } = useSetTypeRegistry();
   const [editing, setEditing] = useState<SetTypePreset | null>(null);
 
   function handleSave(next: SetTypePreset) {
@@ -1615,16 +1628,14 @@ function SetTypesPanel() {
                   ))}
                 </div>
               </div>
-              {!p.builtin && (
                 <div className="flex gap-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(p)}>
                     <Wrench className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => removeCustom(p.id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => removePreset(p.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-              )}
             </div>
             {p.builtin && (
               <Badge variant="secondary" className="absolute right-2 top-2 h-5 text-[9px] uppercase tracking-tighter opacity-40">

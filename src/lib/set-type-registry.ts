@@ -30,7 +30,7 @@ interface SetTypeRegistry {
   presets: SetTypePreset[];
   addCustom: (preset: Omit<SetTypePreset, "id" | "builtin">) => string;
   updateCustom: (id: string, patch: Partial<SetTypePreset>) => void;
-  removeCustom: (id: string) => void;
+  removePreset: (id: string) => void;
 }
 
 export const BUILTIN_SET_TYPES: SetTypePreset[] = [
@@ -121,7 +121,7 @@ export const useSetTypeRegistry = create<SetTypeRegistry>()(
           presets: state.presets.map((p) => (p.id === id ? { ...p, ...patch } : p)),
         }));
       },
-      removeCustom: (id) => {
+      removePreset: (id) => {
         set((state) => ({
           presets: state.presets.filter((p) => p.id !== id),
         }));
