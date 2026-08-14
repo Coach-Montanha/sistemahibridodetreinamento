@@ -121,7 +121,7 @@ export const useSetTypeRegistry = create<SetTypeRegistry>()(
           presets: state.presets.map((p) => (p.id === id ? { ...p, ...patch } : p)),
         }));
       },
-      removeCustom: (id) => {
+      removePreset: (id) => {
         set((state) => ({
           presets: state.presets.filter((p) => p.id !== id),
         }));
