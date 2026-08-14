@@ -660,12 +660,12 @@ export function PrescreverIaDialog({
               {gerarMut.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Gerando periodização...
+                  Gerando {semanas} semana(s)...
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Gerar periodização em bloco
+                  Gerar periodização ({semanas} sem)
                 </>
               )}
             </Button>
