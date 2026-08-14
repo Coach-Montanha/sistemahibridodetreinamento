@@ -571,7 +571,7 @@ export function PrescreverIaDialog({
             </Button>
           </div>
 
-          {previa && (
+          {previa ? (
             <div className="space-y-4">
               {previa.notes && (
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
