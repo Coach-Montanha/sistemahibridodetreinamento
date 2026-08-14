@@ -237,6 +237,7 @@ export function PrescreverIaDialog({
   const gerar = useServerFn(prescribeTrainingWithAi);
   const [prompt, setPrompt] = useState("");
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
+  const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
 
   const limpar = useCallback(() => {
@@ -247,32 +248,52 @@ export function PrescreverIaDialog({
   const gerarMut = useMutation({
     mutationFn: async () => {
       if (!programa) throw new Error("Programa não selecionado");
-      return gerar({
-        data: {
-          programId: programa.id,
-          prompt: prompt.trim(),
-          diasPorSemana: escopo?.diasPorSemana ?? null,
-          escopoLabel: escopo?.label ?? null,
-          kb: kb ?? null,
-          wl: wl ?? null,
-          tf: tf ?? null,
-          co: co ?? null,
-          hibrido: programa?.metodologia === "hibrido" || programa?.metodologia === "kettlebell_fitness" 
-            ? { 
-                modalidade: programa.metodologia,
-                tituloPrograma: programa.titulo ?? "Continuar Progressão",
-                numeroSessoes: escopo?.semanas ? (escopo.semanas * (escopo.diasPorSemana || 1)) : 1,
-                diasPorSemana: escopo?.diasPorSemana ?? 1,
-                dataInicio: escopo?.dataInicio ?? new Date().toISOString().slice(0, 10),
-                sessaoTemplate: [] // O servidor buscará a última sessão como base para o molde de evolução
-              } 
-            : null,
-          setTypes: setTypes,
-        },
-      });
+      setProgresso(["Analisando histórico e metodologia..."]);
+      
+      const totalSemanas = escopo?.semanas || 1;
+      const totalSessoes = totalSemanas * (escopo?.diasPorSemana || 1);
+      
+      setProgresso(prev => [...prev, `Projetando periodização para ${totalSemanas} semana(s) (${totalSessoes} treinos)...`]);
+      
+      try {
+        const res = await gerar({
+          data: {
+            programId: programa.id,
+            prompt: prompt.trim(),
+            diasPorSemana: escopo?.diasPorSemana ?? null,
+            escopoLabel: escopo?.label ?? null,
+            kb: kb ?? null,
+            wl: wl ?? null,
+            tf: tf ?? null,
+            co: co ?? null,
+            hibrido: programa?.metodologia === "hibrido" || programa?.metodologia === "kettlebell_fitness" 
+              ? { 
+                  modalidade: programa.metodologia,
+                  tituloPrograma: programa.titulo ?? "Continuar Progressão",
+                  numeroSessoes: totalSessoes,
+                  diasPorSemana: escopo?.diasPorSemana ?? 1,
+                  dataInicio: escopo?.dataInicio ?? new Date().toISOString().slice(0, 10),
+                  sessaoTemplate: [] 
+                } 
+              : null,
+            setTypes: setTypes,
+          },
+        });
+        setProgresso(prev => [...prev, "Gerando relatório de evolução...", "Finalizando prescrição em bloco!"]);
+        return res;
+      } catch (e) {
+        setProgresso([]);
+        throw e;
+      }
     },
-    onSuccess: (res) => setPrevia(res),
-    onError: (e: any) => toast.error(e?.message ?? "Falha ao gerar a prescrição"),
+    onSuccess: (res) => {
+      setPrevia(res);
+      setTimeout(() => setProgresso([]), 1000);
+    },
+    onError: (e: any) => {
+      setProgresso([]);
+      toast.error(e?.message ?? "Falha ao gerar a prescrição");
+    },
   });
 
   const salvarMut = useMutation({
