@@ -11,7 +11,7 @@ import {
   useBuilder,
   type BuilderBlock,
 } from "@/lib/session-builder-store";
-import { BLOCK_FORMAT_LABEL } from "@/lib/methodology";
+import { BLOCK_FORMAT_LABEL, useFormatLabel } from "@/lib/methodology";
 import {
   PrepMovimentoForm,
   TimedForm,
@@ -67,7 +67,7 @@ export function BlockCard({ block }: { block: BuilderBlock }) {
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <Badge>{BLOCK_FORMAT_LABEL[block.formato]}</Badge>
+            <Badge>{useFormatLabel(block.formato)}</Badge>
             <Input
               placeholder="Título do bloco (opcional)"
               className="h-8 flex-1"

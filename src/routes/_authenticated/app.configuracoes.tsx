@@ -1194,6 +1194,7 @@ function FormatoCard({
   if (defaults.intervalo_min) chips.push({ label: "Int", value: `${defaults.intervalo_min}′` });
   if (defaults.reps) chips.push({ label: "Reps", value: String(defaults.reps) });
   if (defaults.tempo_seg) chips.push({ label: "Tempo", value: `${defaults.tempo_seg}s` });
+  if (defaults.estacoes) chips.push({ label: "Estações", value: String(defaults.estacoes) });
 
   const sortable = useSortable({ id: preset.id, disabled: hidden });
   const {
