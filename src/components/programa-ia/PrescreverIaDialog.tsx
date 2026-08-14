@@ -261,10 +261,10 @@ export function PrescreverIaDialog({
             ? { 
                 modalidade: programa.metodologia,
                 tituloPrograma: programa.titulo ?? "Continuar Progressão",
-                numeroSessoes: 1, // Progressão continuada costuma ser 1 a 1 ou por semana
+                numeroSessoes: escopo?.semanas ? (escopo.semanas * (escopo.diasPorSemana || 1)) : 1,
                 diasPorSemana: escopo?.diasPorSemana ?? 1,
                 dataInicio: escopo?.dataInicio ?? new Date().toISOString().slice(0, 10),
-                sessaoTemplate: [] // Será preenchido pelo servidor buscando a última sessão
+                sessaoTemplate: [] // O servidor buscará a última sessão como base para o molde de evolução
               } 
             : null,
           setTypes: setTypes,
@@ -572,24 +572,35 @@ export function PrescreverIaDialog({
           </div>
 
           {previa ? (
-            <section className="space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Prévia · {previa.days.length} treino(s)
-              </h3>
-              {previa.days.map((d, i) => (
-                <DiaCard key={`${d.name}-${i}`} dia={d} index={i} />
-              ))}
+            <div className="space-y-4">
               {previa.notes && (
-                <div className="rounded-xl border border-primary/25 bg-primary/[0.06] p-4">
-                  <p className="text-xs font-semibold text-foreground">
-                    Observações finais
-                  </p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                  <h5 className="mb-2 flex items-center gap-2 text-sm font-bold text-primary">
+                    <Info className="h-4 w-4" />
+                    Relatório de Evolução
+                  </h5>
+                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
                     {previa.notes}
                   </p>
                 </div>
               )}
-            </section>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h5 className="text-sm font-bold tracking-tight">
+                    Sessões Geradas ({previa.days.length})
+                  </h5>
+                  <Badge variant="outline" className="text-[10px] uppercase">
+                    Modo: Evolução Silenciosa
+                  </Badge>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {previa.days.map((dia, i) => (
+                    <DiaCard key={i} dia={dia} index={i} />
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
             !gerarMut.isPending && (
               <div className="rounded-xl border border-dashed border-border/70 p-6 text-center">

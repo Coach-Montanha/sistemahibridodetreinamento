@@ -266,39 +266,67 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       (w: any) => (w.sessions ?? []).map((s: any) => s.titulo ?? null),
     );
     
-    // Busca apenas nomes dos exercícios usados nas últimas 4 semanas para evitar repetição
+    // Busca o histórico detalhado do programa
     const programWeeks = (programa as any).program_weeks || [];
     const weekIds = programWeeks.map((w: any) => w.id);
     
     let resumoAnterior = null;
+    let historicoCompleto: any[] = [];
+
     if (weekIds.length > 0) {
-      // Busca sessões das semanas para extrair blocos
+      // Busca todas as sessões das semanas para extrair blocos e exercícios
       const { data: sessoes } = await supabase
         .from("sessions")
-        .select("id")
-        .in("program_week_id", weekIds);
+        .select("id, titulo, numero_dia, program_week_id, program_weeks(numero_semana)")
+        .in("program_week_id", weekIds)
+        .order("created_at", { ascending: true });
       
       const sessaoIds = (sessoes ?? []).map((s: any) => s.id);
       
       if (sessaoIds.length > 0) {
         const { data: blocosSessao } = await supabase
           .from("session_blocks")
-          .select("id")
-          .in("session_id", sessaoIds);
+          .select("id, session_id, formato, titulo, config")
+          .in("session_id", sessaoIds)
+          .order("ordem", { ascending: true });
         
         const blocoIds = (blocosSessao ?? []).map((b: any) => b.id);
         
         if (blocoIds.length > 0) {
-          const { data: sessoesPassadas } = await supabase
+          const { data: exerciciosPassados } = await supabase
             .from("session_block_exercises")
-            .select("nome_livre")
+            .select("session_block_id, nome_livre, series, reps, carga_kg, pct_1rm, descanso_seg, observacoes")
             .in("session_block_id", blocoIds)
-            .limit(50);
+            .order("ordem", { ascending: true });
 
-          const nomesUsados = Array.from(new Set((sessoesPassadas ?? []).map((e: any) => e.nome_livre)));
-          resumoAnterior = nomesUsados.length > 0 
-            ? `Exercícios já utilizados recentemente (EVITE-OS para gerar VARIAÇÃO): ${nomesUsados.join(", ")}`
-            : "Nenhum histórico encontrado. Gere uma sessão inicial sólida.";
+          // Constrói um resumo estruturado para a IA
+          historicoCompleto = (sessoes ?? []).map(s => {
+            const blocos = (blocosSessao ?? [])
+              .filter(b => b.session_id === s.id)
+              .map(b => {
+                const exercicios = (exerciciosPassados ?? [])
+                  .filter(e => e.session_block_id === b.id)
+                  .map(e => ({
+                    nome: e.nome_livre,
+                    sets: e.series,
+                    reps: e.reps,
+                    carga: e.carga_kg ? `${e.carga_kg}kg` : e.pct_1rm ? `${e.pct_1rm}%` : "Livre",
+                    obs: e.observacoes
+                  }));
+                return { titulo: b.titulo, formato: b.formato, exercicios };
+              });
+            return {
+              semana: (s.program_weeks as any)?.numero_semana,
+              dia: s.numero_dia,
+              titulo: s.titulo,
+              blocos
+            };
+          });
+
+          const nomesUsados = Array.from(new Set((exerciciosPassados ?? []).map((e: any) => e.nome_livre)));
+          resumoAnterior = `HISTÓRICO COMPLETO DO PROGRAMA (use para sobrecarga progressiva e variação):\n` +
+            JSON.stringify(historicoCompleto.slice(-15), null, 2) + // Últimas 15 sessões para não estourar contexto
+            `\n\nResumo de exercícios já utilizados: ${nomesUsados.join(", ")}`;
         }
       }
     }
