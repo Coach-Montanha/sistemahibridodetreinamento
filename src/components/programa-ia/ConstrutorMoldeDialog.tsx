@@ -177,7 +177,7 @@ function resumoBloco(b: BlocoTemplate): string {
   if (USA_PERCENTUAL.includes(b.formato) && b.percentual1rm != null) {
     partes.push(`${b.percentual1rm}% 1RM`);
   }
-  if (USA_NUMERO_EXERCICIOS.includes(b.formato)) {
+  if (USA_NUMERO_EXERCICIOS(b.formato)) {
     partes.push(`${b.numeroExercicios} exerc.`);
   }
   if (b.repsPorExercicio) partes.push(`${b.repsPorExercicio} reps`);
@@ -492,12 +492,14 @@ function BlocoCard({
   onToggle,
   onChange,
   onRemove,
+  formatLabel,
 }: {
   bloco: BlocoTemplate;
   aberto: boolean;
   onToggle: () => void;
   onChange: (patch: Partial<BlocoTemplate>) => void;
   onRemove: () => void;
+  formatLabel: (f: string) => string;
 }) {
   return (
     <div className="w-full">
@@ -510,9 +512,9 @@ function BlocoCard({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold">{bloco.titulo || FORMATO_LABEL[bloco.formato]}</span>
+                  <span className="text-sm font-semibold">{bloco.titulo || formatLabel(bloco.formato)}</span>
                   <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                    {FORMATO_LABEL[bloco.formato] ?? bloco.formato}
+                    {formatLabel(bloco.formato)}
                   </Badge>
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{resumoBloco(bloco)}</p>
@@ -530,7 +532,7 @@ function BlocoCard({
           </Button>
         </div>
         <CollapsibleContent className="px-3 pb-3">
-          <BlocoConfigForm bloco={bloco} onChange={onChange} />
+          <BlocoConfigForm bloco={bloco} onChange={onChange} formatLabel={formatLabel} />
         </CollapsibleContent>
       </Collapsible>
     </div>
@@ -622,6 +624,14 @@ export function ConstrutorMoldeDialog({
   }
 
 
+  const { presets: allPresets } = useFormatRegistry();
+  const formatosDisponiveis = getFormatosDisponiveis(allPresets);
+
+  const getFormatLabel = (f: string) => {
+    const p = allPresets.find(p => p.id === f || `builtin:${p.base}` === f);
+    return p?.label ?? f;
+  };
+
   return (
     <Dialog
       open={open}
@@ -694,7 +704,7 @@ export function ConstrutorMoldeDialog({
               <SortableList ids={blocos.map((b) => b.chave)} label="Bloco" onReorder={reordenar}>
                 <div className="space-y-2">
                   {blocos.map((b) => (
-                    <SortableRow key={b.chave} id={b.chave} handleLabel={`Reordenar ${FORMATO_LABEL[b.formato] ?? b.formato}`}>
+                    <SortableRow key={b.chave} id={b.chave} handleLabel={`Reordenar ${getFormatLabel(b.formato)}`}>
                       <div className="flex-1 min-w-0 pr-3 py-1">
                         <BlocoCard
                           bloco={b}
@@ -702,6 +712,7 @@ export function ConstrutorMoldeDialog({
                           onToggle={() => setAbertoChave((prev) => (prev === b.chave ? null : b.chave))}
                           onChange={(patch) => atualizarBloco(b.chave, patch)}
                           onRemove={() => removerBloco(b.chave)}
+                          formatLabel={getFormatLabel}
                         />
                       </div>
                     </SortableRow>
@@ -718,7 +729,7 @@ export function ConstrutorMoldeDialog({
               </PopoverTrigger>
               <PopoverContent align="start" className="w-64 p-1">
                 <div className="grid gap-0.5">
-                  {FORMATOS_DISPONIVEIS.map((f) => (
+                  {formatosDisponiveis.map((f: any) => (
                     <button
                       key={f}
                       type="button"
