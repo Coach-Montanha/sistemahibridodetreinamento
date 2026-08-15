@@ -10,22 +10,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ImageDown, Loader2, ImageIcon, AlertTriangle } from "lucide-react";
 import { prepararSessaoParaImagem } from "@/lib/session-image";
 import {
   exportarSessaoImagem,
   exportarSessoesPDF,
-  renderizarPreviewDataURL,
   type SessaoImagemInput,
 } from "@/lib/image-export";
-import { PRESETS_LAYOUT, carregarLayout, salvarLayout } from "@/lib/program-image-layout";
+import { PRESETS_LAYOUT, carregarLayout, salvarLayout, type ImageLayout } from "@/lib/program-image-layout";
 import { UnifiedCanvasEditor } from "../program-image/UnifiedCanvasEditor";
 import { cn } from "@/lib/utils";
 
@@ -41,17 +33,14 @@ export function ExportImageDialog({
   sessionId: string;
 }) {
   const [formato, setFormato] = useState<Formato>("png");
-  const [presetId, setPresetId] = useState<string>("padrao");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
   const [payload, setPayload] = useState<{
     input: SessaoImagemInput;
     nomeArquivo: string;
   } | null>(null);
   const [baixando, setBaixando] = useState(false);
-
-  const [layout, setLayout] = useState<any>(null);
+  const [layout, setLayout] = useState<ImageLayout | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -60,25 +49,17 @@ export function ExportImageDialog({
   }, [open, sessionId]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !layout) return;
     let cancel = false;
     setLoading(true);
     setError(null);
-    setPreview(null);
     (async () => {
       try {
         const prep = await prepararSessaoParaImagem(sessionId);
         if (cancel) return;
-        const comLayout = { ...prep, input: { ...prep.input, layout } };
-        setPayload(comLayout);
-        const url = await renderizarPreviewDataURL(
-          comLayout.input,
-          Math.min(1280, layout.largura),
-        );
-        if (cancel) return;
-        setPreview(url);
+        setPayload(prep);
       } catch (e: any) {
-        if (!cancel) setError(e?.message ?? "Falha ao preparar preview");
+        if (!cancel) setError(e?.message ?? "Falha ao preparar dados");
       } finally {
         if (!cancel) setLoading(false);
       }
@@ -89,13 +70,14 @@ export function ExportImageDialog({
   }, [open, sessionId, layout]);
 
   async function baixar() {
-    if (!payload) return;
+    if (!payload || !layout) return;
     setBaixando(true);
     try {
+      const inputComLayout = { ...payload.input, layout };
       if (formato === "pdf") {
-        await exportarSessoesPDF([payload], `${payload.nomeArquivo}.pdf`);
+        await exportarSessoesPDF([{ ...payload, input: inputComLayout }], `${payload.nomeArquivo}.pdf`);
       } else {
-        await exportarSessaoImagem(payload.input, payload.nomeArquivo, formato);
+        await exportarSessaoImagem(inputComLayout, payload.nomeArquivo, formato);
       }
       toast.success(`${payload.nomeArquivo}.${formato} baixado`);
       onOpenChange(false);
@@ -119,8 +101,7 @@ export function ExportImageDialog({
                 Exportar como imagem
               </DialogTitle>
               <DialogDescription className="mt-1 text-sm leading-relaxed">
-                Escolha o formato de tela e o arquivo: pronto pra publicar nas redes,
-                enviar ao aluno ou imprimir.
+                Arraste os blocos no canvas livre e exporte no formato desejado.
               </DialogDescription>
             </div>
           </div>
@@ -139,7 +120,16 @@ export function ExportImageDialog({
               }}
             />
           ) : (
-            <div className="aspect-video animate-pulse rounded-lg bg-muted" />
+            <div className="aspect-video animate-pulse rounded-lg bg-muted flex items-center justify-center">
+              {error ? (
+                 <div className="flex flex-col items-center gap-2 text-destructive">
+                   <AlertTriangle className="h-6 w-6" />
+                   <span className="text-sm font-medium">{error}</span>
+                 </div>
+              ) : (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              )}
+            </div>
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -158,7 +148,8 @@ export function ExportImageDialog({
                       layout?.largura === p.layout.largura && "bg-primary text-primary-foreground border-primary"
                     )}
                     onClick={() => {
-                      const next = { ...layout, largura: p.layout.largura, altura: p.layout.altura };
+                      if (!layout) return;
+                      const next: ImageLayout = { ...layout, largura: p.layout.largura, altura: p.layout.altura };
                       setLayout(next);
                       salvarLayout(sessionId, next);
                     }}
@@ -189,16 +180,6 @@ export function ExportImageDialog({
                 ))}
               </ToggleGroup>
             </div>
-            {payload && (
-              <div className="min-w-0 text-right">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Nome do arquivo
-                </p>
-                <p className="mt-1 truncate text-sm font-mono font-medium text-foreground">
-                  {payload.nomeArquivo}.{formato}
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
@@ -208,7 +189,7 @@ export function ExportImageDialog({
           </Button>
           <Button
             onClick={baixar}
-            disabled={loading || !!error || baixando || !payload}
+            disabled={loading || !!error || baixando || !payload || !layout}
             className="gap-2"
           >
             {baixando ? (
