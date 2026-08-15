@@ -42,31 +42,50 @@ function desenharColuna(
   escala: number,
   corTexto: string,
   corMuted: string,
+  layout: LayoutImagem & { posicoes?: Record<string, any> }
 ) {
   let y = yInicial;
   const tituloSize = 44 * escala;
   const linhaSize = 34 * escala;
 
   for (const b of blocos) {
+    // Se houver posição customizada, usamos ela.
+    // A chave do bloco é essencial aqui.
+    let drawX = x;
+    let drawY = y;
+    let drawW = largura;
+
+    const pos = b.chave ? layout.posicoes?.[b.chave] : null;
+    if (pos) {
+      drawX = (pos.x / 100) * ctx.canvas.width;
+      drawY = (pos.y / 100) * ctx.canvas.height;
+      drawW = (pos.w / 100) * ctx.canvas.width;
+    }
+
     ctx.fillStyle = corTexto;
     ctx.font = `800 ${tituloSize}px "${FONT_FAMILY}", sans-serif`;
-    ctx.fillText(b.titulo ?? "", x, y, largura);
-    y += tituloSize * 1.35;
+    ctx.fillText(b.titulo ?? "", drawX, drawY, drawW);
+    
+    let currentY = drawY + tituloSize * 1.35;
 
     if (b.subtitulo) {
       ctx.fillStyle = corMuted;
       ctx.font = `600 ${linhaSize}px "${FONT_FAMILY}", sans-serif`;
-      ctx.fillText(b.subtitulo, x, y, largura);
-      y += linhaSize * 1.4;
+      ctx.fillText(b.subtitulo, drawX, currentY, drawW);
+      currentY += linhaSize * 1.4;
     }
 
     ctx.fillStyle = corTexto;
     ctx.font = `400 ${linhaSize}px "${FONT_FAMILY}", sans-serif`;
     for (const l of b.linhas) {
-      ctx.fillText(l.texto, x, y, largura);
-      y += linhaSize * 1.35;
+      ctx.fillText(l.texto, drawX, currentY, drawW);
+      currentY += linhaSize * 1.35;
     }
-    y += tituloSize * 0.8;
+
+    // Se não for posicionado manualmente, atualiza o y global para o próximo bloco automático
+    if (!pos) {
+      y = currentY + tituloSize * 0.8;
+    }
   }
 }
 
@@ -102,7 +121,7 @@ export async function renderizarSessaoCanvas(
   const topo = margem + 160 * escala;
 
   if (temEsquerda) {
-    desenharColuna(ctx, input.esquerda, margem, topo, larguraEsq, escala, corTexto, corMuted);
+    desenharColuna(ctx, input.esquerda, margem, topo, larguraEsq, escala, corTexto, corMuted, L);
   }
   desenharColuna(
     ctx,
@@ -113,6 +132,7 @@ export async function renderizarSessaoCanvas(
     escala,
     corTexto,
     corMuted,
+    L
   );
 
   ctx.fillStyle = corMuted;

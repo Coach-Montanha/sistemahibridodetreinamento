@@ -96,28 +96,17 @@ async function montarInputDeBlocos(
 
   function blocoParaImagem(b: any, tituloForcado?: string): BlocoImagem {
     return {
-      chave: b.config?.chave, // novo — só existe em blocos do motor de molde
+      chave: b.id, // Usamos o ID real do bloco como chave única
       titulo: (tituloForcado ?? tituloBloco(b)).toUpperCase(),
       subtitulo: subtituloFormato(b),
       linhas: linhasExerciciosDe(b),
     };
   }
 
-  const esquerda: BlocoImagem[] = [];
-  const principal: BlocoImagem[] = [];
-
-  for (const b of blocks) {
-    if (b.formato === "mobilidade") {
-      esquerda.push(blocoParaImagem(b, "BLOCO DE MOBILIDADE"));
-    } else if (ehAquecimento(b)) {
-      esquerda.push(blocoParaImagem(b, "AQUECIMENTO"));
-    } else {
-      principal.push(blocoParaImagem(b));
-    }
-  }
+  const principal: BlocoImagem[] = blocks.map(b => blocoParaImagem(b));
 
   return {
-    esquerda,
+    esquerda: [], // No canvas livre, todos os blocos estão na lista principal para posicionamento
     principal,
     metodologiaLabel: (METHODOLOGY_LABEL[metodologia as Methodology] ?? metodologia).toUpperCase(),
     coachLabel: `by ${coachNome}`,
