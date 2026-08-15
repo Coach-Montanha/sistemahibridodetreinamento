@@ -145,7 +145,7 @@ export function ExportImageDialog({
                     size="sm"
                     className={cn(
                       "h-8 text-[10px] uppercase font-bold",
-                      layout?.largura === p.layout.largura && "bg-primary text-primary-foreground border-primary"
+                      layout?.largura === (p as any).layout.largura && "bg-primary text-primary-foreground border-primary"
                     )}
                     onClick={() => {
                       if (!layout) return;
