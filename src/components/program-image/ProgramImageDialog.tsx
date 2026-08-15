@@ -25,15 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { LayoutEditor } from "./layout-editor";
-import {
-  carregarLayout,
-  salvarLayout,
-  salvarTemplateModalidade,
-  limparOverridePrograma,
-  type ImageLayout,
-  type OrigemLayout,
-} from "@/lib/program-image-layout";
+import { carregarLayout, type ImageLayout } from "@/lib/program-image-layout";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { prepararSessoesParaImagem, type SessaoImagemPreparada } from "@/lib/session-image";
 import {
@@ -60,12 +52,6 @@ function idsDasSessoes(programa: Programa): string[] {
         .map((s: any) => String(s.id)),
     );
 }
-
-const ORIGEM_TEXTO: Record<OrigemLayout, string> = {
-  programa: "Ajustes deste programa",
-  modalidade: "Padrão da modalidade",
-  padrao: "Preset padrão",
-};
 
 /** Chave única de dispensa da faixa de novidades. */
 export const NOVIDADES_KEY = "program-image-novidades-dispensadas";
