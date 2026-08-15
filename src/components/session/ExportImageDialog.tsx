@@ -149,12 +149,12 @@ export function ExportImageDialog({
                     )}
                     onClick={() => {
                       if (!layout) return;
-                      const next: ImageLayout = { ...layout, largura: p.layout.largura, altura: p.layout.altura };
+                      const next: ImageLayout = { ...layout, largura: (p as any).layout.largura, altura: (p as any).layout.altura };
                       setLayout(next);
                       salvarLayout(sessionId, next);
                     }}
                   >
-                    {p.nome}
+                    {(p as any).nome}
                   </Button>
                 ))}
               </div>
