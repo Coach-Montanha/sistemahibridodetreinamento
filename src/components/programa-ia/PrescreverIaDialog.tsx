@@ -508,6 +508,7 @@ export function PrescreverIaDialog({
               ai_prompt: prompt.trim(),
               ai_generated_at: new Date().toISOString(),
               notes: previa.notes || null,
+              escola_metodologica: escola !== "auto" ? escola : null,
             },
           },
         })
