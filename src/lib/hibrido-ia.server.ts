@@ -85,6 +85,7 @@ export type HibridoPayload = {
   diasPorSemana: number;
   dataInicio: string | null | undefined;
   sessaoTemplate: SessaoTemplate;
+  escola?: string | null;
 };
 
 
@@ -193,6 +194,7 @@ export function montarHibridoPrompt(args: {
   return [
     `Você é um treinador especialista em ${LABEL_MODALIDADE[payload.modalidade]}.`,
     filosofia,
+    payload.escola ? `ESCOLA METODOLÓGICA SELECIONADA: ${payload.escola}. Adapte a seleção de exercícios e nomenclaturas a este estilo.` : "",
     "",
     `SUA TAREFA É EVOLUIR A PROGRAMAÇÃO (CONTINUAR GERANDO EM BLOCO):`,
     `A estrutura de cada bloco JÁ ESTÁ DEFINIDA e não deve ser alterada. Sua liberdade está em escolher exercícios, séries, repetições e cargas.`,

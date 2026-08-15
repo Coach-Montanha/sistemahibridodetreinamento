@@ -247,11 +247,75 @@ export function PrescreverIaDialog({
   const gerar = useServerFn(prescribeTrainingWithAi);
   const [prompt, setPrompt] = useState("");
   const [metodologia, setMetodologia] = useState<Methodology | string>(programa?.metodologia || "musculacao");
+  const [escola, setEscola] = useState<string>("auto");
   const [semanas, setSemanas] = useState(escopoInicial?.semanas || 1);
   const [diasPorSemana, setDiasPorSemana] = useState(escopoInicial?.diasPorSemana || 3);
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
   const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
+
+  // Mapeamento de escolas por metodologia
+  const ESCOLAS_DISPONIVEIS: Record<string, { value: string; label: string }[]> = useMemo(() => ({
+    musculacao: [
+      { value: "auto", label: "Automático (IA decide)" },
+      { value: "bro_split", label: "Bro-Split (Bodybuilding Clássico)" },
+      { value: "upper_lower", label: "Upper/Lower" },
+      { value: "ppl", label: "PPL (Push/Pull/Legs)" },
+      { value: "full_body", label: "Full Body" },
+      { value: "heavy_duty", label: "Heavy Duty / HIT" },
+    ],
+    treinamento_funcional: [
+      { value: "auto", label: "Automático (IA decide)" },
+      { value: "exos", label: "EXOS / Core Performance" },
+      { value: "crossfit", label: "CrossFit" },
+      { value: "boyle", label: "Joint-by-Joint (Boyle)" },
+      { value: "fms_sfma", label: "FMS/SFMA" },
+      { value: "dns", label: "DNS (Praga)" },
+      { value: "original_strength", label: "Original Strength" },
+    ],
+    levantamento_peso: [
+      { value: "auto", label: "Automático (IA decide)" },
+      { value: "bulgara", label: "Búlgara" },
+      { value: "russa_classica", label: "Russa Clássica" },
+      { value: "chinesa", label: "Chinesa" },
+      { value: "cubana", label: "Cubana" },
+      { value: "colombiana", label: "Colombiana" },
+      { value: "pendlay", label: "Takano / Pendlay" },
+    ],
+    kettlebell_sport: [
+      { value: "auto", label: "Automático (IA decide)" },
+      { value: "fedorenko", label: "Fedorenko / WKC" },
+      { value: "rudnev", label: "Rudnev" },
+      { value: "vorotyntsev", label: "Vorotyntsev" },
+      { value: "denisov", label: "Denisov" },
+      { value: "vasilev", label: "Vasilev" },
+      { value: "gomonov", label: "Gomonov" },
+    ],
+    corrida: [
+      { value: "auto", label: "Automático (IA decide)" },
+      { value: "daniels", label: "Daniels / VDOT" },
+      { value: "lydiard", label: "Lydiard (Base)" },
+      { value: "canova", label: "Canova (Elite)" },
+      { value: "hansons", label: "Hansons" },
+      { value: "pfitzinger", label: "Pfitzinger" },
+      { value: "horwill", label: "Horwill" },
+      { value: "koop", label: "Koop (Ultra)" },
+    ],
+    hibrido: [
+      { value: "auto", label: "Híbrido Clássico" },
+      { value: "performance", label: "Híbrido Performance" },
+      { value: "saude", label: "Híbrido Saúde/Longevidade" },
+    ],
+    kettlebell_fitness: [
+      { value: "auto", label: "KB Fitness Padrão" },
+      { value: "fluxo", label: "KB Flows / Complexos" },
+    ],
+  }), []);
+
+  // Resetar escola ao mudar metodologia
+  useEffect(() => {
+    setEscola("auto");
+  }, [metodologia]);
 
   const limpar = useCallback(() => {
     setPrompt("");
@@ -261,7 +325,7 @@ export function PrescreverIaDialog({
   const gerarMut = useMutation({
     mutationFn: async () => {
       if (!programa) throw new Error("Programa não selecionado");
-      setProgresso(["Analisando histórico, limitações e metodologia..."]);
+      setProgresso(["Analisando histórico, limitações e escola metodológica..."]);
       
       const totalSessoes = semanas * diasPorSemana;
       
@@ -275,6 +339,7 @@ export function PrescreverIaDialog({
             diasPorSemana: diasPorSemana,
             escopoLabel: `${semanas} semanas`,
             metodologiaOverride: metodologia as Methodology,
+            escolaOverride: escola,
             kb: kbInicial ?? null,
             wl: wlInicial ?? null,
             tf: tfInicial ?? null,
@@ -286,7 +351,8 @@ export function PrescreverIaDialog({
                   numeroSessoes: totalSessoes,
                   diasPorSemana: diasPorSemana,
                   dataInicio: escopoInicial?.dataInicio ?? new Date().toISOString().slice(0, 10),
-                  sessaoTemplate: [] 
+                  sessaoTemplate: [],
+                  escola: escola !== "auto" ? escola : null
                 } 
               : null,
             setTypes: setTypes,
@@ -479,7 +545,7 @@ export function PrescreverIaDialog({
             </span>
             Prescrever com IA
             <Badge variant="secondary" className="ml-1 text-[10px] uppercase tracking-wide">
-              {METHODOLOGY_LABEL[metodologia as Methodology] || metodologia}
+              {METHODOLOGY_LABEL[metodologia as Methodology] || metodologia} - {escola === "auto" ? "IA" : escola}
             </Badge>
           </DialogTitle>
           <DialogDescription className="text-xs">
@@ -494,7 +560,7 @@ export function PrescreverIaDialog({
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[
               { label: "Rotina alvo", value: programa?.titulo ?? "—" },
-              { label: "Metodologia", value: METHODOLOGY_LABEL[metodologia as Methodology] ?? metodologia },
+              { label: "Escola Metodológica", value: escola === "auto" ? "Automático" : (ESCOLAS_DISPONIVEIS[metodologia]?.find(e => e.value === escola)?.label ?? escola) },
               {
                 label: "Duração",
                 value: `${semanas} semana(s)`,
@@ -521,7 +587,25 @@ export function PrescreverIaDialog({
           <div className="grid grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 sm:grid-cols-3">
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Metodologia
+                Escola Metodológica
+              </label>
+              <Select value={escola} onValueChange={setEscola} disabled={gerarMut.isPending}>
+                <SelectTrigger className="h-9 bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(ESCOLAS_DISPONIVEIS[metodologia] || [{ value: "auto", label: "Automático" }]).map((e) => (
+                    <SelectItem key={e.value} value={e.value}>
+                      {e.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Base Técnica
               </label>
               <Select value={metodologia} onValueChange={setMetodologia} disabled={gerarMut.isPending}>
                 <SelectTrigger className="h-9 bg-background">
