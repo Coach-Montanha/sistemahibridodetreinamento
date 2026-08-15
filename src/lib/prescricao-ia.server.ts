@@ -62,6 +62,7 @@ Se você for informado sobre 'TIPOS DE SÉRIES DISPONÍVEIS', utilize preferenci
 export type RotinaContexto = {
   titulo: string;
   metodologia: string;
+  escola?: string | null;
   duracao_semanas: number;
   data_inicio: string | null;
   data_fim: string | null;
@@ -83,6 +84,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     "CONTEXTO DA ROTINA (não repita, apenas use):",
     `- Nome: ${ctx.titulo}`,
     `- Modalidade: ${ctx.metodologia}`,
+    ctx.escola ? `- Escola Metodológica: ${ctx.escola}` : null,
     `- Duração: ${ctx.duracao_semanas} semana(s)`,
     ctx.escopo_label ? `- Escopo da prescrição: ${ctx.escopo_label}` : null,
     dias ? `- Dias de treino por semana: ${dias}` : null,
