@@ -1,6 +1,3 @@
-import { cn } from "@/lib/utils";
-import { withAlpha } from "./image-export-utils"; // Vamos criar esse utilitário para centralizar
-
 const FONT_FAMILY = "Poppins";
 
 export interface LinhaBloco {
@@ -13,6 +10,12 @@ export interface BlocoImagem {
   linhas: LinhaBloco[];
 }
 
+export interface LayoutImagem {
+  largura: number;
+  altura: number;
+  fundo: string;
+}
+
 export interface SessaoImagemInput {
   esquerda: BlocoImagem[];
   principal: BlocoImagem[];
@@ -22,27 +25,99 @@ export interface SessaoImagemInput {
   corFundo?: string;
   corMuted?: string;
   corDivisor?: string;
-  layout?: { largura: number; altura: number; fundo: string };
+  layout?: LayoutImagem;
+}
+
+export interface SessaoImagemPreparadaLike {
+  input: SessaoImagemInput;
+  nomeArquivo: string;
+}
+
+function desenharColuna(
+  ctx: CanvasRenderingContext2D,
+  blocos: BlocoImagem[],
+  x: number,
+  yInicial: number,
+  largura: number,
+  escala: number,
+  corTexto: string,
+  corMuted: string,
+) {
+  let y = yInicial;
+  const tituloSize = 44 * escala;
+  const linhaSize = 34 * escala;
+
+  for (const b of blocos) {
+    ctx.fillStyle = corTexto;
+    ctx.font = `800 ${tituloSize}px "${FONT_FAMILY}", sans-serif`;
+    ctx.fillText(b.titulo ?? "", x, y, largura);
+    y += tituloSize * 1.35;
+
+    if (b.subtitulo) {
+      ctx.fillStyle = corMuted;
+      ctx.font = `600 ${linhaSize}px "${FONT_FAMILY}", sans-serif`;
+      ctx.fillText(b.subtitulo, x, y, largura);
+      y += linhaSize * 1.4;
+    }
+
+    ctx.fillStyle = corTexto;
+    ctx.font = `400 ${linhaSize}px "${FONT_FAMILY}", sans-serif`;
+    for (const l of b.linhas) {
+      ctx.fillText(l.texto, x, y, largura);
+      y += linhaSize * 1.35;
+    }
+    y += tituloSize * 0.8;
+  }
 }
 
 export async function renderizarSessaoCanvas(
   input: SessaoImagemInput,
 ): Promise<HTMLCanvasElement> {
+  const L = input.layout ?? { largura: 5760, altura: 2160, fundo: "claro" };
   const canvas = document.createElement("canvas");
-  const L = input.layout || { largura: 5760, altura: 2160, fundo: "claro" };
   canvas.width = L.largura;
   canvas.height = L.altura;
   const ctx = canvas.getContext("2d")!;
 
-  // Renderização básica durante o reset
-  ctx.fillStyle = L.fundo === "escuro" ? "#0F1115" : "#FFFFFF";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const escuro = L.fundo === "escuro";
+  const corFundo = input.corFundo ?? (escuro ? "#0F1115" : "#FFFFFF");
+  const corTexto = input.corTexto ?? (escuro ? "#F5F5F4" : "#0F1115");
+  const corMuted = input.corMuted ?? (escuro ? "#9CA3AF" : "#6B7280");
 
-  const corTexto = input.corTexto ?? (L.fundo === "escuro" ? "#F5F5F4" : "#000000");
-  ctx.fillStyle = corTexto;
-  ctx.font = `800 120px "${FONT_FAMILY}", sans-serif`;
+  if (L.fundo !== "transparente") {
+    ctx.fillStyle = corFundo;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
   ctx.textBaseline = "top";
-  ctx.fillText(input.metodologiaLabel, 120, canvas.height - 260);
+  const escala = canvas.height / 2160;
+  const margem = 140 * escala;
+  const temEsquerda = input.esquerda.length > 0;
+  const larguraEsq = temEsquerda ? (canvas.width - margem * 3) * 0.3 : 0;
+  const larguraPrin = canvas.width - margem * (temEsquerda ? 3 : 2) - larguraEsq;
+
+  ctx.fillStyle = corTexto;
+  ctx.font = `900 ${90 * escala}px "${FONT_FAMILY}", sans-serif`;
+  ctx.fillText(input.metodologiaLabel, margem, margem);
+  const topo = margem + 160 * escala;
+
+  if (temEsquerda) {
+    desenharColuna(ctx, input.esquerda, margem, topo, larguraEsq, escala, corTexto, corMuted);
+  }
+  desenharColuna(
+    ctx,
+    input.principal,
+    margem + (temEsquerda ? larguraEsq + margem : 0),
+    topo,
+    larguraPrin,
+    escala,
+    corTexto,
+    corMuted,
+  );
+
+  ctx.fillStyle = corMuted;
+  ctx.font = `600 ${40 * escala}px "${FONT_FAMILY}", sans-serif`;
+  ctx.fillText(input.coachLabel, margem, canvas.height - margem);
 
   return canvas;
 }
@@ -61,19 +136,70 @@ export async function renderizarPreviewDataURL(
   return small.toDataURL("image/png");
 }
 
+async function canvasParaBlob(
+  canvas: HTMLCanvasElement,
+  formato: "png" | "jpg",
+): Promise<Blob> {
+  return new Promise((resolve) =>
+    canvas.toBlob((b) => resolve(b!), formato === "jpg" ? "image/jpeg" : "image/png", 0.95),
+  );
+}
+
+function baixarBlob(blob: Blob, nome: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function exportarSessaoImagem(
   input: SessaoImagemInput,
   nomeArquivo: string,
   formato: "png" | "jpg" = "png",
 ) {
   const canvas = await renderizarSessaoCanvas(input);
-  const blob = await new Promise<Blob>((resolve) => 
-    canvas.toBlob(b => resolve(b!), formato === "jpg" ? "image/jpeg" : "image/png")
-  );
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${nomeArquivo}.${formato}`;
-  a.click();
-  URL.revokeObjectURL(url);
+  baixarBlob(await canvasParaBlob(canvas, formato), `${nomeArquivo}.${formato}`);
+}
+
+/** Exporta várias sessões como um único ZIP de imagens. */
+export async function exportarSessoesEmMassa(
+  itens: SessaoImagemPreparadaLike[],
+  formato: "png" | "jpg",
+  nomeZip: string,
+) {
+  const { default: JSZip } = await import("jszip");
+  const zip = new JSZip();
+  for (const item of itens) {
+    const canvas = await renderizarSessaoCanvas(item.input);
+    const blob = await canvasParaBlob(canvas, formato);
+    zip.file(`${item.nomeArquivo}.${formato}`, blob);
+  }
+  baixarBlob(await zip.generateAsync({ type: "blob" }), nomeZip);
+}
+
+/** Exporta várias sessões num PDF único (uma página por sessão). */
+export async function exportarSessoesPDF(
+  itens: SessaoImagemPreparadaLike[],
+  nomeArquivo: string,
+) {
+  const { jsPDF } = await import("jspdf");
+  let pdf: any = null;
+  for (const item of itens) {
+    const canvas = await renderizarSessaoCanvas(item.input);
+    const orientacao = canvas.width >= canvas.height ? "landscape" : "portrait";
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    if (!pdf) {
+      pdf = new jsPDF({
+        orientation: orientacao,
+        unit: "px",
+        format: [canvas.width, canvas.height],
+      });
+    } else {
+      pdf.addPage([canvas.width, canvas.height], orientacao);
+    }
+    pdf.addImage(dataUrl, "JPEG", 0, 0, canvas.width, canvas.height);
+  }
+  if (pdf) pdf.save(nomeArquivo);
 }

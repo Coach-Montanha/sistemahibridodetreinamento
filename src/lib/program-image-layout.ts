@@ -12,6 +12,15 @@ export const LAYOUT_PADRAO: ImageLayout = {
   fundo: "claro",
 };
 
+/** Formatos de tela disponíveis para exportação. */
+export const PRESETS_LAYOUT: Record<string, { nome: string; layout: ImageLayout }> = {
+  padrao: { nome: "Painel ultrawide", layout: LAYOUT_PADRAO },
+  a4: { nome: "A4 paisagem", layout: { largura: 3508, altura: 2480, fundo: "claro" } },
+  quadrado: { nome: "Quadrado 1:1", layout: { largura: 2160, altura: 2160, fundo: "claro" } },
+  feed: { nome: "Feed 4:5", layout: { largura: 2160, altura: 2700, fundo: "claro" } },
+  story: { nome: "Story 9:16", layout: { largura: 2160, altura: 3840, fundo: "claro" } },
+};
+
 /**
  * Limpa todos os layouts salvos no localStorage para reconstrução.
  */
