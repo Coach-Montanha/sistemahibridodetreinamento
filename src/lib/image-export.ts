@@ -121,7 +121,7 @@ export async function renderizarSessaoCanvas(
   const topo = margem + 160 * escala;
 
   if (temEsquerda) {
-    desenharColuna(ctx, input.esquerda, margem, topo, larguraEsq, escala, corTexto, corMuted);
+    desenharColuna(ctx, input.esquerda, margem, topo, larguraEsq, escala, corTexto, corMuted, L);
   }
   desenharColuna(
     ctx,
@@ -132,6 +132,7 @@ export async function renderizarSessaoCanvas(
     escala,
     corTexto,
     corMuted,
+    L
   );
 
   ctx.fillStyle = corMuted;
