@@ -209,6 +209,7 @@ const INPUT = z.object({
   diasPorSemana: z.number().int().min(1).max(7).nullable().optional(),
   escopoLabel: z.string().max(80).nullable().optional(),
   metodologiaOverride: z.string().nullable().optional(),
+  escolaOverride: z.string().optional(),
   kb: KB,
   wl: WL,
   tf: TF,
