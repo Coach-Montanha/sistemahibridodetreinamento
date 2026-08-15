@@ -25,15 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { LayoutEditor } from "./layout-editor";
-import {
-  carregarLayout,
-  salvarLayout,
-  salvarTemplateModalidade,
-  limparOverridePrograma,
-  type ImageLayout,
-  type OrigemLayout,
-} from "@/lib/program-image-layout";
+import { carregarLayout, type ImageLayout } from "@/lib/program-image-layout";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { prepararSessoesParaImagem, type SessaoImagemPreparada } from "@/lib/session-image";
 import {
@@ -60,12 +52,6 @@ function idsDasSessoes(programa: Programa): string[] {
         .map((s: any) => String(s.id)),
     );
 }
-
-const ORIGEM_TEXTO: Record<OrigemLayout, string> = {
-  programa: "Ajustes deste programa",
-  modalidade: "Padrão da modalidade",
-  padrao: "Preset padrão",
-};
 
 /** Chave única de dispensa da faixa de novidades. */
 export const NOVIDADES_KEY = "program-image-novidades-dispensadas";
@@ -161,7 +147,6 @@ export function ProgramImageDialog({
 }) {
   const open = !!programa;
   const [layout, setLayout] = useState<ImageLayout | null>(null);
-  const [origem, setOrigem] = useState<OrigemLayout>("padrao");
   const [sessoes, setSessoes] = useState<SessaoImagemPreparada[] | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [gerandoPreview, setGerandoPreview] = useState(false);
@@ -203,7 +188,6 @@ export function ProgramImageDialog({
     }
     const resolvido = carregarLayout(programa.id, modalidade);
     setLayout(resolvido.layout);
-    setOrigem(resolvido.origem);
     let cancelado = false;
     (async () => {
       try {
@@ -241,29 +225,6 @@ export function ProgramImageDialog({
       clearTimeout(t);
     };
   }, [layout, sessoes]);
-
-  function atualizarLayout(next: ImageLayout) {
-    setLayout(next);
-    if (programa) {
-      salvarLayout(programa.id, next);
-      setOrigem("programa");
-    }
-  }
-
-  function definirComoPadraoDaModalidade() {
-    if (!layout || !modalidade) return;
-    salvarTemplateModalidade(modalidade, layout);
-    toast.success(`Layout salvo como padrão de ${modalidadeLabel}`);
-  }
-
-  function restaurarPadraoDaModalidade() {
-    if (!programa) return;
-    limparOverridePrograma(programa.id);
-    const resolvido = carregarLayout(programa.id, modalidade);
-    setLayout(resolvido.layout);
-    setOrigem(resolvido.origem);
-    toast.success("Ajustes deste programa descartados");
-  }
 
   async function exportar(formato: "png" | "jpg" | "pdf") {
     if (!layout || !sessoes || sessoes.length === 0) return;
@@ -305,12 +266,6 @@ export function ProgramImageDialog({
             <GuiaDeUso realcado={destaque === "ajuda"} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              variant={origem === "programa" ? "default" : "outline"}
-              className={cn("font-medium", destaque === "origem" && ANEL)}
-            >
-              {ORIGEM_TEXTO[origem]}
-            </Badge>
             {modalidadeLabel && (
               <span className="text-[11px] leading-snug text-muted-foreground">
                 Modalidade: {modalidadeLabel}
@@ -372,12 +327,6 @@ export function ProgramImageDialog({
               </div>
             )}
 
-            {layout ? (
-              <LayoutEditor layout={layout} onChange={atualizarLayout} />
-            ) : (
-              <Skeleton className="h-72 w-full rounded-lg" />
-            )}
-
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -407,37 +356,7 @@ export function ProgramImageDialog({
           </div>
         </ScrollArea>
 
-        <div className="flex flex-col gap-3 border-t border-border/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div
-            className={cn(
-              "flex flex-col gap-2 sm:flex-row sm:items-center",
-              destaque === "template" && ANEL,
-            )}
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 transition-colors duration-200"
-              disabled={!layout || !modalidade}
-              onClick={definirComoPadraoDaModalidade}
-            >
-              <BookmarkCheck className="h-4 w-4" />
-              <span className="truncate">
-                Salvar como padrão{modalidadeLabel ? ` de ${modalidadeLabel}` : ""}
-              </span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground transition-colors duration-200 hover:text-foreground"
-              disabled={origem !== "programa"}
-              onClick={restaurarPadraoDaModalidade}
-            >
-              <RotateCcw className="h-4 w-4" />
-              Restaurar padrão
-            </Button>
-          </div>
-
+        <div className="flex flex-col gap-3 border-t border-border/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
           <div className="flex flex-wrap justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Fechar

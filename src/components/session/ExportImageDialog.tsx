@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ImageDown, Loader2, ImageIcon, AlertTriangle, LayoutGrid, MousePointer2 } from "lucide-react";
+import { ImageDown, Loader2, ImageIcon, AlertTriangle } from "lucide-react";
 import { prepararSessaoParaImagem } from "@/lib/session-image";
 import {
   exportarSessaoImagem,
@@ -25,7 +25,7 @@ import {
   renderizarPreviewDataURL,
   type SessaoImagemInput,
 } from "@/lib/image-export";
-import { PRESETS_LAYOUT, salvarLayout, type ImageLayout, type PosicaoBloco } from "@/lib/program-image-layout";
+import { PRESETS_LAYOUT } from "@/lib/program-image-layout";
 import { cn } from "@/lib/utils";
 
 type Formato = "png" | "jpg" | "pdf";
@@ -49,8 +49,6 @@ export function ExportImageDialog({
     nomeArquivo: string;
   } | null>(null);
   const [baixando, setBaixando] = useState(false);
-  const [dragMode, setDragMode] = useState(false);
-  const [draggingBlock, setDraggingBlock] = useState<string | null>(null);
 
   const layout = useMemo(
     () => (PRESETS_LAYOUT[presetId] ?? PRESETS_LAYOUT.padrao).layout,
@@ -103,47 +101,6 @@ export function ExportImageDialog({
       setBaixando(false);
     }
   }
-  
-  const blocks = useMemo(() => {
-    if (!payload) return [];
-    return [...payload.input.esquerda, ...payload.input.principal];
-  }, [payload]);
-
-  const handleDrag = (e: React.MouseEvent, canvasRect: DOMRect) => {
-    if (!draggingBlock || !payload) return;
-    
-    // Calcula coordenadas normalizadas (0-1)
-    const x = Math.max(0, Math.min(1, (e.clientX - canvasRect.left) / canvasRect.width));
-    const y = Math.max(0, Math.min(1, (e.clientY - canvasRect.top) / canvasRect.height));
-    
-    const currentPosicoes = payload.input.layout?.posicoesBlocos || [];
-    const existingIndex = currentPosicoes.findIndex(p => p.chave === draggingBlock);
-    
-    let newPosicoes: PosicaoBloco[];
-    if (existingIndex >= 0) {
-      newPosicoes = currentPosicoes.map((p, i) => 
-        i === existingIndex ? { ...p, x, y } : p
-      );
-    } else {
-      newPosicoes = [...currentPosicoes, { 
-        chave: draggingBlock, 
-        zona: 'principal', 
-        ordem: currentPosicoes.length, 
-        x, 
-        y 
-      }];
-    }
-    
-    const nextLayout = { ...payload.input.layout!, posicoesBlocos: newPosicoes };
-    setPayload({ ...payload, input: { ...payload.input, layout: nextLayout } });
-  };
-
-  const handleSaveLayout = () => {
-    if (!payload?.input.layout) return;
-    salvarLayout(sessionId, payload.input.layout as ImageLayout);
-    toast.success("Posições do canvas salvas!");
-    setDragMode(false);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -185,54 +142,11 @@ export function ExportImageDialog({
               </div>
             )}
             {!loading && !error && preview && (
-              <div 
-                className="relative h-full w-full group"
-                onMouseMove={(e) => {
-                  if (dragMode) {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    handleDrag(e, rect);
-                  }
-                }}
-                onMouseUp={() => setDraggingBlock(null)}
-                onMouseLeave={() => setDraggingBlock(null)}
-              >
-                <img
-                  src={preview}
-                  alt="Preview da sessão"
-                  className={cn(
-                    "h-full w-full object-contain",
-                    dragMode && "cursor-crosshair"
-                  )}
-                />
-                
-                {dragMode && (
-                   <div className="absolute inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle,currentColor_1px,transparent_1px)] bg-[size:40px_40px]" />
-                )}
-
-                {dragMode && payload && blocks.map((b, i) => {
-                  const pos = payload.input.layout?.posicoesBlocos?.find(p => p.chave === b.chave);
-                  return (
-                    <div
-                      key={b.chave || i}
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        setDraggingBlock(b.chave || `bloco-${i}`);
-                      }}
-                      className={cn(
-                        "absolute z-10 cursor-move rounded border border-primary bg-primary/20 p-2 text-[10px] font-bold uppercase text-primary shadow-lg backdrop-blur-sm transition-transform hover:scale-105",
-                        draggingBlock === b.chave && "scale-110 ring-2 ring-primary"
-                      )}
-                      style={{
-                        left: `${(pos?.x ?? 0.1 + (i * 0.1)) * 100}%`,
-                        top: `${(pos?.y ?? 0.1 + (i * 0.05)) * 100}%`,
-                        transform: 'translate(-50%, -50%)'
-                      }}
-                    >
-                      {b.titulo || "Bloco"}
-                    </div>
-                  );
-                })}
-              </div>
+              <img
+                src={preview}
+                alt="Preview da sessão"
+                className="h-full w-full object-contain"
+              />
             )}
             {!loading && !error && !preview && (
               <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
@@ -294,42 +208,24 @@ export function ExportImageDialog({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-2">
-          <Button 
-            variant={dragMode ? "secondary" : "outline"} 
-            size="sm"
-            onClick={() => setDragMode(!dragMode)}
-            className="mr-auto gap-2"
-          >
-            {dragMode ? <MousePointer2 className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
-            {dragMode ? "Modo Arrastar Ativo" : "Posicionamento Livre"}
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={baixando}>
+            Cancelar
           </Button>
-
-          {dragMode ? (
-            <Button onClick={handleSaveLayout} className="gap-2">
-               <ImageIcon className="h-4 w-4" /> Salvar Posições
-            </Button>
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={baixando}>
-                Cancelar
-              </Button>
-              <Button
-                onClick={baixar}
-                disabled={loading || !!error || baixando || !payload}
-                className="gap-2"
-              >
-                {baixando ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Baixando…
-                  </>
-                ) : (
-                  <>
-                    <ImageDown className="h-4 w-4" /> Baixar {formato.toUpperCase()}
-                  </>
-                )}
-              </Button>
-            </>
-          )}
+          <Button
+            onClick={baixar}
+            disabled={loading || !!error || baixando || !payload}
+            className="gap-2"
+          >
+            {baixando ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Baixando…
+              </>
+            ) : (
+              <>
+                <ImageDown className="h-4 w-4" /> Baixar {formato.toUpperCase()}
+              </>
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

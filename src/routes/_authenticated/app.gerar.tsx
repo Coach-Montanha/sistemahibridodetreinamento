@@ -41,13 +41,6 @@ const ConstrutorMoldeDialog = lazy(() =>
   })),
 );
 
-const PosicionarBlocosDialog = lazy(() =>
-  import("@/components/programa-ia/PosicionarBlocosDialog").then((m) => ({
-    default: m.PosicionarBlocosDialog,
-  })),
-);
-
-
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
 import type { TfPayload } from "@/lib/funcional-ia.server";
@@ -109,7 +102,7 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const isCorrida = metodologia === "corrida";
   const isHibrido = metodologia === "hibrido";
   const isKbFitness = metodologia === "kettlebell_fitness";
-  const [posicionarAberto, setPosicionarAberto] = useState<{ programaId: string; modalidade: string } | null>(null);
+  const [, setPosicionarAberto] = useState<{ programaId: string; modalidade: string } | null>(null);
 
   const isKbFitnessMolde = isKbFitness;
   const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida;
@@ -531,20 +524,6 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
         </Suspense>
       )}
 
-      {posicionarAberto && (
-        <Suspense fallback={null}>
-          <PosicionarBlocosDialog
-            open={!!posicionarAberto}
-            onOpenChange={(o) => !o && setPosicionarAberto(null)}
-            programaId={posicionarAberto.programaId}
-            modalidade={posicionarAberto.modalidade}
-            onFinish={() => {
-              setPosicionarAberto(null);
-              navigate({ to: "/app/treinos", search: { aba: "programas" } });
-            }}
-          />
-        </Suspense>
-      )}
     </div>
   );
 }
