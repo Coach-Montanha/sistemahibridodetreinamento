@@ -365,14 +365,14 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     const kb = data.kb ?? null;
     const linha: Exclude<EscolaMetodologica, "auto"> | null = kb
-      ? kb.escolaMetodologica === "auto"
+      ? (data.escolaOverride as any) || (kb.escolaMetodologica === "auto"
         ? escolherEscola(kb.nivelAtleta, kb.disciplina)
-        : kb.escolaMetodologica
-      : null;
+        : kb.escolaMetodologica)
+      : (metodologiaEfetiva === "kettlebell_sport" ? (data.escolaOverride as any) || "gomonov" : null);
 
     const wl = data.wl ?? null;
     const linhaWl: Exclude<EscolaWeightlifting, "auto"> | null = wl
-      ? wl.escolaMetodologica === "auto"
+      ? (data.escolaOverride as any) || (wl.escolaMetodologica === "auto"
         ? escolherEscolaWl({
             nivel: wl.nivelAtleta,
             pontoFraco: wl.pontoFracoIdentificado,
@@ -380,24 +380,24 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             recuperacao: wl.capacidadeRecuperacao,
             suporteTotal: wl.suporteTotalDeclarado,
           })
-        : wl.escolaMetodologica
-      : null;
+        : wl.escolaMetodologica)
+      : (metodologiaEfetiva === "levantamento_peso" ? (data.escolaOverride as any) || "takano" : null);
 
     const tf = data.tf ?? null;
     const linhaTf: Exclude<EscolaFuncional, "auto"> | null = tf
-      ? tf.escolaMetodologica === "auto"
+      ? (data.escolaOverride as any) || (tf.escolaMetodologica === "auto"
         ? escolherEscolaFuncional({
             lesoes: tf.lesoes as any[],
             objetivo: tf.objetivo,
             nivel: tf.nivelAtleta,
             sedentarismoProlongado: tf.sedentarismoProlongado,
           })
-        : tf.escolaMetodologica
-      : null;
+        : tf.escolaMetodologica)
+      : (metodologiaEfetiva === "treinamento_funcional" ? (data.escolaOverride as any) || "exos" : null);
 
     const co = data.co ?? null;
     const linhaCo: Exclude<EscolaCorrida, "auto"> | null = co
-      ? co.escolaMetodologica === "auto"
+      ? (data.escolaOverride as any) || (co.escolaMetodologica === "auto"
         ? escolherEscolaCorrida({
             lesoes: co.lesoes as any,
             nivel: co.nivelAtleta,
@@ -405,8 +405,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             volumeSemanalKm: co.volumeSemanalKm,
             preferenciaAltaFrequencia: co.preferenciaAltaFrequencia,
           })
-        : co.escolaMetodologica
-      : null;
+        : co.escolaMetodologica)
+      : (metodologiaEfetiva === "corrida" ? (data.escolaOverride as any) || "daniels" : null);
 
     const systemPrompt = isKbSport
       ? KB_SPORT_SYSTEM_PROMPT
