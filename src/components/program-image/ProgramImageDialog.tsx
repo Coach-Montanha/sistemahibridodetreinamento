@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
   Download,
   Sparkles,
+  LayoutGrid,
 } from "lucide-react";
 import {
   Dialog,
@@ -25,7 +26,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { carregarLayout, type ImageLayout } from "@/lib/program-image-layout";
+import { carregarLayout, salvarLayout, type ImageLayout, PRESETS_LAYOUT } from "@/lib/program-image-layout";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { prepararSessoesParaImagem, type SessaoImagemPreparada } from "@/lib/session-image";
 import {
@@ -33,6 +34,7 @@ import {
   exportarSessoesPDF,
   renderizarPreviewDataURL,
 } from "@/lib/image-export";
+import { UnifiedCanvasEditor } from "./UnifiedCanvasEditor";
 
 type Programa = {
   id: string;
@@ -53,7 +55,6 @@ function idsDasSessoes(programa: Programa): string[] {
     );
 }
 
-/** Chave única de dispensa da faixa de novidades. */
 export const NOVIDADES_KEY = "program-image-novidades-dispensadas";
 
 export function novidadesPendentes(): boolean {
@@ -65,7 +66,6 @@ export function novidadesPendentes(): boolean {
   }
 }
 
-/** Versão segura para render (evita divergência de hidratação). */
 export function useNovidadesPendentes(): boolean {
   const [pendente, setPendente] = useState(false);
   useEffect(() => setPendente(novidadesPendentes()), []);
@@ -80,22 +80,14 @@ const ANEL =
 function GuiaDeUso({ realcado }: { realcado?: boolean }) {
   const passos = [
     {
-      icon: SlidersHorizontal,
-      titulo: "Editar o layout",
-      texto:
-        "Escolha um preset e ajuste a grade de 12 colunas, o fundo, o respiro e a escala do texto. A pré-visualização atualiza sozinha.",
-    },
-    {
-      icon: GripVertical,
-      titulo: "Reordenar arrastando",
-      texto:
-        "Nos programas e no construtor, segure o puxador de seis pontinhos para mover semanas, dias, blocos e exercícios. Pelo teclado: Espaço e setas.",
+      icon: LayoutGrid,
+      titulo: "Canvas Livre",
+      texto: "Arraste os blocos para qualquer lugar da imagem. O sistema salvará as coordenadas automaticamente.",
     },
     {
       icon: Download,
       titulo: "Exportar",
-      texto:
-        "PNG e JPG saem em um ZIP com todas as sessões; o PDF sai em arquivo único com uma página por sessão.",
+      texto: "PNG e JPG saem em um ZIP com todas as sessões; o PDF sai em arquivo único com uma página por sessão.",
     },
   ];
   return (
@@ -117,7 +109,7 @@ function GuiaDeUso({ realcado }: { realcado?: boolean }) {
         <div className="border-b border-border/60 px-4 py-3">
           <p className="text-sm font-semibold leading-tight">Como usar</p>
           <p className="text-xs leading-snug text-muted-foreground">
-            Três passos para sair do ajuste à imagem final.
+            Ajuste e exporte suas imagens.
           </p>
         </div>
         <ul className="space-y-4 px-4 py-4">
@@ -179,7 +171,6 @@ export function ProgramImageDialog({
     }
   }
 
-  // Carrega layout salvo + dados das sessões ao abrir
   useEffect(() => {
     if (!programa) {
       setSessoes(null);
@@ -201,30 +192,6 @@ export function ProgramImageDialog({
       cancelado = true;
     };
   }, [programa, sessionIds, modalidade]);
-
-  // Preview ao vivo da primeira sessão (debounce curto)
-  useEffect(() => {
-    if (!layout || !sessoes || sessoes.length === 0) return;
-    let cancelado = false;
-    setGerandoPreview(true);
-    const t = setTimeout(async () => {
-      try {
-        const url = await renderizarPreviewDataURL(
-          { ...sessoes[0].input, layout },
-          1100,
-        );
-        if (!cancelado) setPreview(url);
-      } catch {
-        /* preview é acessório */
-      } finally {
-        if (!cancelado) setGerandoPreview(false);
-      }
-    }, 220);
-    return () => {
-      cancelado = true;
-      clearTimeout(t);
-    };
-  }, [layout, sessoes]);
 
   async function exportar(formato: "png" | "jpg" | "pdf") {
     if (!layout || !sessoes || sessoes.length === 0) return;
@@ -260,7 +227,7 @@ export function ProgramImageDialog({
                 )}
               </DialogTitle>
               <DialogDescription className="leading-snug">
-                Ajuste a grade de 12 colunas e exporte todas as sessões em PNG, JPG ou PDF.
+                Arraste os blocos e exporte em PNG, JPG ou PDF.
               </DialogDescription>
             </div>
             <GuiaDeUso realcado={destaque === "ajuda"} />
@@ -274,20 +241,29 @@ export function ProgramImageDialog({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[62vh]">
+        <ScrollArea className="max-h-[72vh]">
           <div className="flex flex-col gap-6 px-6 py-5">
             {novidades && (
               <div className="rounded-xl border border-primary/30 bg-primary/[0.04] p-4 duration-200 animate-in fade-in">
-                {/* ... existing novelty content ... */}
+                <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 space-y-3">
+                    <p className="text-sm font-semibold leading-tight">Novo Motor de Canvas</p>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Agora você pode arrastar livremente os blocos para qualquer lugar da imagem.
+                    </p>
+                    <Button variant="ghost" size="sm" onClick={dispensarNovidades}>Entendi</Button>
+                  </div>
+                </div>
               </div>
             )}
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Canvas Livre
-                  </span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Canvas Livre</span>
                   <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/40 p-1">
                     {Object.entries(PRESETS_LAYOUT).map(([id, p]) => (
                       <Button
@@ -300,7 +276,7 @@ export function ProgramImageDialog({
                         )}
                         onClick={() => {
                           if (!layout) return;
-                          const next = { ...layout, largura: p.layout.largura, altura: p.layout.altura };
+                          const next: ImageLayout = { ...layout, largura: p.layout.largura, altura: p.layout.altura };
                           setLayout(next);
                           salvarLayout(programa!.id, next);
                         }}
@@ -315,7 +291,7 @@ export function ProgramImageDialog({
                     className="h-7 gap-1 text-[10px] uppercase font-bold"
                     onClick={() => {
                       if (!layout) return;
-                      const next = { ...layout, fundo: layout.fundo === 'claro' ? 'escuro' : 'claro' };
+                      const next: ImageLayout = { ...layout, fundo: layout.fundo === 'claro' ? 'escuro' : 'claro' };
                       setLayout(next);
                       salvarLayout(programa!.id, next);
                     }}
@@ -323,9 +299,7 @@ export function ProgramImageDialog({
                     {layout?.fundo === 'claro' ? 'Modo Escuro' : 'Modo Claro'}
                   </Button>
                 </div>
-                {gerandoPreview && (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                )}
+                {gerandoPreview && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
               </div>
 
               {layout && sessoes && sessoes.length > 0 ? (
@@ -334,7 +308,7 @@ export function ProgramImageDialog({
                   blocos={sessoes[0].input.principal}
                   metodologiaLabel={sessoes[0].input.metodologiaLabel}
                   coachLabel={sessoes[0].input.coachLabel}
-                  onChange={(newLayout) => {
+                  onChange={(newLayout: ImageLayout) => {
                     setLayout(newLayout);
                     salvarLayout(programa!.id, newLayout);
                   }}
@@ -342,59 +316,22 @@ export function ProgramImageDialog({
               ) : (
                 <Skeleton className="aspect-video w-full rounded-md" />
               )}
-
-              <p className="text-[11px] leading-snug text-muted-foreground text-center">
-                {sessoes
-                  ? `${sessoes.length} sessão(ões) serão exportadas usando este posicionamento.`
-                  : "Carregando sessões do programa…"}
-              </p>
             </div>
           </div>
         </ScrollArea>
 
         <div className="flex flex-col gap-3 border-t border-border/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Fechar</Button>
           <div className="flex flex-wrap justify-end gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Fechar
-          </Button>
-          <Button
-            variant="outline"
-            className="gap-2"
-            disabled={!sessoes?.length || !!exportando}
-            onClick={() => exportar("jpg")}
-          >
-            {exportando === "jpg" ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ImageDown className="h-4 w-4" />
-            )}
-            JPG
-          </Button>
-          <Button
-            variant="outline"
-            className="gap-2"
-            disabled={!sessoes?.length || !!exportando}
-            onClick={() => exportar("pdf")}
-          >
-            {exportando === "pdf" ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <FileDown className="h-4 w-4" />
-            )}
-            PDF
-          </Button>
-          <Button
-            className="gap-2"
-            disabled={!sessoes?.length || !!exportando}
-            onClick={() => exportar("png")}
-          >
-            {exportando === "png" ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ImageDown className="h-4 w-4" />
-            )}
-            Exportar PNG
-          </Button>
+            <Button variant="outline" disabled={!sessoes?.length || !!exportando} onClick={() => exportar("jpg")}>
+              {exportando === 'jpg' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />} JPG
+            </Button>
+            <Button variant="outline" disabled={!sessoes?.length || !!exportando} onClick={() => exportar("pdf")}>
+              {exportando === 'pdf' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} PDF
+            </Button>
+            <Button disabled={!sessoes?.length || !!exportando} onClick={() => exportar("png")}>
+              {exportando === 'png' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />} Exportar PNG
+            </Button>
           </div>
         </div>
       </DialogContent>
