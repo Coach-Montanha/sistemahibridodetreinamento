@@ -188,7 +188,6 @@ export function ProgramImageDialog({
     }
     const resolvido = carregarLayout(programa.id, modalidade);
     setLayout(resolvido.layout);
-    setOrigem(resolvido.origem);
     let cancelado = false;
     (async () => {
       try {
