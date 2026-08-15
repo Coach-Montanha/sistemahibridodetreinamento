@@ -2,8 +2,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchCoachBranding } from "./session-export";
 import { METHODOLOGY_LABEL, type Methodology } from "./methodology";
 import type { SessaoImagemInput, BlocoImagem, LinhaBloco } from "./image-export";
-import { carregarLayout, type PosicaoBloco } from "@/lib/program-image-layout";
-
 
 const METODOLOGIA_SIGLA: Record<string, string> = {
   hibrido: "TH",
@@ -88,7 +86,6 @@ async function montarInputDeBlocos(
   blocks: any[],
   metodologia: string,
   coachNome: string,
-  posicoesBlocos?: PosicaoBloco[],
 ): Promise<SessaoImagemInput> {
   function linhasExerciciosDe(b: any): LinhaBloco[] {
     const exs = (b.session_block_exercises ?? []).sort(
@@ -109,49 +106,15 @@ async function montarInputDeBlocos(
   const esquerda: BlocoImagem[] = [];
   const principal: BlocoImagem[] = [];
 
-  // Se HÁ posicoesBlocos E todo bloco com chave tem uma posição definida,
-  // usa a posição manual. Caso contrário (programa antigo, ou modalidade
-  // sem molde), mantém a heurística automática — retrocompatível.
-  const mapaPosicoes = new Map((posicoesBlocos ?? []).map((p) => [p.chave, p]));
-  // Mudança: Consideramos apenas se o bloco tem uma posição definida. 
-  // Se tiver, usa a manual. Se não tiver chave ou não tiver na lista, 
-  // ele cai no fluxo automático dentro do loop.
-  const usaPosicaoManual = (posicoesBlocos?.length ?? 0) > 0;
-
-  if (usaPosicaoManual) {
-    // Primeiro, processamos os blocos que têm posição definida
-    const blocosComPosicao = blocks
-      .map((b) => ({ b, pos: mapaPosicoes.get(b.config?.chave) }))
-      .filter((x): x is { b: any; pos: PosicaoBloco } => !!x.pos)
-      .sort((x, y) => x.pos.ordem - y.pos.ordem);
-
-    for (const { b, pos } of blocosComPosicao) {
-      const item = blocoParaImagem(b);
-      (pos.zona === "esquerda" ? esquerda : principal).push(item);
-    }
-
-    // Agora, processamos os blocos que NÃO têm posição definida (ex: adicionados manualmente)
-    // usando a heurística automática para não sumirem da imagem.
-    const blocosSemPosicao = blocks.filter(b => !b.config?.chave || !mapaPosicoes.has(b.config.chave));
-    for (const b of blocosSemPosicao) {
-      if (b.formato === "mobilidade" || ehAquecimento(b)) {
-        esquerda.push(blocoParaImagem(b));
-      } else {
-        principal.push(blocoParaImagem(b));
-      }
-    }
-  } else {
-    for (const b of blocks) {
-      if (b.formato === "mobilidade") {
-        esquerda.push(blocoParaImagem(b, "BLOCO DE MOBILIDADE"));
-      } else if (ehAquecimento(b)) {
-        esquerda.push(blocoParaImagem(b, "AQUECIMENTO"));
-      } else {
-        principal.push(blocoParaImagem(b));
-      }
+  for (const b of blocks) {
+    if (b.formato === "mobilidade") {
+      esquerda.push(blocoParaImagem(b, "BLOCO DE MOBILIDADE"));
+    } else if (ehAquecimento(b)) {
+      esquerda.push(blocoParaImagem(b, "AQUECIMENTO"));
+    } else {
+      principal.push(blocoParaImagem(b));
     }
   }
-
 
   return {
     esquerda,
@@ -195,9 +158,7 @@ export async function prepararSessaoParaImagem(
     fetchSessionFull(sessionId),
     fetchCoachBranding(),
   ]);
-  const programId = (session as any).program_weeks?.programs?.id;
-  const { layout } = programId ? carregarLayout(programId, metodologia) : { layout: undefined };
-  const input = await montarInputDeBlocos(blocks, metodologia, branding.nome, layout?.posicoesBlocos);
+  const input = await montarInputDeBlocos(blocks, metodologia, branding.nome);
   return { input, nomeArquivo: nomeArquivoSessao(session, metodologia) };
 }
 
@@ -208,9 +169,7 @@ export async function prepararSessoesParaImagem(
   const out: SessaoImagemPreparada[] = [];
   for (const id of sessionIds) {
     const { session, blocks, metodologia } = await fetchSessionFull(id);
-    const programId = (session as any).program_weeks?.programs?.id;
-    const { layout } = programId ? carregarLayout(programId, metodologia) : { layout: undefined };
-    const input = await montarInputDeBlocos(blocks, metodologia, branding.nome, layout?.posicoesBlocos);
+    const input = await montarInputDeBlocos(blocks, metodologia, branding.nome);
     out.push({ input, nomeArquivo: nomeArquivoSessao(session, metodologia) });
   }
   return out;
