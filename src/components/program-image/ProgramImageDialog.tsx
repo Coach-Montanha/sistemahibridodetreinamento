@@ -272,16 +272,16 @@ export function ProgramImageDialog({
                         size="sm"
                         className={cn(
                           "h-7 px-2 text-[10px] uppercase font-bold",
-                          layout?.largura === p.layout.largura && "bg-background shadow-sm"
+                          layout?.largura === (p as any).layout.largura && "bg-background shadow-sm"
                         )}
                         onClick={() => {
                           if (!layout) return;
-                          const next: ImageLayout = { ...layout, largura: p.layout.largura, altura: p.layout.altura };
+                          const next: ImageLayout = { ...layout, largura: (p as any).layout.largura, altura: (p as any).layout.altura };
                           setLayout(next);
                           salvarLayout(programa!.id, next);
                         }}
                       >
-                        {p.nome}
+                        {(p as any).nome}
                       </Button>
                     ))}
                   </div>
