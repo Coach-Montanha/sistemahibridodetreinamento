@@ -25,7 +25,8 @@ import {
   renderizarPreviewDataURL,
   type SessaoImagemInput,
 } from "@/lib/image-export";
-import { PRESETS_LAYOUT } from "@/lib/program-image-layout";
+import { PRESETS_LAYOUT, carregarLayout, salvarLayout } from "@/lib/program-image-layout";
+import { UnifiedCanvasEditor } from "../program-image/UnifiedCanvasEditor";
 import { cn } from "@/lib/utils";
 
 type Formato = "png" | "jpg" | "pdf";
@@ -50,10 +51,13 @@ export function ExportImageDialog({
   } | null>(null);
   const [baixando, setBaixando] = useState(false);
 
-  const layout = useMemo(
-    () => (PRESETS_LAYOUT[presetId] ?? PRESETS_LAYOUT.padrao).layout,
-    [presetId],
-  );
+  const [layout, setLayout] = useState<any>(null);
+
+  useEffect(() => {
+    if (open) {
+      setLayout(carregarLayout(sessionId).layout);
+    }
+  }, [open, sessionId]);
 
   useEffect(() => {
     if (!open) return;
@@ -123,55 +127,46 @@ export function ExportImageDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div
-            style={{ aspectRatio: `${layout.largura} / ${layout.altura}` }}
-            className={cn(
-              "relative mx-auto max-h-[52vh] w-full overflow-hidden rounded-lg border border-border/60 bg-muted/40",
-            )}
-          >
-            {loading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="text-xs">Renderizando preview…</span>
-              </div>
-            )}
-            {error && !loading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
-                <span className="text-sm font-medium text-destructive">{error}</span>
-              </div>
-            )}
-            {!loading && !error && preview && (
-              <img
-                src={preview}
-                alt="Preview da sessão"
-                className="h-full w-full object-contain"
-              />
-            )}
-            {!loading && !error && !preview && (
-              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                <ImageIcon className="h-6 w-6" />
-              </div>
-            )}
-          </div>
+          {layout && payload ? (
+            <UnifiedCanvasEditor
+              layout={layout}
+              blocos={payload.input.principal}
+              metodologiaLabel={payload.input.metodologiaLabel}
+              coachLabel={payload.input.coachLabel}
+              onChange={(newLayout) => {
+                setLayout(newLayout);
+                salvarLayout(sessionId, newLayout);
+              }}
+            />
+          ) : (
+            <div className="aspect-video animate-pulse rounded-lg bg-muted" />
+          )}
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Formato de tela
               </p>
-              <Select value={presetId} onValueChange={setPresetId}>
-                <SelectTrigger className="h-9 w-[220px] text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(PRESETS_LAYOUT).map(([id, p]) => (
-                    <SelectItem key={id} value={id} className="text-sm">
-                      {p.nome} · {p.layout.largura}×{p.layout.altura}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                {Object.entries(PRESETS_LAYOUT).map(([id, p]) => (
+                  <Button
+                    key={id}
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-8 text-[10px] uppercase font-bold",
+                      layout?.largura === p.layout.largura && "bg-primary text-primary-foreground border-primary"
+                    )}
+                    onClick={() => {
+                      const next = { ...layout, largura: p.layout.largura, altura: p.layout.altura };
+                      setLayout(next);
+                      salvarLayout(sessionId, next);
+                    }}
+                  >
+                    {p.nome}
+                  </Button>
+                ))}
+              </div>
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
