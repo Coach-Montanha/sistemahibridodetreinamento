@@ -182,7 +182,7 @@ export type Database = {
           config: Json
           criado_em: string
           duracao_min: number | null
-          formato: Database["public"]["Enums"]["block_format"]
+          formato: string
           id: string
           metodologia: Database["public"]["Enums"]["methodology_key"]
           nome: string
@@ -193,7 +193,7 @@ export type Database = {
           config?: Json
           criado_em?: string
           duracao_min?: number | null
-          formato: Database["public"]["Enums"]["block_format"]
+          formato: string
           id?: string
           metodologia: Database["public"]["Enums"]["methodology_key"]
           nome: string
@@ -204,7 +204,7 @@ export type Database = {
           config?: Json
           criado_em?: string
           duracao_min?: number | null
-          formato?: Database["public"]["Enums"]["block_format"]
+          formato?: string
           id?: string
           metodologia?: Database["public"]["Enums"]["methodology_key"]
           nome?: string
@@ -701,7 +701,7 @@ export type Database = {
           config: Json | null
           criado_em: string
           duracao_min: number | null
-          formato: Database["public"]["Enums"]["block_format"]
+          formato: string
           id: string
           ordem: number
           session_id: string
@@ -712,7 +712,7 @@ export type Database = {
           config?: Json | null
           criado_em?: string
           duracao_min?: number | null
-          formato: Database["public"]["Enums"]["block_format"]
+          formato: string
           id?: string
           ordem: number
           session_id: string
@@ -723,7 +723,7 @@ export type Database = {
           config?: Json | null
           criado_em?: string
           duracao_min?: number | null
-          formato?: Database["public"]["Enums"]["block_format"]
+          formato?: string
           id?: string
           ordem?: number
           session_id?: string
