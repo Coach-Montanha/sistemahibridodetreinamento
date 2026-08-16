@@ -983,6 +983,24 @@ export type Database = {
         | "finalizador"
         | "livre"
         | "preparacao_movimento"
+        | "builtin:mobilidade"
+        | "builtin:aquecimento"
+        | "builtin:preparacao"
+        | "builtin:forca"
+        | "builtin:tecnica"
+        | "builtin:principal"
+        | "builtin:acessorio"
+        | "builtin:cardio"
+        | "builtin:alongamento"
+        | "builtin:potencia"
+        | "builtin:resistencia"
+        | "builtin:hipertrofia"
+        | "builtin:explosao"
+        | "builtin:core"
+        | "builtin:skill"
+        | "builtin:wod"
+        | "builtin:recovery"
+        | "builtin:complex"
       coach_plan: "trial" | "individual" | "studio" | "revenda"
       export_format: "pdf" | "xlsx" | "docx"
       media_kind: "video" | "imagem" | "gif"
@@ -1137,6 +1155,24 @@ export const Constants = {
         "finalizador",
         "livre",
         "preparacao_movimento",
+        "builtin:mobilidade",
+        "builtin:aquecimento",
+        "builtin:preparacao",
+        "builtin:forca",
+        "builtin:tecnica",
+        "builtin:principal",
+        "builtin:acessorio",
+        "builtin:cardio",
+        "builtin:alongamento",
+        "builtin:potencia",
+        "builtin:resistencia",
+        "builtin:hipertrofia",
+        "builtin:explosao",
+        "builtin:core",
+        "builtin:skill",
+        "builtin:wod",
+        "builtin:recovery",
+        "builtin:complex",
       ],
       coach_plan: ["trial", "individual", "studio", "revenda"],
       export_format: ["pdf", "xlsx", "docx"],
