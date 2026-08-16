@@ -616,8 +616,7 @@ export function ConstrutorMoldeDialog({
   }
 
 
-  const { presets: allPresets } = useFormatRegistry();
-  const formatosDisponiveis = getFormatosDisponiveis(allPresets);
+  const formatosDisponiveis = getFormatosDisponiveis(presets);
 
   const getFormatLabel = (f: string) => {
     const p = allPresets.find(p => p.id === f || `builtin:${p.base}` === f);
