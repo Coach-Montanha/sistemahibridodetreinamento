@@ -269,7 +269,11 @@ export function normalizarPrescricaoHibrido(
 
   const sessoesRaw = Array.isArray(json?.sessoes) ? json.sessoes : [];
   if (sessoesRaw.length === 0) {
-    throw new Error("A IA não retornou nenhuma sessão. Tente novamente.");
+    console.error("HibridoIA: IA retornou JSON sem o campo 'sessoes' ou array vazio.", {
+      bruto,
+      json
+    });
+    throw new Error("A IA não retornou nenhuma sessão estruturada. Verifique se o molde possui blocos configurados para IA e tente novamente.");
   }
 
   const porChave = new Map(template.map((b) => [b.chave, b]));
