@@ -630,55 +630,10 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     }
 
     if (isHibrido) {
-      const programWeeks = (programa as any).program_weeks || [];
-      const sortedWeeks = [...programWeeks].sort((a: any, b: any) => b.numero_semana - a.numero_semana);
-      
-      const weekIds = sortedWeeks.map((w: any) => w.id);
-      const { data: ultimaSessao } = weekIds.length > 0 
-        ? await supabase
-            .from("sessions")
-            .select("id, session_blocks(formato, titulo, duracao_min, config, session_block_exercises(exercise_id, series, reps, pct_1rm, descanso_seg))")
-            .in("program_week_id", weekIds)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-        : { data: null };
-
-      let molde: SessaoTemplate = (ultimaSessao?.session_blocks ?? []).map((b: any) => ({
-        chave: (b.config as any)?.chave || b.titulo || b.formato,
-        formato: b.formato as string,
-        titulo: b.titulo,
-        duracaoMin: b.duracao_min,
-        seriesMin: b.session_block_exercises?.[0]?.series || 3,
-        seriesMax: b.session_block_exercises?.[0]?.series || 3,
-        numeroExercicios: b.session_block_exercises?.length || 1,
-        repsPorExercicio: b.session_block_exercises?.[0]?.reps || "10",
-        modoExecucao: (b.config as any)?.modo_execucao || "series_fixas",
-        descansoAposSeg: (b.config as any)?.descanso_apos_seg || 60,
-        selecaoExercicios: "ia",
-        fonteExercicios: (b.config as any)?.fonte_exercicios || {}
-      }));
-
-      // Fallback para normalização se não houver histórico
-      if (molde.length === 0) {
-        if (metodologiaEfetiva === "kettlebell_fitness") {
-          molde = [
-            { chave: "prep_mobilidade", formato: "preparacao_movimento", titulo: "Mobilidade", duracaoMin: 2, seriesMin: 1, seriesMax: 1, numeroExercicios: 1, repsPorExercicio: "120s", modoExecucao: "series_fixas", descansoAposSeg: 30, selecaoExercicios: "ia", slot: "mobilidade", fonteExercicios: { equipamento: ["mobilidade"] } },
-            { chave: "aquecimento", formato: "circuito", titulo: "Aquecimento", duracaoMin: 5, seriesMin: 4, seriesMax: 4, numeroExercicios: 2, repsPorExercicio: "10", modoExecucao: "circuito", descansoAposSeg: 60, selecaoExercicios: "ia", fonteExercicios: { equipamento: ["kettlebell", "ginastico"] } },
-            { chave: "bloco_principal", formato: "kb_timed_sets", titulo: "Bloco Principal", duracaoMin: 10, seriesMin: 1, seriesMax: 1, numeroExercicios: 1, repsPorExercicio: "AMRAP", modoExecucao: "series_fixas", descansoAposSeg: 120, selecaoExercicios: "ia", fonteExercicios: { metodologias: ["kettlebell_fitness"], equipamento: ["kettlebell"] } }
-          ];
-        } else {
-          molde = [
-            { chave: "prep", formato: "preparacao_movimento", titulo: "Preparação", duracaoMin: 5, seriesMin: 1, seriesMax: 1, numeroExercicios: 2, repsPorExercicio: "10", modoExecucao: "series_fixas", descansoAposSeg: 30, selecaoExercicios: "ia", fonteExercicios: {} },
-            { chave: "principal", formato: "amrap", titulo: "Fitness A", duracaoMin: 12, seriesMin: 1, seriesMax: 1, numeroExercicios: 3, repsPorExercicio: "10", modoExecucao: "circuito", descansoAposSeg: 120, selecaoExercicios: "ia", fonteExercicios: {} }
-          ];
-        }
-      }
-
       return normalizarPrescricaoHibrido(
         conteudo,
-        molde,
-        await buscarCandidatosDoMolde(supabase, molde)
+        data.hibrido.sessaoTemplate,
+        await buscarCandidatosDoMolde(supabase, data.hibrido.sessaoTemplate)
       ) as any;
     }
 
