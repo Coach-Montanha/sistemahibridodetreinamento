@@ -552,6 +552,7 @@ export function ConstrutorMoldeDialog({
   isGenerating = false,
   onGerar,
 }: ConstrutorMoldeDialogProps) {
+  const { presets } = useFormatRegistry();
   const [numeroSessoes, setNumeroSessoes] = useState(1);
   const [instrucoes, setInstrucoes] = useState("");
   const [blocos, setBlocos] = useState<SessaoTemplate>([]);
@@ -559,7 +560,7 @@ export function ConstrutorMoldeDialog({
 
   function adicionarBloco(formato: BlockFormatHibrido) {
     if (formato === "preparacao_movimento") {
-      const mob = novoBloco("preparacao_movimento", blocos);
+      const mob = novoBloco("preparacao_movimento", blocos, presets);
       const aq = novoAquecimento([...blocos, mob], modalidade);
       // Garante que o bloco de mobilidade tenha o nome correto e o aquecimento também
       mob.titulo = "Mobilidade";
@@ -567,7 +568,7 @@ export function ConstrutorMoldeDialog({
       setBlocos((prev) => [...prev, mob, aq]);
       setAbertoChave(mob.chave);
     } else {
-      const b = novoBloco(formato, blocos);
+      const b = novoBloco(formato, blocos, presets);
       setBlocos((prev) => [...prev, b]);
       setAbertoChave(b.chave);
     }
