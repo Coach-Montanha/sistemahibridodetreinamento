@@ -57,7 +57,8 @@ Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, se
   "notes": "RELATÓRIO DE EVOLUÇÃO: Descreva detalhadamente a ESTRATÉGIA DE PERIODIZAÇÃO ONDULATÓRIA usada para todo o bloco gerado (ex: Semana 1 adaptação, Semana 2 carga, Semana 3 pico, Semana 4 deload) e justifique a escolha/troca dos exercícios em relação ao histórico."
 }
 Regras: 4 a 8 exercícios por dia; 'load' e 'observations' podem ser vazios; 'day_label' segue o tipo de nomenclatura da rotina.
-Se você for informado sobre 'TIPOS DE SÉRIES DISPONÍVEIS', utilize preferencialmente esses formatos e nomenclaturas no campo 'load' ou 'observations' conforme adequado ao contexto.`;
+Se você for informado sobre 'TIPOS DE SÉRIES DISPONÍVEIS', utilize preferencialmente esses formatos e nomenclaturas no campo 'load' ou 'observations' conforme adequado ao contexto.
+Se você for informado sobre 'FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS', utilize-os para entender a estrutura dos blocos solicitados, mas mantenha-se fiel ao molde fornecido.`;
 
 export type RotinaContexto = {
   titulo: string;
@@ -103,7 +104,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     "INSTRUÇÕES DO TREINADOR:",
     instrucoes.trim().length > 0
       ? instrucoes.trim()
-      : "Sem instruções adicionais: monte uma divisão equilibrada de hipertrofia adequada ao escopo acima.",
+      : "Sem instruções adicionais: monte uma division equilibrada de hipertrofia adequada ao escopo acima.",
   ]
     .filter(Boolean)
     .join("\n");

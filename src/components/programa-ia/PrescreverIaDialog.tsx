@@ -39,6 +39,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { prescribeTrainingWithAi } from "@/lib/prescricao-ia.functions";
 import { useSetTypeRegistry } from "@/lib/set-type-registry";
+import { useFormatRegistry } from "@/lib/format-registry";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
@@ -253,6 +254,7 @@ export function PrescreverIaDialog({
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
   const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
+  const { registry: formatRegistry } = useFormatRegistry();
 
   // Mapeamento de escolas por metodologia
   const ESCOLAS_DISPONIVEIS: Record<string, { value: string; label: string }[]> = useMemo(() => ({
@@ -356,6 +358,7 @@ export function PrescreverIaDialog({
                 } 
               : null,
             setTypes: setTypes,
+            formatRegistry: formatRegistry,
           },
         });
         setProgresso(prev => [...prev, "Gerando relatório de evolução...", "Finalizando prescrição em bloco!"]);

@@ -216,6 +216,7 @@ const INPUT = z.object({
   co: CO,
   hibrido: z.any().optional(),
   setTypes: z.array(z.any()).optional(),
+  formatRegistry: z.any().optional(),
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
@@ -597,7 +598,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               candidatos: await buscarCandidatosDoMolde(supabase, molde),
               instrucoes: data.prompt,
               resumoAnterior: resumoAnterior,
-              setTypeRegistry: data.setTypes || BUILTIN_SET_TYPES
+              setTypeRegistry: data.setTypes || BUILTIN_SET_TYPES,
+              formatRegistry: data.formatRegistry
             });
           })()
         : montarUserPrompt({ ...ctx, set_types: data.setTypes || BUILTIN_SET_TYPES }, data.prompt);

@@ -41,20 +41,8 @@ const EQUIPAMENTO_VALORES = [
   "Objetos Alternativos",
 ] as const;
 
-const FORMATO_LABEL: Record<string, string> = {
-  mobilidade: "Bloco de Mobilidade",
-  preparacao_movimento: "Preparação de Movimento",
-  forca_tecnica_pct: "Força/Técnica (%1RM)",
-  emom: "EMOM",
-  e2mom: "E2MOM",
-  amrap: "AMRAP",
-  circuito: "Circuito",
-  kb_timed_sets: "Kettlebell Sport (AQ/TR)",
-  metcon: "MetCon",
-  bodybuilding_sets: "Musculação (séries × reps)",
-  finalizador: "Finalizador",
-  livre: "Bloco livre",
-};
+// Mapeamento dinâmico via useFormatRegistry agora cuida das labels
+const FORMATO_LABEL: Record<string, string> = {};
 
 function getFormatosDisponiveis(presets: any[]): string[] {
   return presets.map(p => p.id);
@@ -88,7 +76,7 @@ function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
   return chave;
 }
 
-function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): BlocoTemplate {
+function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[], presets: any[]): BlocoTemplate {
   const chave = gerarChave(formato, existentes);
   const base: BlocoTemplate = {
     chave,
@@ -110,7 +98,10 @@ function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[]): Bl
     fonteExercicios: {},
   };
 
-  switch (formato) {
+  // Formatos base para presets dinâmicos
+  const formatoBase = presets.find(p => p.id === formato)?.base || formato;
+
+  switch (formatoBase) {
     case "preparacao_movimento":
       return { ...base, titulo: "Mobilidade", duracaoMin: 2, numeroExercicios: 1, seriesMin: 4, seriesMax: 4, slot: "mobilidade" };
     case "forca_tecnica_pct":
@@ -561,6 +552,7 @@ export function ConstrutorMoldeDialog({
   isGenerating = false,
   onGerar,
 }: ConstrutorMoldeDialogProps) {
+  const { presets } = useFormatRegistry();
   const [numeroSessoes, setNumeroSessoes] = useState(1);
   const [instrucoes, setInstrucoes] = useState("");
   const [blocos, setBlocos] = useState<SessaoTemplate>([]);
@@ -568,7 +560,7 @@ export function ConstrutorMoldeDialog({
 
   function adicionarBloco(formato: BlockFormatHibrido) {
     if (formato === "preparacao_movimento") {
-      const mob = novoBloco("preparacao_movimento", blocos);
+      const mob = novoBloco("preparacao_movimento", blocos, presets);
       const aq = novoAquecimento([...blocos, mob], modalidade);
       // Garante que o bloco de mobilidade tenha o nome correto e o aquecimento também
       mob.titulo = "Mobilidade";
@@ -576,7 +568,7 @@ export function ConstrutorMoldeDialog({
       setBlocos((prev) => [...prev, mob, aq]);
       setAbertoChave(mob.chave);
     } else {
-      const b = novoBloco(formato, blocos);
+      const b = novoBloco(formato, blocos, presets);
       setBlocos((prev) => [...prev, b]);
       setAbertoChave(b.chave);
     }
@@ -624,11 +616,10 @@ export function ConstrutorMoldeDialog({
   }
 
 
-  const { presets: allPresets } = useFormatRegistry();
-  const formatosDisponiveis = getFormatosDisponiveis(allPresets);
+  const formatosDisponiveis = getFormatosDisponiveis(presets);
 
   const getFormatLabel = (f: string) => {
-    const p = allPresets.find(p => p.id === f || `builtin:${p.base}` === f);
+    const p = presets.find((p: any) => p.id === f || `builtin:${p.base}` === f);
     return p?.label ?? f;
   };
 

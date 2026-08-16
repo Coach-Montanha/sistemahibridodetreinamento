@@ -18,6 +18,7 @@ export const METHODOLOGY_LABEL: Record<Methodology, string> = {
 };
 
 export type BlockFormat = string;
+export type SetType = string;
 
 export const BLOCK_FORMAT_LABEL: Record<BlockFormat, string> = {
   mobilidade: "Bloco de Mobilidade",
