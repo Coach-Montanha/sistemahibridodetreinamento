@@ -216,6 +216,7 @@ const INPUT = z.object({
   co: CO,
   hibrido: z.any().optional(),
   setTypes: z.array(z.any()).optional(),
+  formatRegistry: z.any().optional(),
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
