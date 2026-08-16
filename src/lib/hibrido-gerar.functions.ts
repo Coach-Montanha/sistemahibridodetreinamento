@@ -15,19 +15,7 @@ import {
 // emitidos pelo ConstrutorMoldeDialog.tsx.
 // ---------------------------------------------------------------------------
 
-const FORMATO = z.enum([
-  "preparacao_movimento",
-  "forca_tecnica_pct",
-  "emom",
-  "e2mom",
-  "amrap",
-  "circuito",
-  "kb_timed_sets",
-  "metcon",
-  "bodybuilding_sets",
-  "finalizador",
-  "livre",
-]);
+const FORMATO = z.string().min(1);
 
 const FONTE_EXERCICIOS = z
   .object({
