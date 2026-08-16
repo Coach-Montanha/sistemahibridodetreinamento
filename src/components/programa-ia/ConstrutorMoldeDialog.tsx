@@ -619,7 +619,7 @@ export function ConstrutorMoldeDialog({
   const formatosDisponiveis = getFormatosDisponiveis(presets);
 
   const getFormatLabel = (f: string) => {
-    const p = allPresets.find(p => p.id === f || `builtin:${p.base}` === f);
+    const p = presets.find((p: any) => p.id === f || `builtin:${p.base}` === f);
     return p?.label ?? f;
   };
 
