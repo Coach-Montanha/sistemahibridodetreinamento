@@ -787,6 +787,7 @@ function ProgramaCard({
                                       </div>
                                     )}
                                   </div>
+                                </div>
                               </SortableRow>
                             );
                           })}
