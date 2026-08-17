@@ -100,7 +100,7 @@ export function ProgramasPanel({
       const { data, error } = await supabase
         .from("programs")
         .select(
-          "id, titulo, metodologia, data_inicio, duracao_semanas, status, criado_em, program_weeks(id, numero_semana, rotulo, sessions(id, numero_dia, titulo, status))",
+          "id, titulo, metodologia, data_inicio, duracao_semanas, status, criado_em, program_weeks(id, numero_semana, rotulo, sessions(id, numero_dia, titulo, status, session_blocks(id, titulo, formato, ordem, config, session_block_exercises(id, ordem, reps, series, carga_kg, descanso_seg, exercise_id, exercises(nome_pt)))))",
         )
         .order("criado_em", { ascending: false });
       if (error) throw error;
