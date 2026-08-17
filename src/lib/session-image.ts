@@ -96,7 +96,9 @@ async function montarInputDeBlocos(
 
   function blocoParaImagem(b: any, tituloForcado?: string): BlocoImagem {
     return {
-      chave: b.id, // Usamos o ID real do bloco como chave única
+      // Usamos a CHAVE salva no bloco para manter o posicionamento consistente entre sessões.
+      // Se não houver chave (legado), usamos o ID do bloco.
+      chave: b.chave || b.id, 
       titulo: (tituloForcado ?? tituloBloco(b)).toUpperCase(),
       subtitulo: subtituloFormato(b),
       linhas: linhasExerciciosDe(b),

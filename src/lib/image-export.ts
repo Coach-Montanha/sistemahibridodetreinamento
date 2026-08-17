@@ -51,8 +51,8 @@ function desenharColuna(
   const linhaSize = 34 * escala * escalaBase;
 
   for (const b of blocos) {
-    // Se houver posição customizada, usamos ela.
-    // A chave do bloco é essencial aqui.
+    // Busca posição salva no layout. No canvas livre, a chave do bloco (id real ou chave mapeada)
+    // garante que o bloco B gerado na semana 2 herde a posição do bloco B da semana 1.
     let drawX = x;
     let drawY = y;
     let drawW = largura;
