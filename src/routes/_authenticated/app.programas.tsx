@@ -388,20 +388,28 @@ export function ProgramasPanel({
                     numeroSessoes: 12,
                     diasPorSemana: 3,
                     dataInicio: new Date().toISOString(),
-                    sessaoTemplate: iaPrograma.p.program_weeks?.[0]?.sessions?.[0]?.session_blocks?.map((b: any) => ({
-                      chave: b.chave || `b_${b.id}`,
-                      formato: b.formato,
-                      titulo: b.titulo,
-                      duracaoMin: b.duracao_min,
-                      seriesMin: b.config?.series || b.config?.rounds || 3,
-                      seriesMax: b.config?.series || b.config?.rounds || 3,
-                      numeroExercicios: b.session_block_exercises?.length || 1,
-                      repsPorExercicio: b.session_block_exercises?.[0]?.reps || "12",
-                      modoExecucao: b.config?.modo_execucao || "circuito",
-                      descansoAposSeg: b.descanso_apos_seg || 0,
-                      selecaoExercicios: "ia",
-                      fonteExercicios: { metodologias: [iaPrograma.p.metodologia] }
-                    })) || []
+                    // Passamos as sessões anteriores para o seletor no Dialog
+                    historicoSessoes: iaPrograma.p.program_weeks?.flatMap((w: any) => 
+                      w.sessions?.map((s: any) => ({
+                        id: s.id,
+                        titulo: s.titulo,
+                        blocks: s.session_blocks?.map((b: any) => ({
+                          chave: b.chave || `b_${b.id}`,
+                          formato: b.formato,
+                          titulo: b.titulo,
+                          duracaoMin: b.duracao_min,
+                          seriesMin: b.config?.series || b.config?.rounds || 3,
+                          seriesMax: b.config?.series || b.config?.rounds || 3,
+                          numeroExercicios: b.session_block_exercises?.length || 1,
+                          repsPorExercicio: b.session_block_exercises?.[0]?.reps || "12",
+                          modoExecucao: b.config?.modo_execucao || "circuito",
+                          descansoAposSeg: b.descanso_apos_seg || 0,
+                          selecaoExercicios: "ia" as const,
+                          fonteExercicios: { metodologias: [iaPrograma.p.metodologia] }
+                        })) || []
+                      }))
+                    ).filter(Boolean) || [],
+                    sessaoTemplate: [] // Será definido no Dialog pelo seletor
                   }
                 : null
             } : null}

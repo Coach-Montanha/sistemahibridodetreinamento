@@ -86,6 +86,8 @@ export type HibridoPayload = {
   dataInicio: string | null | undefined;
   sessaoTemplate: SessaoTemplate;
   escola?: string | null;
+  /** Histórico de sessões para escolha de molde (opcional, usado no frontend). */
+  historicoSessoes?: { id: string; titulo: string; blocks: BlocoTemplate[] }[];
 };
 
 
@@ -201,7 +203,7 @@ export function montarHibridoPrompt(args: {
     `A estrutura de cada bloco JÁ ESTÁ DEFINIDA e não deve ser alterada. Sua liberdade está em escolher exercícios, séries, repetições e cargas.`,
     `Você deve analisar o HISTÓRICO COMPLETO abaixo para projetar a sobrecarga progressiva e PERIODIZAÇÃO ONDULATÓRIA.`,
     `VOCÊ TEM LIBERDADE TOTAL PARA ALTERAR ENTRE AS SEMANAS:`,
-    `- Escolher novos exercícios (do pool de candidatos) para variar o estímulo técnico.`,
+    `- TROCA OBRIGATÓRIA: Você DEVE escolher NOVOS exercícios (do pool de candidatos) para variar o estímulo técnico em relação à fase anterior. Não repita os mesmos IDs se houver candidatos viáveis.`,
     `- Variar o número de exercícios, séries e repetições de forma não linear entre as sessões/semanas.`,
     `- Aumentar intensidades de forma estratégica (ex: Semana 1 base, Semana 2 volume, Semana 3 intensidade, Semana 4 recuperação).`,
     `- OBRIGATÓRIO: Identifique corretamente o "week_number" (1, 2, 3...) para cada sessão gerada.`,
@@ -210,7 +212,7 @@ export function montarHibridoPrompt(args: {
     `- Apenas IDs listados em "candidatos_permitidos" para blocos "ia".`,
     `- NUNCA invente um ID ou nome de exercício.`,
     `- Blocos "manual" devem ter seus "exercicios_fixos" repetidos fielmente.`,
-    `- Gere ${payload.numeroSessoes} sessão(ões) que expandam logicamente o programa anterior.`,
+    `- Gere ${payload.numeroSessoes} sessão(ões) que expandam logicamente o programa anterior, mas com NOVOS exercícios.`,
     "",
     setTypeRegistry ? `TIPOS DE SÉRIES DISPONÍVEIS: ${setTypeRegistry.map(t => `${t.label} (ID: ${t.id})`).join(" | ")}` : "",
     formatRegistry?.custom?.length > 0 ? `FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS: ${formatRegistry.custom.map((f: any) => `${f.label} (ID: ${f.id})`).join(" | ")}` : "",
