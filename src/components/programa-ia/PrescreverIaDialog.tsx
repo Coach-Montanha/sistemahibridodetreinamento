@@ -257,6 +257,37 @@ export function PrescreverIaDialog({
   const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
   const { registry: formatRegistry } = useFormatRegistry();
+  const [moldeSelecionado, setMoldeSelecionado] = useState<string>("auto");
+
+  // Moldes únicos extraídos do histórico
+  const moldesHistoricos = useMemo(() => {
+    if (!escopoInicial?.hibrido?.historicoSessoes) return [];
+    
+    const unique = new Map<string, any>();
+    escopoInicial.hibrido.historicoSessoes.forEach((s: any) => {
+      // Cria uma assinatura estrutural para identificar moldes repetidos
+      const assinatura = s.blocks.map((b: any) => 
+        `${b.formato}-${b.numeroExercicios}-${b.modoExecucao}`
+      ).join("|");
+      
+      if (!unique.has(assinatura)) {
+        unique.set(assinatura, s);
+      }
+    });
+    
+    return Array.from(unique.values());
+  }, [escopoInicial?.hibrido?.historicoSessoes]);
+
+  // Atualiza o molde ao selecionar um histórico
+  useEffect(() => {
+    if (moldeSelecionado !== "auto" && escopoInicial?.hibrido) {
+      const selected = moldesHistoricos.find(m => m.id === moldeSelecionado);
+      if (selected) {
+        // Atualizamos o payload que será enviado para a geração
+        escopoInicial.hibrido.sessaoTemplate = selected.blocks;
+      }
+    }
+  }, [moldeSelecionado, moldesHistoricos, escopoInicial?.hibrido]);
 
   // Mapeamento de escolas por metodologia
   const ESCOLAS_DISPONIVEIS: Record<string, { value: string; label: string }[]> = useMemo(() => ({
@@ -590,7 +621,33 @@ export function PrescreverIaDialog({
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 sm:grid-cols-2">
+            {(metodologia === "hibrido" || metodologia === "kettlebell_fitness") && moldesHistoricos.length > 0 && (
+              <div className="col-span-full space-y-2 border-b border-border/40 pb-4">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                  Recuperação de Estrutura (Molde)
+                </label>
+                <Select value={moldeSelecionado} onValueChange={setMoldeSelecionado} disabled={gerarMut.isPending}>
+                  <SelectTrigger className="h-9 bg-background border-primary/30">
+                    <SelectValue placeholder="Escolha qual estrutura repetir..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">
+                      {escopoInicial?.hibrido?.sessaoTemplate?.length ? "Manter molde atual" : "Selecionar molde histórico..."}
+                    </SelectItem>
+                    {moldesHistoricos.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.titulo} ({m.blocks.length} blocos)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground italic">
+                  * A IA usará esta estrutura para prescrever novos exercícios.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 Escola Metodológica
