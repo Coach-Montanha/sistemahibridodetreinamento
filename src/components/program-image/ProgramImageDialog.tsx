@@ -343,14 +343,14 @@ export function ProgramImageDialog({
         <div className="flex flex-col gap-3 border-t border-border/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Fechar</Button>
           <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" disabled={!sessoes?.length || !!exportando} onClick={() => exportar("png")}>
+              {exportando === 'png' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />} PNG
+            </Button>
             <Button variant="outline" disabled={!sessoes?.length || !!exportando} onClick={() => exportar("jpg")}>
               {exportando === 'jpg' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />} JPG
             </Button>
-            <Button variant="outline" disabled={!sessoes?.length || !!exportando} onClick={() => exportar("pdf")}>
-              {exportando === 'pdf' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} PDF
-            </Button>
-            <Button disabled={!sessoes?.length || !!exportando} onClick={() => exportar("png")}>
-              {exportando === 'png' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />} Exportar PNG
+            <Button disabled={!sessoes?.length || !!exportando} onClick={() => exportar("pdf")}>
+              {exportando === 'pdf' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Exportar PDF
             </Button>
           </div>
         </div>
