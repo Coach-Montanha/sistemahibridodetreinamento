@@ -338,8 +338,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
           const nomesUsados = Array.from(new Set((exerciciosPassados ?? []).map((e: any) => e.nome_livre)));
           resumoAnterior = `HISTÓRICO COMPLETO DO PROGRAMA (use para sobrecarga progressiva e variação):\n` +
-            JSON.stringify(historicoCompleto.slice(-15), null, 2) + // Últimas 15 sessões para não estourar contexto
-            `\n\nResumo de exercícios já utilizados: ${nomesUsados.join(", ")}`;
+            JSON.stringify(historicoCompleto.slice(-10), null, 2) + // Reduzido de 15 para 10 para evitar erro 400
+            `\n\nResumo de exercícios já utilizados: ${nomesUsados.slice(-30).join(", ")}`;
         }
       }
     }
