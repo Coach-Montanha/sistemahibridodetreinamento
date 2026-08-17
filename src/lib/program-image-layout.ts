@@ -10,6 +10,7 @@ export interface ImageLayout {
   largura: number;
   altura: number;
   fundo: FundoImagem;
+  fontSize: number; // 0.5 a 2.0 (multiplicador)
   posicoes: Record<string, PosicaoBloco>; // chave do bloco -> posição
 }
 
@@ -17,6 +18,7 @@ export const LAYOUT_PADRAO: ImageLayout = {
   largura: 5760,
   altura: 2160,
   fundo: "claro",
+  fontSize: 1.0,
   posicoes: {},
 };
 
