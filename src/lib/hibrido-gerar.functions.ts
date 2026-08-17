@@ -163,7 +163,9 @@ export const gerarSessoesHibrido = createServerFn({ method: "POST" })
           ? "Limite de uso da IA atingido, tente em instantes"
           : res.status === 402
             ? "Créditos da IA esgotados"
-            : `Falha ao gerar a prescrição (erro ${res.status})`;
+            : res.status === 400
+              ? `Falha ao gerar a prescrição (erro 400) - Verifique se as instruções ou o histórico não excedem o limite de caracteres.`
+              : `Falha ao gerar a prescrição (erro ${res.status})`;
       throw new Error(msg);
     }
 

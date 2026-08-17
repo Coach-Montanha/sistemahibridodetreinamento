@@ -136,7 +136,14 @@ export async function buscarCandidatosDoMolde(
     const { data, error } = await query;
     if (error) throw new Error(`Falha ao buscar exercícios para o bloco "${bloco.chave}": ${error.message}`);
 
-    out[bloco.chave] = (data ?? []).map((e: any) => ({ id: e.id as string, nome: e.nome_pt as string }));
+    const dataArr = data ?? [];
+    if (bloco.selecaoExercicios === "ia" && dataArr.length === 0) {
+      const equipDesc = equipamentos.length > 0 ? `equipamento [${equipamentos.join(", ")}]` : "nenhum equipamento";
+      const metDesc = metodologias.length > 0 ? `metodologia [${metodologias.join(", ")}]` : "nenhuma metodologia";
+      throw new Error(`A IA não retornou nenhuma sessão estruturada. Verifique se o pool de exercícios da biblioteca atende aos filtros de ${equipDesc} e ${metDesc} do molde "${bloco.titulo ?? bloco.chave}".`);
+    }
+
+    out[bloco.chave] = dataArr.map((e: any) => ({ id: e.id as string, nome: e.nome_pt as string }));
   }
 
   return out;
