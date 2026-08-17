@@ -117,11 +117,8 @@ function BlockBody({ block }: { block: BuilderBlock }) {
     case "livre":
       return <LivreForm block={block} />;
     default:
-      return (
-        <p className="text-sm text-muted-foreground">
-          Este formato de bloco ainda não tem editor visual — será adicionado nas
-          próximas entregas.
-        </p>
-      );
+      // Fallback para suportar todos os formatos dinâmicos/builtin com o editor de SetsRepsForm
+      // Isso resolve o problema de visualização dos exercícios enquanto editores específicos não existem.
+      return <SetsRepsForm block={block} />;
   }
 }

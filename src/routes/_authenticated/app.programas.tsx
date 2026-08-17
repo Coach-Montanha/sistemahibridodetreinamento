@@ -100,7 +100,7 @@ export function ProgramasPanel({
       const { data, error } = await supabase
         .from("programs")
         .select(
-          "id, titulo, metodologia, data_inicio, duracao_semanas, status, criado_em, program_weeks(id, numero_semana, rotulo, sessions(id, numero_dia, titulo, status))",
+          "id, titulo, metodologia, data_inicio, duracao_semanas, status, criado_em, program_weeks(id, numero_semana, rotulo, sessions(id, numero_dia, titulo, status, session_blocks(id, titulo, formato, ordem, config, session_block_exercises(id, ordem, reps, series, carga_kg, descanso_seg, exercise_id, exercises(nome_pt)))))",
         )
         .order("criado_em", { ascending: false });
       if (error) throw error;
@@ -745,24 +745,49 @@ function ProgramaCard({
                                       ? "Publicada para o aluno"
                                       : "Ainda não executado"}
                                   </p>
-                                  <Button
-                                    asChild
-                                    size="sm"
-                                    variant="outline"
-                                    className="mt-3 h-8 gap-1.5"
-                                  >
-                                    <Link to="/app/sessoes/$id" params={{ id: s.id }}>
-                                      <FileText className="h-3.5 w-3.5" />
-                                      Ver exercícios
-                                    </Link>
-                                  </Button>
+                                  <div className="mt-3 space-y-3">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <Button
+                                        asChild
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-8 gap-1.5"
+                                      >
+                                        <Link to="/app/sessoes/$id" params={{ id: s.id }}>
+                                          <FileText className="h-3.5 w-3.5" />
+                                          Ver exercícios
+                                        </Link>
+                                      </Button>
+                                      <Badge
+                                        variant="outline"
+                                        className="h-8 shrink-0 text-[10px] uppercase"
+                                      >
+                                        {s.status}
+                                      </Badge>
+                                    </div>
+
+                                    {/* Lista resumida de blocos/exercícios do treino gerado */}
+                                    {s.session_blocks && s.session_blocks.length > 0 && (
+                                      <div className="grid gap-2 border-t border-border/40 pt-2">
+                                        {s.session_blocks
+                                          .sort((a: any, b: any) => a.ordem - b.ordem)
+                                          .map((block: any) => (
+                                            <div key={block.id} className="text-[11px] leading-tight">
+                                              <span className="font-bold uppercase text-primary/80">
+                                                {block.titulo || block.formato.replace("builtin:", "")}:
+                                              </span>
+                                              <span className="ml-1 text-muted-foreground">
+                                                {block.session_block_exercises
+                                                  ?.sort((a: any, b: any) => a.ordem - b.ordem)
+                                                  .map((e: any) => e.exercises?.nome_pt || e.nome_livre)
+                                                  .join(", ") || "Sem exercícios"}
+                                              </span>
+                                            </div>
+                                          ))}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                <Badge
-                                  variant="outline"
-                                  className="mt-1 shrink-0 text-[10px] uppercase"
-                                >
-                                  {s.status}
-                                </Badge>
                               </SortableRow>
                             );
                           })}
