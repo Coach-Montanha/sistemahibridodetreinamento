@@ -381,10 +381,13 @@ export function ProgramasPanel({
               label: "Continuação de Programação", 
               semanas: 4, 
               diasPorSemana: 3,
-              hibrido: iaPrograma.p.metodologia === "hibrido" || iaPrograma.p.metodologia === "kettlebell_fitness"
+              hibrido: (iaPrograma.p.metodologia === "hibrido" || iaPrograma.p.metodologia === "kettlebell_fitness")
                 ? {
-                    modalidade: iaPrograma.p.metodologia,
+                    modalidade: iaPrograma.p.metodologia as any,
                     tituloPrograma: iaPrograma.p.titulo,
+                    numeroSessoes: 12,
+                    diasPorSemana: 3,
+                    dataInicio: new Date().toISOString(),
                     sessaoTemplate: iaPrograma.p.program_weeks?.[0]?.sessions?.[0]?.session_blocks?.map((b: any) => ({
                       chave: b.chave || `b_${b.id}`,
                       formato: b.formato,
@@ -400,7 +403,7 @@ export function ProgramasPanel({
                       fonteExercicios: { metodologias: [iaPrograma.p.metodologia] }
                     })) || []
                   }
-                : undefined
+                : null
             } : null}
             onOpenChange={(o) => !o && setIaPrograma(null)}
           />
