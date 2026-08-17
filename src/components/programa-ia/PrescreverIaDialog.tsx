@@ -263,19 +263,13 @@ export function PrescreverIaDialog({
   const moldesHistoricos = useMemo(() => {
     if (!escopoInicial?.hibrido?.historicoSessoes) return [];
     
-    const unique = new Map<string, any>();
+    // Agrupa por número do dia (Segunda=1, Terça=2, etc) e pega a ÚLTIMA ocorrência estrutural de cada dia
+    const porDia = new Map<number, any>();
     escopoInicial.hibrido.historicoSessoes.forEach((s: any) => {
-      // Cria uma assinatura estrutural para identificar moldes repetidos
-      const assinatura = s.blocks.map((b: any) => 
-        `${b.formato}-${b.numeroExercicios}-${b.modoExecucao}`
-      ).join("|");
-      
-      if (!unique.has(assinatura)) {
-        unique.set(assinatura, s);
-      }
+      porDia.set(s.numero_dia, s);
     });
     
-    return Array.from(unique.values());
+    return Array.from(porDia.values()).sort((a, b) => (a.numero_dia ?? 0) - (b.numero_dia ?? 0));
   }, [escopoInicial?.hibrido?.historicoSessoes]);
 
   // Atualiza o molde ao selecionar um histórico

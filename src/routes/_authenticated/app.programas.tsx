@@ -379,20 +379,22 @@ export function ProgramasPanel({
             programa={iaPrograma.p}
             escopo={iaPrograma.isContinuation ? { 
               label: "Continuação de Programação", 
-              semanas: 4, 
-              diasPorSemana: 3,
+              semanas: iaPrograma.p.duracao_semanas || (iaPrograma.p.program_weeks?.length || 1),
+              diasPorSemana: iaPrograma.p.program_weeks?.[0]?.sessions?.length || 3,
               hibrido: (iaPrograma.p.metodologia === "hibrido" || iaPrograma.p.metodologia === "kettlebell_fitness")
                 ? {
                     modalidade: iaPrograma.p.metodologia as any,
                     tituloPrograma: iaPrograma.p.titulo,
-                    numeroSessoes: 12,
-                    diasPorSemana: 3,
+                    // Espelha a produção anterior: soma total de sessões do histórico
+                    numeroSessoes: iaPrograma.p.program_weeks?.reduce((acc: number, w: any) => acc + (w.sessions?.length || 0), 0) || 12,
+                    diasPorSemana: iaPrograma.p.program_weeks?.[0]?.sessions?.length || 3,
                     dataInicio: new Date().toISOString(),
-                    // Passamos as sessões anteriores para o seletor no Dialog
+                    // Passamos as sessões anteriores com numero_dia para agrupamento por dia da semana
                     historicoSessoes: iaPrograma.p.program_weeks?.flatMap((w: any) => 
                       w.sessions?.map((s: any) => ({
                         id: s.id,
                         titulo: s.titulo,
+                        numero_dia: s.numero_dia,
                         blocks: s.session_blocks?.map((b: any) => ({
                           chave: b.chave || `b_${b.id}`,
                           formato: b.formato,
@@ -409,7 +411,7 @@ export function ProgramasPanel({
                         })) || []
                       }))
                     ).filter(Boolean) || [],
-                    sessaoTemplate: [] // Será definido no Dialog pelo seletor
+                    sessaoTemplate: [] 
                   }
                 : null
             } : null}
