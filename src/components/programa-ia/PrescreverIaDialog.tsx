@@ -45,6 +45,7 @@ import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
 import type { TfPayload } from "@/lib/funcional-ia.server";
+import type { HibridoPayload } from "@/lib/hibrido-ia.server";
 
 const PLACEHOLDER = `Ex.: Próxima fase focada em força máxima, mantendo a divisão A/B anterior mas reduzindo as repetições para 4-6 e aumentando o descanso.
 Priorizar exercícios básicos; manter o agachamento e o supino como primeiros movimentos da sessão.`;
