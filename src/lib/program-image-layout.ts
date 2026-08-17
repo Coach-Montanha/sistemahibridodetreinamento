@@ -24,11 +24,11 @@ export const LAYOUT_PADRAO: ImageLayout = {
 
 /** Formatos de tela disponíveis para exportação. */
 export const PRESETS_LAYOUT: Record<string, { nome: string; layout: Omit<ImageLayout, "posicoes"> }> = {
-  padrao: { nome: "Painel ultrawide", layout: { largura: 5760, altura: 2160, fundo: "claro" } },
-  a4: { nome: "A4 paisagem", layout: { largura: 3508, altura: 2480, fundo: "claro" } },
-  quadrado: { nome: "Quadrado 1:1", layout: { largura: 2160, altura: 2160, fundo: "claro" } },
-  feed: { nome: "Feed 4:5", layout: { largura: 2160, altura: 2700, fundo: "claro" } },
-  story: { nome: "Story 9:16", layout: { largura: 2160, altura: 3840, fundo: "claro" } },
+  padrao: { nome: "Painel ultrawide", layout: { largura: 5760, altura: 2160, fundo: "claro", fontSize: 1.0 } },
+  a4: { nome: "A4 paisagem", layout: { largura: 3508, altura: 2480, fundo: "claro", fontSize: 1.0 } },
+  quadrado: { nome: "Quadrado 1:1", layout: { largura: 2160, altura: 2160, fundo: "claro", fontSize: 1.0 } },
+  feed: { nome: "Feed 4:5", layout: { largura: 2160, altura: 2700, fundo: "claro", fontSize: 1.0 } },
+  story: { nome: "Story 9:16", layout: { largura: 2160, altura: 3840, fundo: "claro", fontSize: 1.0 } },
 };
 
 /**
