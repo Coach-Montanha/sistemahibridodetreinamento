@@ -346,14 +346,14 @@ export function PrescreverIaDialog({
             wl: wlInicial ?? null,
             tf: tfInicial ?? null,
             co: coInicial ?? null,
-            hibrido: metodologia === "hibrido" || metodologia === "kettlebell_fitness" 
+            hibrido: (metodologia === "hibrido" || metodologia === "kettlebell_fitness") && escopoInicial?.hibrido?.sessaoTemplate
               ? { 
+                  ...escopoInicial.hibrido,
                   modalidade: metodologia,
                   tituloPrograma: programa.titulo ?? "Continuar Progressão",
                   numeroSessoes: totalSessoes,
                   diasPorSemana: diasPorSemana,
                   dataInicio: escopoInicial?.dataInicio ?? new Date().toISOString().slice(0, 10),
-                  sessaoTemplate: [],
                   escola: escola !== "auto" ? escola : null
                 } 
               : null,
