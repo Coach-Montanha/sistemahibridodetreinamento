@@ -377,7 +377,34 @@ export function ProgramasPanel({
         <Suspense fallback={null}>
           <PrescreverIaDialog
             programa={iaPrograma.p}
-            escopo={iaPrograma.isContinuation ? { label: "Continuação de Programação", semanas: 4, diasPorSemana: 3 } : null}
+            escopo={iaPrograma.isContinuation ? { 
+              label: "Continuação de Programação", 
+              semanas: 4, 
+              diasPorSemana: 3,
+              hibrido: (iaPrograma.p.metodologia === "hibrido" || iaPrograma.p.metodologia === "kettlebell_fitness")
+                ? {
+                    modalidade: iaPrograma.p.metodologia as any,
+                    tituloPrograma: iaPrograma.p.titulo,
+                    numeroSessoes: 12,
+                    diasPorSemana: 3,
+                    dataInicio: new Date().toISOString(),
+                    sessaoTemplate: iaPrograma.p.program_weeks?.[0]?.sessions?.[0]?.session_blocks?.map((b: any) => ({
+                      chave: b.chave || `b_${b.id}`,
+                      formato: b.formato,
+                      titulo: b.titulo,
+                      duracaoMin: b.duracao_min,
+                      seriesMin: b.config?.series || b.config?.rounds || 3,
+                      seriesMax: b.config?.series || b.config?.rounds || 3,
+                      numeroExercicios: b.session_block_exercises?.length || 1,
+                      repsPorExercicio: b.session_block_exercises?.[0]?.reps || "12",
+                      modoExecucao: b.config?.modo_execucao || "circuito",
+                      descansoAposSeg: b.descanso_apos_seg || 0,
+                      selecaoExercicios: "ia",
+                      fonteExercicios: { metodologias: [iaPrograma.p.metodologia] }
+                    })) || []
+                  }
+                : null
+            } : null}
             onOpenChange={(o) => !o && setIaPrograma(null)}
           />
         </Suspense>

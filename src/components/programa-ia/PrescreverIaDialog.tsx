@@ -45,6 +45,7 @@ import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
 import type { TfPayload } from "@/lib/funcional-ia.server";
+import type { HibridoPayload } from "@/lib/hibrido-ia.server";
 
 const PLACEHOLDER = `Ex.: Próxima fase focada em força máxima, mantendo a divisão A/B anterior mas reduzindo as repetições para 4-6 e aumentando o descanso.
 Priorizar exercícios básicos; manter o agachamento e o supino como primeiros movimentos da sessão.`;
@@ -233,6 +234,7 @@ export function PrescreverIaDialog({
     semanas?: number | null;
     diasPorSemana?: number | null;
     dataInicio?: string | null;
+    hibrido?: HibridoPayload | null;
   } | null;
   /** Configuração do Kettlebell Sport (quando a rotina é dessa modalidade). */
   kb?: KbSportPayload | null;
@@ -346,14 +348,14 @@ export function PrescreverIaDialog({
             wl: wlInicial ?? null,
             tf: tfInicial ?? null,
             co: coInicial ?? null,
-            hibrido: metodologia === "hibrido" || metodologia === "kettlebell_fitness" 
+            hibrido: (metodologia === "hibrido" || metodologia === "kettlebell_fitness") && escopoInicial?.hibrido?.sessaoTemplate
               ? { 
+                  ...escopoInicial.hibrido,
                   modalidade: metodologia,
                   tituloPrograma: programa.titulo ?? "Continuar Progressão",
                   numeroSessoes: totalSessoes,
                   diasPorSemana: diasPorSemana,
                   dataInicio: escopoInicial?.dataInicio ?? new Date().toISOString().slice(0, 10),
-                  sessaoTemplate: [],
                   escola: escola !== "auto" ? escola : null
                 } 
               : null,

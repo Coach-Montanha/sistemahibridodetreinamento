@@ -269,12 +269,15 @@ export function normalizarPrescricaoHibrido(
 
   const sessoesRaw = Array.isArray(json?.sessoes) ? json.sessoes : [];
   if (sessoesRaw.length === 0) {
-    console.error("HibridoIA: IA retornou JSON sem o campo 'sessoes' ou array vazio.", {
-      bruto,
-      json
-    });
-    throw new Error("A IA não retornou nenhuma sessão estruturada. Verifique se o molde possui blocos configurados para IA e tente novamente.");
-  }
+      console.error("HibridoIA: IA retornou JSON sem o campo 'sessoes' ou array vazio.", {
+        bruto,
+        json
+      });
+      if (template.length === 0) {
+        throw new Error("Não foi possível identificar o molde da sessão anterior. Tente configurar o molde manualmente ou verifique se a rotina possui treinos.");
+      }
+      throw new Error("A IA não retornou nenhuma sessão estruturada. Verifique se o pool de exercícios da biblioteca atende aos filtros de equipamento/metodologia do molde.");
+    }
 
   const porChave = new Map(template.map((b) => [b.chave, b]));
 
