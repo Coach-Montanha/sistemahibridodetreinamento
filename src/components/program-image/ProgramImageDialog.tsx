@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { carregarLayout, salvarLayout, type ImageLayout, PRESETS_LAYOUT } from "@/lib/program-image-layout";
@@ -296,8 +297,27 @@ export function ProgramImageDialog({
                       salvarLayout(programa!.id, next);
                     }}
                   >
-                    {layout?.fundo === 'claro' ? 'Modo Escuro' : 'Modo Claro'}
+                    {layout?.fundo === 'claro' ? 'Escuro' : 'Claro'}
                   </Button>
+
+                  <div className="flex items-center gap-3 ml-2 border-l pl-4 border-border/60">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground whitespace-nowrap">Fonte</span>
+                    <div className="w-32">
+                      <Slider
+                        value={[layout?.fontSize ?? 1.0]}
+                        min={0.5}
+                        max={2.0}
+                        step={0.1}
+                        onValueChange={([val]) => {
+                          if (!layout) return;
+                          const next: ImageLayout = { ...layout, fontSize: val };
+                          setLayout(next);
+                          salvarLayout(programa!.id, next);
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-mono w-8">{(layout?.fontSize ?? 1.0).toFixed(1)}x</span>
+                  </div>
                 </div>
                 {gerandoPreview && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
               </div>
@@ -323,14 +343,14 @@ export function ProgramImageDialog({
         <div className="flex flex-col gap-3 border-t border-border/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Fechar</Button>
           <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" disabled={!sessoes?.length || !!exportando} onClick={() => exportar("png")}>
+              {exportando === 'png' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />} PNG
+            </Button>
             <Button variant="outline" disabled={!sessoes?.length || !!exportando} onClick={() => exportar("jpg")}>
               {exportando === 'jpg' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />} JPG
             </Button>
-            <Button variant="outline" disabled={!sessoes?.length || !!exportando} onClick={() => exportar("pdf")}>
-              {exportando === 'pdf' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} PDF
-            </Button>
-            <Button disabled={!sessoes?.length || !!exportando} onClick={() => exportar("png")}>
-              {exportando === 'png' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />} Exportar PNG
+            <Button disabled={!sessoes?.length || !!exportando} onClick={() => exportar("pdf")}>
+              {exportando === 'pdf' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Exportar PDF
             </Button>
           </div>
         </div>

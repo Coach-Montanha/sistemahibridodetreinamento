@@ -68,7 +68,10 @@ export function UnifiedCanvasEditor({
         style={{ aspectRatio }}
       >
         {/* Header Fixo Simulado */}
-        <div className="absolute top-[5%] left-[5%] font-black uppercase text-[4%]" style={{ fontSize: 'min(40px, 4vw)' }}>
+        <div 
+          className="absolute top-[5%] left-[5%] font-black uppercase" 
+          style={{ fontSize: `calc(min(40px, 4vw) * ${layout.fontSize || 1})` }}
+        >
           {metodologiaLabel}
         </div>
         
@@ -85,6 +88,7 @@ export function UnifiedCanvasEditor({
                 bloco={bloco} 
                 pos={pos}
                 fundo={fundo}
+                fontSize={layout.fontSize}
               />
             );
           })}
@@ -93,9 +97,9 @@ export function UnifiedCanvasEditor({
         {/* Footer Fixo Simulado */}
         <div 
           className={cn(
-            "absolute bottom-[5%] left-[5%] font-semibold opacity-60 text-[1.5%]",
+            "absolute bottom-[5%] left-[5%] font-semibold opacity-60",
           )}
-          style={{ fontSize: 'min(18px, 1.8vw)' }}
+          style={{ fontSize: `calc(min(18px, 1.8vw) * ${layout.fontSize || 1})` }}
         >
           {coachLabel}
         </div>
@@ -104,7 +108,7 @@ export function UnifiedCanvasEditor({
   );
 }
 
-function DraggableBlock({ bloco, pos, fundo }: { bloco: BlocoImagem, pos: PosicaoBloco, fundo: string }) {
+function DraggableBlock({ bloco, pos, fundo, fontSize = 1.0 }: { bloco: BlocoImagem, pos: PosicaoBloco, fundo: string, fontSize?: number }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: bloco.chave!,
   });
@@ -130,13 +134,13 @@ function DraggableBlock({ bloco, pos, fundo }: { bloco: BlocoImagem, pos: Posica
       {...listeners}
       {...attributes}
     >
-      <div className="font-bold uppercase text-[1.2rem] mb-2">{bloco.titulo}</div>
+      <div className="font-bold uppercase mb-2" style={{ fontSize: `${1.2 * fontSize}rem` }}>{bloco.titulo}</div>
       {bloco.subtitulo && (
-        <div className="text-[0.9rem] opacity-70 mb-2 font-semibold">{bloco.subtitulo}</div>
+        <div className="opacity-70 mb-2 font-semibold" style={{ fontSize: `${0.9 * fontSize}rem` }}>{bloco.subtitulo}</div>
       )}
       <div className="space-y-1">
         {bloco.linhas.map((l, i) => (
-          <div key={i} className="text-[0.85rem] leading-snug">{l.texto}</div>
+          <div key={i} className="leading-snug" style={{ fontSize: `${0.85 * fontSize}rem` }}>{l.texto}</div>
         ))}
       </div>
     </div>

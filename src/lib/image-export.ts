@@ -14,6 +14,7 @@ export interface LayoutImagem {
   largura: number;
   altura: number;
   fundo: string;
+  fontSize?: number;
 }
 
 export interface SessaoImagemInput {
@@ -45,8 +46,9 @@ function desenharColuna(
   layout: LayoutImagem & { posicoes?: Record<string, any> }
 ) {
   let y = yInicial;
-  const tituloSize = 44 * escala;
-  const linhaSize = 34 * escala;
+  const escalaBase = layout.fontSize ?? 1.0;
+  const tituloSize = 44 * escala * escalaBase;
+  const linhaSize = 34 * escala * escalaBase;
 
   for (const b of blocos) {
     // Se houver posição customizada, usamos ela.
@@ -92,7 +94,7 @@ function desenharColuna(
 export async function renderizarSessaoCanvas(
   input: SessaoImagemInput,
 ): Promise<HTMLCanvasElement> {
-  const L = input.layout ?? { largura: 5760, altura: 2160, fundo: "claro" };
+  const L = input.layout ?? { largura: 5760, altura: 2160, fundo: "claro", fontSize: 1.0 };
   const canvas = document.createElement("canvas");
   canvas.width = L.largura;
   canvas.height = L.altura;
