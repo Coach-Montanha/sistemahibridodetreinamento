@@ -233,6 +233,7 @@ export function PrescreverIaDialog({
     semanas?: number | null;
     diasPorSemana?: number | null;
     dataInicio?: string | null;
+    hibrido?: HibridoPayload | null;
   } | null;
   /** Configuração do Kettlebell Sport (quando a rotina é dessa modalidade). */
   kb?: KbSportPayload | null;
