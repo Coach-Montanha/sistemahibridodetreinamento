@@ -58,6 +58,7 @@ Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, se
 }
 Regras: 4 a 8 exercícios por dia; 'load' e 'observations' podem ser vazios; 'day_label' segue o tipo de nomenclatura da rotina.
 Se você for informado sobre 'TIPOS DE SÉRIES DISPONÍVEIS', utilize preferencialmente esses formatos e nomenclaturas no campo 'load' ou 'observations' conforme adequado ao contexto.
+Se você for informado sobre 'MOLDE ESTRUTURAL', utilize-o para definir a quantidade, os títulos e os formatos (formato) dos blocos de cada sessão. Mantenha-se fiel ao molde fornecido.
 Se você for informado sobre 'FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS', utilize-os para entender a estrutura dos blocos solicitados, mas mantenha-se fiel ao molde fornecido.`;
 
 export type RotinaContexto = {
@@ -75,6 +76,7 @@ export type RotinaContexto = {
   resumo_anterior?: string | null;
   set_types?: any[];
   aluno_info?: string | null;
+  molde?: any[];
 };
 
 export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): string {
@@ -96,6 +98,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     ctx.aluno_info ? `- LIMITAÇÕES E INFO DO ALUNO: ${ctx.aluno_info}` : null,
     ctx.objetivos ? `- Objetivos: ${ctx.objetivos}` : null,
     ctx.set_types ? `- TIPOS DE SÉRIES DISPONÍVEIS: ${ctx.set_types.map(t => `${t.label} (ID: ${t.id})`).join(", ")}` : null,
+    ctx.molde && ctx.molde.length > 0 ? `- MOLDE ESTRUTURAL (Siga esta sequência de blocos por sessão):\n${JSON.stringify(ctx.molde.map(b => ({ titulo: b.titulo, formato: b.formato })), null, 2)}` : null,
     "",
     dias
       ? `OBRIGATÓRIO: gere o programa completo conforme o escopo selecionado (${ctx.escopo_label ?? `${ctx.duracao_semanas} semanas`}). Se o escopo for de múltiplas semanas, gere exatamente ${dias} dia(s) distintos PARA CADA SEMANA, garantindo a evolução entre elas (ex: se gerar 2 semanas com 3 dias/sem, gere 6 dias no total, identificando "week_number" de 1 a 2).`
