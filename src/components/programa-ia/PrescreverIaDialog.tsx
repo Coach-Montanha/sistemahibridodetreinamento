@@ -652,93 +652,101 @@ export function PrescreverIaDialog({
               </div>
             )}
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Escola Metodológica
-              </label>
-              <Select value={escola} onValueChange={setEscola} disabled={gerarMut.isPending}>
-                <SelectTrigger className="h-9 bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(ESCOLAS_DISPONIVEIS[metodologia] || [{ value: "auto", label: "Automático" }]).map((e) => (
-                    <SelectItem key={e.value} value={e.value}>
-                      {e.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Base Técnica
-              </label>
-              <Select value={metodologia} onValueChange={setMetodologia} disabled={gerarMut.isPending}>
-                <SelectTrigger className="h-9 bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(METHODOLOGY_LABEL).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="col-span-full space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                    Base Técnica (Motor)
+                  </label>
+                  <Select value={metodologia} onValueChange={setMetodologia} disabled={gerarMut.isPending}>
+                    <SelectTrigger className="h-9 border-primary/20 bg-background/50">
+                      <SelectValue placeholder="Selecione a modalidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="musculacao">Musculação</SelectItem>
+                      <SelectItem value="hibrido">Treinamento Híbrido</SelectItem>
+                      <SelectItem value="kettlebell_fitness">Kettlebell Fitness</SelectItem>
+                      <SelectItem value="kettlebell_sport">Kettlebell Sport</SelectItem>
+                      <SelectItem value="levantamento_peso">LPO</SelectItem>
+                      <SelectItem value="treinamento_funcional">Funcional</SelectItem>
+                      <SelectItem value="corrida">Corrida</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Semanas
-              </label>
-              <div className="flex h-9 items-center justify-between rounded-md border bg-background px-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setSemanas(Math.max(1, semanas - 1))}
-                  disabled={gerarMut.isPending || semanas <= 1}
-                >
-                  <Minus className="h-3 w-3" />
-                </Button>
-                <span className="text-sm font-medium tabular-nums">{semanas}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setSemanas(Math.min(12, semanas + 1))}
-                  disabled={gerarMut.isPending || semanas >= 12}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                    Escola Metodológica
+                  </label>
+                  <Select value={escola} onValueChange={setEscola} disabled={gerarMut.isPending}>
+                    <SelectTrigger className="h-9 border-primary/20 bg-background/50">
+                      <SelectValue placeholder="Padrão do Sistema" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(ESCOLAS_DISPONIVEIS[metodologia] || [{ value: "auto", label: "Automático" }]).map((e) => (
+                        <SelectItem key={e.value} value={e.value}>
+                          {e.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Dias/Semana
-              </label>
-              <div className="flex h-9 items-center justify-between rounded-md border bg-background px-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setDiasPorSemana(Math.max(1, diasPorSemana - 1))}
-                  disabled={gerarMut.isPending || diasPorSemana <= 1}
-                >
-                  <Minus className="h-3 w-3" />
-                </Button>
-                <span className="text-sm font-medium tabular-nums">{diasPorSemana}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setDiasPorSemana(Math.min(7, diasPorSemana + 1))}
-                  disabled={gerarMut.isPending || diasPorSemana >= 7}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Semanas (Volume)
+                  </label>
+                  <div className="flex h-9 items-center justify-between rounded-md border bg-background px-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setSemanas(Math.max(1, semanas - 1))}
+                      disabled={gerarMut.isPending || semanas <= 1}
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="text-sm font-medium tabular-nums">{semanas}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setSemanas(Math.min(12, semanas + 1))}
+                      disabled={gerarMut.isPending || semanas >= 12}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Frequência (Dias/Sem)
+                  </label>
+                  <div className="flex h-9 items-center justify-between rounded-md border bg-background px-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setDiasPorSemana(Math.max(1, diasPorSemana - 1))}
+                      disabled={gerarMut.isPending || diasPorSemana <= 1}
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="text-sm font-medium tabular-nums">{diasPorSemana}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setDiasPorSemana(Math.min(7, diasPorSemana + 1))}
+                      disabled={gerarMut.isPending || diasPorSemana >= 7}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
