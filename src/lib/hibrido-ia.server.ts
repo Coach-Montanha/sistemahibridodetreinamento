@@ -126,11 +126,18 @@ export async function buscarCandidatosDoMolde(
       equipamentos.push("Kettlebell", "Ginásticos");
     }
 
+    // Os valores gravados em `exercises.equipamento` são rótulos canônicos
+    // ("Kettlebell", "Ginásticos", ...). `overlaps` é sensível a caixa/acento,
+    // então normalizamos o que vier do molde antes de filtrar.
+    const equipamentosNormalizados = Array.from(
+      new Set(equipamentos.map((e) => normalizarEquipamento(e)).filter(Boolean) as string[]),
+    );
+
     if (metodologias.length > 0) {
       query = query.overlaps("metodologias", metodologias);
     }
-    if (equipamentos.length > 0) {
-      query = query.overlaps("equipamento", equipamentos);
+    if (equipamentosNormalizados.length > 0) {
+      query = query.overlaps("equipamento", equipamentosNormalizados);
     }
 
     const { data, error } = await query;
@@ -138,7 +145,10 @@ export async function buscarCandidatosDoMolde(
 
     const dataArr = data ?? [];
     if (bloco.selecaoExercicios === "ia" && dataArr.length === 0) {
-      const equipDesc = equipamentos.length > 0 ? `equipamento [${equipamentos.join(", ")}]` : "nenhum equipamento";
+      const equipDesc =
+        equipamentosNormalizados.length > 0
+          ? `equipamento [${equipamentosNormalizados.join(", ")}]`
+          : "nenhum equipamento";
       const metDesc = metodologias.length > 0 ? `metodologia [${metodologias.join(", ")}]` : "nenhuma metodologia";
       throw new Error(`A IA não retornou nenhuma sessão estruturada. Verifique se o pool de exercícios da biblioteca atende aos filtros de ${equipDesc} e ${metDesc} do molde "${bloco.titulo ?? bloco.chave}".`);
     }
