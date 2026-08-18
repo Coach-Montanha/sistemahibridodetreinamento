@@ -337,9 +337,9 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
           });
 
           const nomesUsados = Array.from(new Set((exerciciosPassados ?? []).map((e: any) => e.nome_livre)));
-          resumoAnterior = `HISTÓRICO COMPLETO DO PROGRAMA (use para sobrecarga progressiva e variação):\n` +
-            JSON.stringify(historicoCompleto.slice(-10), null, 2) + // Reduzido de 15 para 10 para evitar erro 400
-            `\n\nResumo de exercícios já utilizados: ${nomesUsados.slice(-30).join(", ")}`;
+          resumoAnterior = `HISTÓRICO DO PROGRAMA (use para sobrecarga progressiva):\n` +
+            JSON.stringify(historicoCompleto.slice(-6), null, 2) + // Reduzido para evitar erro 400 (Token limit no Gateway)
+            `\n\nResumo de exercícios já utilizados: ${nomesUsados.slice(-20).join(", ")}`;
         }
       }
     }
