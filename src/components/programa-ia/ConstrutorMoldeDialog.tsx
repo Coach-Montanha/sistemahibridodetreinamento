@@ -43,6 +43,34 @@ const EQUIPAMENTO_VALORES = [
   "Objetos Alternativos",
 ] as const;
 
+type ExercicioPool = { metodologias: string[] | null; equipamento: string[] | null };
+
+function usePoolExercicios() {
+  return useQuery({
+    queryKey: ["pool-exercicios-molde"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<ExercicioPool[]> => {
+      const { data, error } = await supabase.from("exercises").select("metodologias, equipamento");
+      if (error) throw error;
+      return (data ?? []) as ExercicioPool[];
+    },
+  });
+}
+
+function contarCompativeis(
+  pool: ExercicioPool[],
+  metodologias: string[],
+  equipamento: string[],
+): number {
+  return pool.filter((e) => {
+    const okMet =
+      metodologias.length === 0 || (e.metodologias ?? []).some((m) => metodologias.includes(m));
+    const okEq =
+      equipamento.length === 0 || (e.equipamento ?? []).some((q) => equipamento.includes(q));
+    return okMet && okEq;
+  }).length;
+}
+
 // Mapeamento dinâmico via useFormatRegistry agora cuida das labels
 const FORMATO_LABEL: Record<string, string> = {};
 
