@@ -343,8 +343,13 @@ export function PrescreverIaDialog({
 
   // Resetar escola ao mudar metodologia
   useEffect(() => {
-    setEscola("auto");
-  }, [metodologia]);
+    // Para Híbrido e KB Fitness, o seletor é importante, então deixamos o valor atual se for compatível
+    const disponiveis = ESCOLAS_DISPONIVEIS[metodologia] || [];
+    const aindaValido = disponiveis.some(e => e.value === escola);
+    if (!aindaValido) {
+      setEscola("auto");
+    }
+  }, [metodologia, escola, ESCOLAS_DISPONIVEIS]);
 
   const limpar = useCallback(() => {
     setPrompt("");
