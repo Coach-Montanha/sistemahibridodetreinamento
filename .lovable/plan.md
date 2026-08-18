@@ -10,13 +10,10 @@ Vou reverter as mudanças feitas nos arquivos de servidor da IA para limpar o es
 1.  **src/lib/prescricao-ia.server.ts**:
     *   Remover `molde?: any[]` da interface `RotinaContexto`.
     *   Remover a injeção do "MOLDE ESTRUTURAL" no prompt do usuário (linhas 98-99).
-    *   (Opcional, mas recomendado para limpeza total) Reverter o `SYSTEM_PROMPT` que falava sobre Molde Estrutural genérico.
+    *   Reverter a instrução de "MOLDE ESTRUTURAL" no `SYSTEM_PROMPT`.
 
 2.  **src/lib/prescricao-ia.functions.ts**:
     *   Remover `molde: z.array(z.any()).optional()` do validador `prescribeTrainingWithAi`.
 
 ## Próximos Passos (Ajuste para Híbrido)
-Após a limpeza, apresentarei um novo plano focado exclusivamente em:
-*   Garantir que o Motor Híbrido receba corretamente o molde da produção anterior.
-*   Corrigir a falha de "IA não retornou sessão estruturada" especificamente para Híbrido/KB Fitness.
-
+Após a limpeza, focaremos na correção do motor de Treinamento Híbrido conforme solicitado.
