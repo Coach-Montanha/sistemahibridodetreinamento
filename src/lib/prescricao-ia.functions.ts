@@ -210,6 +210,7 @@ const INPUT = z.object({
   escopoLabel: z.string().max(80).nullable().optional(),
   metodologiaOverride: z.string().nullable().optional(),
   escolaOverride: z.string().optional(),
+  historicoSessoes: z.number().int().min(0).max(12).nullable().optional(),
   kb: KB,
   wl: WL,
   tf: TF,
