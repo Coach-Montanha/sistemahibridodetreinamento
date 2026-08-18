@@ -71,6 +71,36 @@ function contarCompativeis(
   }).length;
 }
 
+function ContagemFiltro({
+  metodologias,
+  equipamento,
+  necessarios,
+}: {
+  metodologias: string[];
+  equipamento: string[];
+  necessarios: number;
+}) {
+  const { data: pool, isLoading } = usePoolExercicios();
+  if (isLoading || !pool) {
+    return (
+      <p className="col-span-full text-[11px] text-muted-foreground">
+        Conferindo a biblioteca de exercícios...
+      </p>
+    );
+  }
+  const total = contarCompativeis(pool, metodologias, equipamento);
+  const insuficiente = total < necessarios;
+  return (
+    <p
+      className={`col-span-full text-[11px] ${insuficiente ? "font-medium text-destructive" : "text-muted-foreground"}`}
+    >
+      {insuficiente
+        ? `Apenas ${total} exercício(s) da biblioteca batem com esses filtros, mas o bloco pede ${necessarios}. Ajuste os filtros ou cadastre mais exercícios antes de gerar.`
+        : `${total} exercício(s) da biblioteca batem com esses filtros. A IA escolherá ${necessarios}.`}
+    </p>
+  );
+}
+
 // Mapeamento dinâmico via useFormatRegistry agora cuida das labels
 const FORMATO_LABEL: Record<string, string> = {};
 
