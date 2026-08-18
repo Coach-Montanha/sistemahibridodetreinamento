@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +42,64 @@ const EQUIPAMENTO_VALORES = [
   "Mobilidade",
   "Objetos Alternativos",
 ] as const;
+
+type ExercicioPool = { metodologias: string[] | null; equipamento: string[] | null };
+
+function usePoolExercicios() {
+  return useQuery({
+    queryKey: ["pool-exercicios-molde"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<ExercicioPool[]> => {
+      const { data, error } = await supabase.from("exercises").select("metodologias, equipamento");
+      if (error) throw error;
+      return (data ?? []) as ExercicioPool[];
+    },
+  });
+}
+
+function contarCompativeis(
+  pool: ExercicioPool[],
+  metodologias: string[],
+  equipamento: string[],
+): number {
+  return pool.filter((e) => {
+    const okMet =
+      metodologias.length === 0 || (e.metodologias ?? []).some((m) => metodologias.includes(m));
+    const okEq =
+      equipamento.length === 0 || (e.equipamento ?? []).some((q) => equipamento.includes(q));
+    return okMet && okEq;
+  }).length;
+}
+
+function ContagemFiltro({
+  metodologias,
+  equipamento,
+  necessarios,
+}: {
+  metodologias: string[];
+  equipamento: string[];
+  necessarios: number;
+}) {
+  const { data: pool, isLoading } = usePoolExercicios();
+  if (isLoading || !pool) {
+    return (
+      <p className="col-span-full text-[11px] text-muted-foreground">
+        Conferindo a biblioteca de exercícios...
+      </p>
+    );
+  }
+  const total = contarCompativeis(pool, metodologias, equipamento);
+  const insuficiente = total < necessarios;
+  return (
+    <p
+      className={`col-span-full text-[11px] ${insuficiente ? "font-medium text-destructive" : "text-muted-foreground"}`}
+    >
+      {insuficiente
+        ? `Apenas ${total} exercício(s) da biblioteca batem com esses filtros, mas o bloco pede ${necessarios}. Ajuste os filtros ou cadastre mais exercícios antes de gerar.`
+        : `${total} exercício(s) da biblioteca batem com esses filtros. A IA escolherá ${necessarios}.`}
+    </p>
+  );
+}
 
 // Mapeamento dinâmico via useFormatRegistry agora cuida das labels
 const FORMATO_LABEL: Record<string, string> = {};
@@ -438,10 +498,11 @@ function BlocoConfigForm({
               </div>
             </div>
 
-            <p className="col-span-full text-[11px] text-muted-foreground">
-              Deixe em branco para não filtrar por essa dimensão. A IA escolherá {bloco.numeroExercicios} exercício(s) só
-              entre os que baterem com esses filtros.
-            </p>
+            <ContagemFiltro
+              metodologias={bloco.fonteExercicios.metodologias ?? []}
+              equipamento={bloco.fonteExercicios.equipamento ?? []}
+              necessarios={bloco.numeroExercicios}
+            />
           </div>
         ) : (
           <div className="space-y-2">

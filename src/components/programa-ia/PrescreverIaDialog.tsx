@@ -253,6 +253,7 @@ export function PrescreverIaDialog({
   const [escola, setEscola] = useState<string>("auto");
   const [semanas, setSemanas] = useState(escopoInicial?.semanas || 1);
   const [diasPorSemana, setDiasPorSemana] = useState(escopoInicial?.diasPorSemana || 3);
+  const [historicoSessoes, setHistoricoSessoes] = useState(6);
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
   const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
@@ -374,6 +375,7 @@ export function PrescreverIaDialog({
             escopoLabel: `${semanas} semanas`,
             metodologiaOverride: metodologia as Methodology,
             escolaOverride: escola,
+            historicoSessoes: historicoSessoes,
             kb: kbInicial ?? null,
             wl: wlInicial ?? null,
             tf: tfInicial ?? null,
@@ -408,7 +410,9 @@ export function PrescreverIaDialog({
       setProgresso([]);
       const errorMsg = e?.message || "";
       if (errorMsg.includes("400") || errorMsg.includes("token")) {
-        toast.error("O histórico do programa é muito longo. Tente gerar menos semanas por vez ou reduza as sessões existentes.");
+        toast.error(
+          "Histórico muito longo para a IA. Reduza o campo \"Histórico considerado\" (ex.: 3 ou 0) e gere novamente.",
+        );
       } else {
         toast.error(errorMsg || "Falha ao gerar a prescrição");
       }
@@ -747,6 +751,38 @@ export function PrescreverIaDialog({
                     </Button>
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Histórico considerado (sessões)
+                </label>
+                <div className="flex h-9 items-center justify-between rounded-md border bg-background px-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setHistoricoSessoes(Math.max(0, historicoSessoes - 1))}
+                    disabled={gerarMut.isPending || historicoSessoes <= 0}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="text-sm font-medium tabular-nums">
+                    {historicoSessoes === 0 ? "Sem histórico" : historicoSessoes}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setHistoricoSessoes(Math.min(12, historicoSessoes + 1))}
+                    disabled={gerarMut.isPending || historicoSessoes >= 12}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Reduza se aparecer o aviso de histórico muito longo.
+                </p>
               </div>
             </div>
           </div>

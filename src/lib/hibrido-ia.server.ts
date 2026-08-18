@@ -93,6 +93,33 @@ export type HibridoPayload = {
 
 export type ExercicioCandidato = { id: string; nome: string };
 
+/** Rótulos canônicos gravados em `exercises.equipamento`. */
+export const EQUIPAMENTOS_CANONICOS = [
+  "Kettlebell",
+  "Ginásticos",
+  "Dumbbell",
+  "Barbell",
+  "Mobilidade",
+  "Objetos Alternativos",
+] as const;
+
+function chaveEquip(v: string): string {
+  return v
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** Converte qualquer variação (caixa/acento) para o rótulo canônico do banco. */
+export function normalizarEquipamento(valor: string): string | null {
+  const k = chaveEquip(valor);
+  const achado = EQUIPAMENTOS_CANONICOS.find((c) => chaveEquip(c) === k);
+  if (achado) return achado;
+  if (k === "ginastico" || k === "ginasticos") return "Ginásticos";
+  return null;
+}
+
 /** Pool de candidatos por bloco (chave do BlocoTemplate → lista de candidatos). */
 export type CandidatosPorBloco = Record<string, ExercicioCandidato[]>;
 
@@ -102,6 +129,7 @@ export type CandidatosPorBloco = Record<string, ExercicioCandidato[]>;
  * Recebe o client Supabase já autenticado (context.supabase no server function).
  */
 export async function buscarCandidatosDoMolde(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   template: SessaoTemplate,
 ): Promise<CandidatosPorBloco> {
@@ -119,18 +147,25 @@ export async function buscarCandidatosDoMolde(
     if (bloco.formato === "preparacao_movimento" || bloco.formato === "mobilidade") {
       if (bloco.slot === "mobilidade") {
         // Bloco de mobilidade só consegue solicitar e selecionar movimentos do equipamento mobilidade.
-        equipamentos.push("mobilidade");
+        equipamentos.push("Mobilidade");
       }
     } else if (bloco.titulo?.toLowerCase() === "aquecimento" || bloco.chave.includes("aquecimento")) {
       // Bloco de aquecimento só consegue solicitar e selecionar movimentos do bloco kettlebell e ginástico.
-      equipamentos.push("kettlebell", "ginastico");
+      equipamentos.push("Kettlebell", "Ginásticos");
     }
+
+    // Os valores gravados em `exercises.equipamento` são rótulos canônicos
+    // ("Kettlebell", "Ginásticos", ...). `overlaps` é sensível a caixa/acento,
+    // então normalizamos o que vier do molde antes de filtrar.
+    const equipamentosNormalizados = Array.from(
+      new Set(equipamentos.map((e) => normalizarEquipamento(e)).filter(Boolean) as string[]),
+    );
 
     if (metodologias.length > 0) {
       query = query.overlaps("metodologias", metodologias);
     }
-    if (equipamentos.length > 0) {
-      query = query.overlaps("equipamento", equipamentos);
+    if (equipamentosNormalizados.length > 0) {
+      query = query.overlaps("equipamento", equipamentosNormalizados);
     }
 
     const { data, error } = await query;
@@ -138,7 +173,10 @@ export async function buscarCandidatosDoMolde(
 
     const dataArr = data ?? [];
     if (bloco.selecaoExercicios === "ia" && dataArr.length === 0) {
-      const equipDesc = equipamentos.length > 0 ? `equipamento [${equipamentos.join(", ")}]` : "nenhum equipamento";
+      const equipDesc =
+        equipamentosNormalizados.length > 0
+          ? `equipamento [${equipamentosNormalizados.join(", ")}]`
+          : "nenhum equipamento";
       const metDesc = metodologias.length > 0 ? `metodologia [${metodologias.join(", ")}]` : "nenhuma metodologia";
       throw new Error(`A IA não retornou nenhuma sessão estruturada. Verifique se o pool de exercícios da biblioteca atende aos filtros de ${equipDesc} e ${metDesc} do molde "${bloco.titulo ?? bloco.chave}".`);
     }
