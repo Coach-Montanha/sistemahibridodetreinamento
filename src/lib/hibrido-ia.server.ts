@@ -210,7 +210,7 @@ export function montarHibridoPrompt(args: {
     `A estrutura de cada bloco JÁ ESTÁ DEFINIDA e não deve ser alterada. Sua liberdade está em escolher exercícios, séries, repetições e cargas.`,
     `Você deve analisar o HISTÓRICO COMPLETO abaixo para projetar a sobrecarga progressiva e PERIODIZAÇÃO ONDULATÓRIA.`,
     `VOCÊ TEM LIBERDADE TOTAL PARA ALTERAR ENTRE AS SEMANAS:`,
-    `- TROCA OBRIGATÓRIA: Você DEVE escolher NOVOS exercícios (do pool de candidatos) para variar o estímulo técnico em relação à fase anterior. Priorize a diversidade técnica e novos movimentos do pool.`,
+    `- TROCA OBRIGATÓRIA: Você DEVE escolher NOVOS exercícios (do pool de candidatos) para variar o estímulo técnico em relação à fase anterior. Se o histórico mostrar um exercício X, tente não repetí-lo se houver outras opções viáveis no pool. Priorize a diversidade técnica.`,
     `- Variar o número de exercícios, séries e repetições de forma não linear entre as sessões/semanas.`,
     `- Aumentar intensidades de forma estratégica (ex: Semana 1 base, Semana 2 volume, Semana 3 intensidade, Semana 4 recuperação).`,
     `- OBRIGATÓRIO: Identifique corretamente o "week_number" (1, 2, 3...) para cada sessão gerada.`,
