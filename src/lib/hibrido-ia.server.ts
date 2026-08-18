@@ -93,6 +93,33 @@ export type HibridoPayload = {
 
 export type ExercicioCandidato = { id: string; nome: string };
 
+/** Rótulos canônicos gravados em `exercises.equipamento`. */
+export const EQUIPAMENTOS_CANONICOS = [
+  "Kettlebell",
+  "Ginásticos",
+  "Dumbbell",
+  "Barbell",
+  "Mobilidade",
+  "Objetos Alternativos",
+] as const;
+
+function chaveEquip(v: string): string {
+  return v
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** Converte qualquer variação (caixa/acento) para o rótulo canônico do banco. */
+export function normalizarEquipamento(valor: string): string | null {
+  const k = chaveEquip(valor);
+  const achado = EQUIPAMENTOS_CANONICOS.find((c) => chaveEquip(c) === k);
+  if (achado) return achado;
+  if (k === "ginastico" || k === "ginasticos") return "Ginásticos";
+  return null;
+}
+
 /** Pool de candidatos por bloco (chave do BlocoTemplate → lista de candidatos). */
 export type CandidatosPorBloco = Record<string, ExercicioCandidato[]>;
 
