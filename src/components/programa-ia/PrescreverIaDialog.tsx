@@ -253,6 +253,7 @@ export function PrescreverIaDialog({
   const [escola, setEscola] = useState<string>("auto");
   const [semanas, setSemanas] = useState(escopoInicial?.semanas || 1);
   const [diasPorSemana, setDiasPorSemana] = useState(escopoInicial?.diasPorSemana || 3);
+  const [historicoSessoes, setHistoricoSessoes] = useState(6);
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
   const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
@@ -374,6 +375,7 @@ export function PrescreverIaDialog({
             escopoLabel: `${semanas} semanas`,
             metodologiaOverride: metodologia as Methodology,
             escolaOverride: escola,
+            historicoSessoes: historicoSessoes,
             kb: kbInicial ?? null,
             wl: wlInicial ?? null,
             tf: tfInicial ?? null,
