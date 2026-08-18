@@ -410,7 +410,9 @@ export function PrescreverIaDialog({
       setProgresso([]);
       const errorMsg = e?.message || "";
       if (errorMsg.includes("400") || errorMsg.includes("token")) {
-        toast.error("O histórico do programa é muito longo. Tente gerar menos semanas por vez ou reduza as sessões existentes.");
+        toast.error(
+          "Histórico muito longo para a IA. Reduza o campo \"Histórico considerado\" (ex.: 3 ou 0) e gere novamente.",
+        );
       } else {
         toast.error(errorMsg || "Falha ao gerar a prescrição");
       }
