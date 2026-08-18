@@ -54,11 +54,12 @@ export function ExerciseMediaUpload({
     setProgress(0);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuário não autenticado");
+      const { data: coachId, error: coachError } = await supabase.rpc("auth_coach_id");
+      if (coachError) throw coachError;
+      if (!coachId) throw new Error("Usuário não autenticado");
 
       const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const fileName = `${coachId}/${Date.now()}.${fileExt}`;
       const type: MediaType = file.type.startsWith("video/") ? "video" : "imagem";
 
       const { error: uploadError } = await supabase.storage
