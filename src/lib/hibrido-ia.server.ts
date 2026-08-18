@@ -119,11 +119,11 @@ export async function buscarCandidatosDoMolde(
     if (bloco.formato === "preparacao_movimento" || bloco.formato === "mobilidade") {
       if (bloco.slot === "mobilidade") {
         // Bloco de mobilidade só consegue solicitar e selecionar movimentos do equipamento mobilidade.
-        equipamentos.push("mobilidade");
+        equipamentos.push("Mobilidade");
       }
     } else if (bloco.titulo?.toLowerCase() === "aquecimento" || bloco.chave.includes("aquecimento")) {
       // Bloco de aquecimento só consegue solicitar e selecionar movimentos do bloco kettlebell e ginástico.
-      equipamentos.push("kettlebell", "ginastico");
+      equipamentos.push("Kettlebell", "Ginásticos");
     }
 
     if (metodologias.length > 0) {
