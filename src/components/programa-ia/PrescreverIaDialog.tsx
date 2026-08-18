@@ -401,7 +401,12 @@ export function PrescreverIaDialog({
     },
     onError: (e: any) => {
       setProgresso([]);
-      toast.error(e?.message ?? "Falha ao gerar a prescrição");
+      const errorMsg = e?.message || "";
+      if (errorMsg.includes("400") || errorMsg.includes("token")) {
+        toast.error("O histórico do programa é muito longo. Tente gerar menos semanas por vez ou reduza as sessões existentes.");
+      } else {
+        toast.error(errorMsg || "Falha ao gerar a prescrição");
+      }
     },
   });
 
