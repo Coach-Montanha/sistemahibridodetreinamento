@@ -76,6 +76,7 @@ export type RotinaContexto = {
   resumo_anterior?: string | null;
   set_types?: any[];
   aluno_info?: string | null;
+  molde?: any[];
 };
 
 export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): string {
