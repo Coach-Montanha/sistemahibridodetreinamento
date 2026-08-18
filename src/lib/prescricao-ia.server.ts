@@ -58,6 +58,7 @@ Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, se
 }
 Regras: 4 a 8 exercícios por dia; 'load' e 'observations' podem ser vazios; 'day_label' segue o tipo de nomenclatura da rotina.
 Se você for informado sobre 'TIPOS DE SÉRIES DISPONÍVEIS', utilize preferencialmente esses formatos e nomenclaturas no campo 'load' ou 'observations' conforme adequado ao contexto.
+Se você for informado sobre 'MOLDE ESTRUTURAL', utilize-o para definir a quantidade, os títulos e os formatos (formato) dos blocos de cada sessão. Mantenha-se fiel ao molde fornecido.
 Se você for informado sobre 'FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS', utilize-os para entender a estrutura dos blocos solicitados, mas mantenha-se fiel ao molde fornecido.`;
 
 export type RotinaContexto = {
