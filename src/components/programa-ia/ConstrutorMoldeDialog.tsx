@@ -468,10 +468,11 @@ function BlocoConfigForm({
               </div>
             </div>
 
-            <p className="col-span-full text-[11px] text-muted-foreground">
-              Deixe em branco para não filtrar por essa dimensão. A IA escolherá {bloco.numeroExercicios} exercício(s) só
-              entre os que baterem com esses filtros.
-            </p>
+            <ContagemFiltro
+              metodologias={bloco.fonteExercicios.metodologias ?? []}
+              equipamento={bloco.fonteExercicios.equipamento ?? []}
+              necessarios={bloco.numeroExercicios}
+            />
           </div>
         ) : (
           <div className="space-y-2">
