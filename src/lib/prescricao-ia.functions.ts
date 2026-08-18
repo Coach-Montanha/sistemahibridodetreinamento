@@ -217,7 +217,6 @@ const INPUT = z.object({
   hibrido: z.any().optional(),
   setTypes: z.array(z.any()).optional(),
   formatRegistry: z.any().optional(),
-  molde: z.array(z.any()).optional(),
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
