@@ -286,8 +286,9 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     
     let resumoAnterior = null;
     let historicoCompleto: any[] = [];
+    const nHistorico = data.historicoSessoes ?? 6;
 
-    if (weekIds.length > 0) {
+    if (weekIds.length > 0 && nHistorico > 0) {
       // Busca todas as sessões das semanas para extrair blocos e exercícios
       const { data: sessoes } = await supabase
         .from("sessions")
@@ -338,8 +339,24 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
           });
 
           const nomesUsados = Array.from(new Set((exerciciosPassados ?? []).map((e: any) => e.nome_livre)));
-          resumoAnterior = `HISTÓRICO DO PROGRAMA (use para sobrecarga progressiva):\n` +
-            JSON.stringify(historicoCompleto.slice(-6), null, 2) + // Reduzido para evitar erro 400 (Token limit no Gateway)
+          const recentes = historicoCompleto.slice(-nHistorico);
+          let corpo = JSON.stringify(recentes, null, 2);
+          // Guarda-chuva contra erro 400 (limite de tokens do gateway):
+          // se o histórico detalhado for grande demais, degrada para um resumo estrutural.
+          if (corpo.length > 12000) {
+            const compacto = recentes.map((s: any) => ({
+              semana: s.semana,
+              dia: s.dia,
+              blocos: (s.blocos ?? []).map((b: any) => ({
+                formato: b.formato,
+                exercicios: (b.exercicios ?? []).map((e: any) => e.nome).filter(Boolean),
+              })),
+            }));
+            corpo = JSON.stringify(compacto);
+            if (corpo.length > 12000) corpo = JSON.stringify(compacto.slice(-2));
+          }
+          resumoAnterior = `HISTÓRICO DO PROGRAMA (últimas ${recentes.length} sessões — use para sobrecarga progressiva):\n` +
+            corpo +
             `\n\nResumo de exercícios já utilizados: ${nomesUsados.slice(-20).join(", ")}`;
         }
       }
