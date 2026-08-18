@@ -102,6 +102,7 @@ export type CandidatosPorBloco = Record<string, ExercicioCandidato[]>;
  * Recebe o client Supabase já autenticado (context.supabase no server function).
  */
 export async function buscarCandidatosDoMolde(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   template: SessaoTemplate,
 ): Promise<CandidatosPorBloco> {
