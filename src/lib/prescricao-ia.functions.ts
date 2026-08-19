@@ -273,7 +273,13 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       throw new Error("Configuração da Corrida ausente");
     }
     if (isHibrido && !data.hibrido) {
-      throw new Error("Configuração do motor Híbrido/KB Fitness ausente");
+      throw new Error("Configuração do motor Híbrido/KB Fitness ausente (hibrido payload)");
+    }
+    
+    // Fallback de segurança para molde estrutural se vier vazio na continuidade
+    if (isHibrido && data.hibrido && (!data.hibrido.sessaoTemplate || data.hibrido.sessaoTemplate.length === 0)) {
+      // Se não enviou molde, tentaremos buscar no histórico abaixo
+      console.log("Aviso: Híbrido sem sessaoTemplate. Tentando recuperar do histórico...");
     }
 
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(
