@@ -275,11 +275,18 @@ export function PrescreverIaDialog({
 
   // Atualiza o molde ao selecionar um histórico
   useEffect(() => {
-    if (moldeSelecionado !== "auto" && escopoInicial?.hibrido) {
-      const selected = moldesHistoricos.find(m => m.id === moldeSelecionado);
-      if (selected) {
-        // Atualizamos o payload que será enviado para a geração
-        escopoInicial.hibrido.sessaoTemplate = selected.blocks;
+    if (escopoInicial?.hibrido) {
+      if (moldeSelecionado === "auto") {
+        // Pega o molde mais recente disponível no histórico como padrão
+        const ultimo = moldesHistoricos[moldesHistoricos.length - 1];
+        if (ultimo) {
+          escopoInicial.hibrido.sessaoTemplate = ultimo.blocks;
+        }
+      } else {
+        const selected = moldesHistoricos.find(m => m.id === moldeSelecionado);
+        if (selected) {
+          escopoInicial.hibrido.sessaoTemplate = selected.blocks;
+        }
       }
     }
   }, [moldeSelecionado, moldesHistoricos, escopoInicial?.hibrido]);

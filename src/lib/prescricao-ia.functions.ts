@@ -273,7 +273,13 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       throw new Error("Configuração da Corrida ausente");
     }
     if (isHibrido && !data.hibrido) {
-      throw new Error("Configuração do motor Híbrido/KB Fitness ausente");
+      throw new Error("Configuração do motor Híbrido/KB Fitness ausente (hibrido payload)");
+    }
+    
+    // Fallback de segurança para molde estrutural se vier vazio na continuidade
+    if (isHibrido && data.hibrido && (!data.hibrido.sessaoTemplate || data.hibrido.sessaoTemplate.length === 0)) {
+      // Se não enviou molde, tentaremos buscar no histórico abaixo
+      console.log("Aviso: Híbrido sem sessaoTemplate. Tentando recuperar do histórico...");
     }
 
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(
@@ -482,14 +488,33 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isHibrido
-        ? montarHibridoPrompt({
-            payload: data.hibrido,
-            candidatos: await buscarCandidatosDoMolde(supabase, data.hibrido.sessaoTemplate),
-            instrucoes: data.prompt,
-            resumoAnterior: resumoAnterior,
-            setTypeRegistry: data.setTypes || BUILTIN_SET_TYPES,
-            formatRegistry: data.formatRegistry
-          })
+        ? await (async () => {
+            const template = data.hibrido.sessaoTemplate?.length > 0 
+              ? data.hibrido.sessaoTemplate 
+              : historicoCompleto.length > 0
+                ? historicoCompleto[historicoCompleto.length - 1].blocos.map((b: any, idx: number) => ({
+                    chave: `b_${idx}`,
+                    formato: b.formato,
+                    titulo: b.titulo,
+                    selecaoExercicios: "ia",
+                    numeroExercicios: b.exercicios?.length || 1,
+                    fonteExercicios: { metodologias: [metodologiaEfetiva] }
+                  }))
+                : [];
+            
+            if (!template || template.length === 0) {
+              throw new Error("A IA não retornou nenhuma sessão estruturada. Verifique se o molde possui blocos configurados para IA e tente novamente.");
+            }
+
+            return montarHibridoPrompt({
+              payload: { ...data.hibrido, sessaoTemplate: template },
+              candidatos: await buscarCandidatosDoMolde(supabase, template),
+              instrucoes: data.prompt,
+              resumoAnterior: resumoAnterior,
+              setTypeRegistry: data.setTypes || BUILTIN_SET_TYPES,
+              formatRegistry: data.formatRegistry
+            });
+          })()
         : montarUserPrompt({ ...ctx, set_types: data.setTypes || BUILTIN_SET_TYPES }, data.prompt);
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -518,10 +543,23 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     }
 
     if (isHibrido) {
+      const templateFinal = data.hibrido.sessaoTemplate?.length > 0 
+        ? data.hibrido.sessaoTemplate 
+        : historicoCompleto.length > 0
+          ? historicoCompleto[historicoCompleto.length - 1].blocos.map((b: any, idx: number) => ({
+              chave: `b_${idx}`,
+              formato: b.formato,
+              titulo: b.titulo,
+              selecaoExercicios: "ia",
+              numeroExercicios: b.exercicios?.length || 1,
+              fonteExercicios: { metodologias: [metodologiaEfetiva] }
+            }))
+          : [];
+
       return normalizarPrescricaoHibrido(
         conteudo,
-        data.hibrido.sessaoTemplate,
-        await buscarCandidatosDoMolde(supabase, data.hibrido.sessaoTemplate)
+        templateFinal,
+        await buscarCandidatosDoMolde(supabase, templateFinal)
       ) as any;
     }
 
