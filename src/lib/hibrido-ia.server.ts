@@ -36,6 +36,13 @@ export type ModalidadeHibrida = "hibrido" | "kettlebell_fitness";
 /** Mesmo vocabulário do BlockFormat já usado em session-builder/BlockFormats.tsx. */
 export type BlockFormatHibrido = string;
 
+export function resolveBaseFormat(formatId: string): string {
+  if (formatId.startsWith("builtin:")) return formatId.replace("builtin:", "");
+  if (formatId.startsWith("custom:")) return formatId; // Will need lookup if custom formats have different base
+  return formatId;
+}
+
+
 export type ModoExecucao = "circuito" | "series_fixas";
 export type SlotPreparacao = "mobilidade" | "aquecimento";
 export type SelecaoExercicios = "ia" | "manual";
@@ -146,7 +153,9 @@ export async function buscarCandidatosDoMolde(
     const metodologias = [...(bloco.fonteExercicios.metodologias ?? [])];
     const equipamentos = [...(bloco.fonteExercicios.equipamento ?? [])];
 
-    if (bloco.formato === "preparacao_movimento" || bloco.formato === "mobilidade") {
+    const formatBase = resolveBaseFormat(bloco.formato);
+    if (formatBase === "preparacao_movimento" || formatBase === "mobilidade") {
+
       if (bloco.slot === "mobilidade") {
         // Bloco de mobilidade só consegue solicitar e selecionar movimentos do equipamento mobilidade.
         equipamentos.push("Mobilidade");

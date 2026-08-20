@@ -1,0 +1,91 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+const FORMAT_DEF_SCHEMA = z.object({
+  id: z.string(),
+  base_format: z.string(),
+  label: z.string(),
+  description: z.string().nullable().optional(),
+  default_config: z.record(z.any()).default({}),
+  is_active: z.boolean().default(true),
+  is_builtin: z.boolean().default(false),
+});
+
+const SET_TYPE_DEF_SCHEMA = z.object({
+  id: z.string(),
+  label: z.string(),
+  fields: z.array(z.record(z.any())).default([]),
+  is_active: z.boolean().default(true),
+  is_builtin: z.boolean().default(false),
+});
+
+export const listFormatDefinitions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("format_definitions")
+      .select("*")
+      .order("label");
+    if (error) throw new Error(error.message);
+    return data;
+  });
+
+export const upsertFormatDefinition = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw) => FORMAT_DEF_SCHEMA.parse(raw))
+  .handler(async ({ data, context }) => {
+    const { data: coach } = await context.supabase.from("coaches").select("id").maybeSingle();
+    const { error } = await context.supabase
+      .from("format_definitions")
+      .upsert({ ...data, coach_id: coach?.id });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteFormatDefinition = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw) => z.object({ id: z.string() }).parse(raw))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("format_definitions")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listSetTypeDefinitions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("set_type_definitions")
+      .select("*")
+      .order("label");
+    if (error) throw new Error(error.message);
+    return data;
+  });
+
+export const upsertSetTypeDefinition = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw) => SET_TYPE_DEF_SCHEMA.parse(raw))
+  .handler(async ({ data, context }) => {
+    const { data: coach } = await context.supabase.from("coaches").select("id").maybeSingle();
+    const { error } = await context.supabase
+      .from("set_type_definitions")
+      .upsert({ ...data, coach_id: coach?.id });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteSetTypeDefinition = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw) => z.object({ id: z.string() }).parse(raw))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("set_type_definitions")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
