@@ -319,7 +319,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const resumoAnterior = ctx.continuation 
       ? `CONTEXTO RECENTE: Analisadas ${ctx.continuation.sourceSessionCount} sessões. ` +
         `IDs evitáveis: ${ctx.continuation.softAvoidIds.join(", ")}. ` +
-        `Exercícios anteriores: ${ctx.continuation.recentSessions.flatMap(s => s.exerciseNames).slice(-20).join(", ")}`
+        `Exercícios anteriores: ${ctx.continuation.recentSessions.flatMap(s => s.exerciseNames).slice(-10).join(", ")}`
       : null;
 
     const apiKey = process.env.LOVABLE_API_KEY;
