@@ -392,7 +392,21 @@ export function PrescreverIaDialog({
   const gerarMut = useMutation({
     mutationFn: async () => {
       if (!programa) throw new Error("Programa não selecionado");
-      setProgresso(["Analisando histórico, limitações e escola metodológica..."]);
+      setProgresso(["Salvando perfil e analisando histórico..."]);
+      
+      // Salva o perfil no programa para persistência
+      await supabase.from("programs").update({
+        regras_progressao: {
+          metodologia,
+          escola,
+          dias_por_semana: diasPorSemana,
+          semanas,
+          historico_sessoes: historicoSessoes,
+          cooldown_sessoes: cooldownSessoes,
+          prompt: prompt.trim()
+        }
+      }).eq("id", programa.id);
+
       
       const totalSessoes = semanas * diasPorSemana;
       
