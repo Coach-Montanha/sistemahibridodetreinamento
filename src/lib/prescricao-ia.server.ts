@@ -82,6 +82,20 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
   const exemplo =
     ctx.nomenclatura === "alfabetico" ? "Dia A, Dia B, Dia C" : "Dia 1, Dia 2, Dia 3";
   const dias = ctx.dias_por_semana && ctx.dias_por_semana > 0 ? ctx.dias_por_semana : null;
+  
+  const historySection = ctx.continuation 
+    ? [
+        "RESUMO ESTRUTURADO DO HISTÓRICO RECENTE (Análise para Progressão):",
+        `- Sessões analisadas: ${ctx.continuation.sourceSessionCount}`,
+        `- Exercícios recentes: ${ctx.continuation.recentSessions.flatMap(s => s.exerciseNames).join(", ")}`,
+        `- Grupos musculares trabalhados: ${Array.from(new Set(ctx.continuation.recentSessions.flatMap(s => s.muscleGroups))).join(", ")}`,
+        `- BLOQUEIO DE REPETIÇÃO (Soft Avoid): Evite usar estes IDs se possível: ${ctx.continuation.softAvoidIds.join(", ")}`,
+        `- Exercícios mais frequentes: ${ctx.continuation.usage.slice(0, 5).map(u => u.name).join(", ")}`,
+        `- Formatos de bloco recentes: ${ctx.continuation.recentFormats.join(", ")}`,
+        `- NOTAS DE PROGRESSÃO: ${ctx.continuation.progressionNotes}`,
+      ].join("\n")
+    : ctx.resumo_anterior;
+
   return [
     "CONTEXTO DA ROTINA (não repita, apenas use):",
     `- Nome: ${ctx.titulo}`,
@@ -93,7 +107,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     `- Período: ${ctx.data_inicio ?? "não informado"} até ${ctx.data_fim ?? "não informado"}`,
     `- Nomenclatura dos dias: ${ctx.nomenclatura} (ex.: ${exemplo})`,
     `- Sessões já existentes: ${ctx.sessoes_existentes}`,
-    ctx.resumo_anterior ? `- CONTEXTO DA PROGRAMAÇÃO ATUAL (O que já foi feito):\n${ctx.resumo_anterior}` : null,
+    historySection ? `- CONTEXTO DA PROGRAMAÇÃO ATUAL:\n${historySection}` : null,
     ctx.aluno_info ? `- LIMITAÇÕES E INFO DO ALUNO: ${ctx.aluno_info}` : null,
     ctx.objetivos ? `- Objetivos: ${ctx.objetivos}` : null,
     ctx.set_types ? `- TIPOS DE SÉRIES DISPONÍVEIS: ${ctx.set_types.map(t => `${t.label} (ID: ${t.id})`).join(", ")}` : null,
