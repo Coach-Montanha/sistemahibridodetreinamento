@@ -279,6 +279,22 @@ function BlocoConfigForm({
     <div className="space-y-4 border-t border-border/60 pt-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Formato</Label>
+          <Select value={bloco.formato} onValueChange={(v) => onChange({ formato: v as BlockFormatHibrido })}>
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {useFormatRegistry().presets.map((p: any) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Título do bloco — opcional</Label>
           <Input
             className="h-9"
