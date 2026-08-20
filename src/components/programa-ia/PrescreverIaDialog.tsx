@@ -254,6 +254,7 @@ export function PrescreverIaDialog({
   const [semanas, setSemanas] = useState(escopoInicial?.semanas || 1);
   const [diasPorSemana, setDiasPorSemana] = useState(escopoInicial?.diasPorSemana || 3);
   const [historicoSessoes, setHistoricoSessoes] = useState(6);
+  const [cooldownSessoes, setCooldownSessoes] = useState(3);
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
   const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
@@ -382,7 +383,9 @@ export function PrescreverIaDialog({
             escopoLabel: `${semanas} semanas`,
             metodologiaOverride: metodologia as Methodology,
             escolaOverride: escola,
-            historicoSessoes: historicoSessoes,
+             historicoSessoes: historicoSessoes,
+             cooldownSessoes: cooldownSessoes,
+             semanasNovas: semanas,
             kb: kbInicial ?? null,
             wl: wlInicial ?? null,
             tf: tfInicial ?? null,
@@ -789,6 +792,38 @@ export function PrescreverIaDialog({
                 </div>
                 <p className="text-[10px] text-muted-foreground">
                   Reduza se aparecer o aviso de histórico muito longo.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Bloqueio de repetição (Cooldown)
+                </label>
+                <div className="flex h-9 items-center justify-between rounded-md border bg-background px-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setCooldownSessoes(Math.max(0, cooldownSessoes - 1))}
+                    disabled={gerarMut.isPending || cooldownSessoes <= 0}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="text-sm font-medium tabular-nums">
+                    {cooldownSessoes === 0 ? "Sem bloqueio" : `${cooldownSessoes} sessões`}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setCooldownSessoes(Math.min(10, cooldownSessoes + 1))}
+                    disabled={gerarMut.isPending || cooldownSessoes >= 10}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Evita repetir exercícios usados nas últimas N sessões.
                 </p>
               </div>
             </div>
