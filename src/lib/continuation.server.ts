@@ -21,16 +21,12 @@ export type ContinuationContext = {
   progressionNotes: string;
 };
 
-/**
- * Constrói um resumo compacto do histórico para alimentar a IA sem estourar o limite de tokens.
- */
 export async function buildContinuationContext(
   supabase: SupabaseClient<Database>,
   programId: string,
   nHistory: number,
   cooldown: number = 3
 ): Promise<ContinuationContext> {
-  // 1. Busca as semanas do programa
   const { data: weeks } = await supabase
     .from("program_weeks")
     .select("id, numero_semana")
@@ -51,11 +47,11 @@ export async function buildContinuationContext(
       hardExcludeIds: [],
       softAvoidIds: [],
       recentFormats: [],
+      lastSessionStructure: null,
       progressionNotes: "Início de nova fase sem histórico prévio analisado."
     };
   }
 
-  // 2. Busca sessões recentes
   const { data: sessoes } = await supabase
     .from("sessions")
     .select("id, titulo, numero_dia, program_week_id, program_weeks(numero_semana)")
@@ -74,16 +70,16 @@ export async function buildContinuationContext(
       hardExcludeIds: [],
       softAvoidIds: [],
       recentFormats: [],
+      lastSessionStructure: null,
       progressionNotes: "Nenhuma sessão encontrada no histórico."
     };
   }
 
   const sessaoIds = sessoes.map((s) => s.id);
   
-  // 3. Busca blocos e exercícios das sessões recentes
   const { data: blocos } = await supabase
     .from("session_blocks")
-    .select("id, session_id, formato, titulo")
+    .select("id, session_id, formato, titulo, ordem")
     .in("session_id", sessaoIds)
     .order("ordem", { ascending: true });
 
@@ -100,8 +96,7 @@ export async function buildContinuationContext(
     .in("session_block_id", blocoIds)
     .order("ordem", { ascending: true });
 
-  // 4. Processa os dados para o resumo
-  const sessionData = sessoes.reverse().map((s, idx) => {
+  const sessionData = sessoes.reverse().map((s) => {
     const sBlocos = (blocos ?? []).filter(b => b.session_id === s.id);
     const sExs = (exercicios ?? []).filter(e => sBlocos.some(b => b.id === e.session_block_id));
     
@@ -114,15 +109,24 @@ export async function buildContinuationContext(
     };
   });
 
+  const lastSessao = sessoes[0];
+  const lastBlocos = (blocos ?? [])
+    .filter(b => b.session_id === lastSessao.id)
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+  
+  const lastSessionStructure = lastBlocos.map(b => ({
+    titulo: b.titulo,
+    formato: b.formato
+  }));
+
   const usageMap = new Map<string, { id: string; name: string; count: number; lastIdx: number }>();
-  exercicios?.forEach((e, idx) => {
+  exercicios?.forEach((e) => {
     const id = e.exercise_id || e.nome_livre;
     if (!id) return;
     
     const name = e.nome_livre || (e.exercises as any)?.nome_pt || "Exercício";
     const current = usageMap.get(id) || { id, name, count: 0, lastIdx: -1 };
     
-    // Encontra o índice da sessão original
     const sIdx = sessoes.findIndex(s => 
       (blocos ?? []).some(b => b.id === e.session_block_id && b.session_id === s.id)
     );
@@ -139,7 +143,6 @@ export async function buildContinuationContext(
     .map(u => ({ exerciseId: u.id, name: u.name, count: u.count, lastSeenSessionIdx: u.lastIdx }))
     .sort((a, b) => b.count - a.count);
 
-  // Soft Avoid: exercícios usados nas últimas 'cooldown' sessões
   const softAvoidIds = usage
     .filter(u => (sessoes.length - 1 - u.lastSeenSessionIdx) < cooldown)
     .map(u => u.exerciseId);
@@ -153,9 +156,10 @@ export async function buildContinuationContext(
     lastWeekNumber,
     recentSessions: sessionData,
     usage,
-    hardExcludeIds: [], // Poderia ser preenchido por lesões/restrições no futuro
+    hardExcludeIds: [],
     softAvoidIds,
     recentFormats,
+    lastSessionStructure,
     progressionNotes: `Analisadas ${sessoes.length} sessões. Foco em evitar repetições das últimas ${cooldown} sessões e manter progressão ondulatória.`
   };
 }
