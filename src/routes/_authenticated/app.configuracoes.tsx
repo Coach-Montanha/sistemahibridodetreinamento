@@ -993,8 +993,8 @@ function StatChip({ label, value, hint }: { label: string; value: string; hint?:
 
 function FormatosPanel() {
   const {
-    registry,
     builtins,
+
     presets,
     renameBuiltin,
     describeBuiltin,
@@ -1012,7 +1012,7 @@ function FormatosPanel() {
   const [showHidden, setShowHidden] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<FormatPreset | null>(null);
 
-  const hiddenBuiltins = builtins.filter((p) => registry.hidden.includes(p.base));
+  const hiddenBuiltins = builtins.filter((p) => !presets.find(pr => pr.id === p.id));
   const activeCount = presets.length;
 
   const sensors = useSensors(
@@ -1100,18 +1100,16 @@ function FormatosPanel() {
                 <FormatoCard
                   key={p.id}
                   preset={p}
-                  customized={
-                    p.builtin
-                      ? !!registry.labels[p.base] ||
-                        !!registry.descriptions[p.base] ||
-                        !!registry.builtinDefaults[p.base]
-                      : false
-                  }
+                  customized={false}
+
                   onEdit={() => setEditing(p)}
-                  onDuplicate={() => {
-                    const id = duplicatePreset(p);
-                    setEditing({ ...p, id, label: `${p.label} (cópia)`, builtin: false });
+                  onDuplicate={async () => {
+                    const id = await duplicatePreset(p);
+                    const newPreset = presets.find(pr => pr.id === id);
+                    if (newPreset) setEditing(newPreset);
                   }}
+
+
                   onReset={p.builtin ? () => resetBuiltin(p.base) : undefined}
                   onDelete={() => setConfirmDelete(p)}
                 />
@@ -1150,11 +1148,8 @@ function FormatosPanel() {
                   key={p.id}
                   preset={p}
                   hidden
-                  customized={
-                    !!registry.labels[p.base] ||
-                    !!registry.descriptions[p.base] ||
-                    !!registry.builtinDefaults[p.base]
-                  }
+                  customized={false}
+
                   onEdit={() => setEditing(p)}
                   onShow={() => toggleBuiltin(p.base, true)}
                   onReset={() => resetBuiltin(p.base)}

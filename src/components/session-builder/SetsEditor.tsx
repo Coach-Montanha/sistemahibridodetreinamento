@@ -29,11 +29,11 @@ import {
   type SetPreset,
 } from "@/lib/exercise-set-presets";
 
-import { useSetTypeRegistry, type SetFieldKey } from "@/lib/set-type-registry";
+import { useSetTypeRegistry, type SetFieldConfig } from "@/lib/set-type-registry";
 
 function useSetTypeInfo(typeId: string) {
-  const presets = useSetTypeRegistry((s) => s.presets);
-  return presets.find((p) => p.id === typeId) || presets[0];
+  const { presets } = useSetTypeRegistry();
+  return presets.find((p: any) => p.id === typeId) || presets[0];
 }
 
 export function SetsEditor({
@@ -49,7 +49,7 @@ export function SetsEditor({
   const replicateLastSet = useBuilder((s) => s.replicateLastSet);
   const setExerciseSets = useBuilder((s) => s.setExerciseSets);
 
-  const { presets, save: savePreset, remove: removePreset } = useSetPresets();
+  const { presets: setPresets, save: savePreset, remove: removePreset } = useSetPresets();
   const sets = exercise.sets ?? [];
 
   const [addOpen, setAddOpen] = useState(false);
@@ -125,7 +125,7 @@ export function SetsEditor({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-[min(92vw,340px)] p-2">
             <PresetList
-              presets={presets}
+              presets={setPresets}
               onPick={(p) => {
                 setExerciseSets(block.tempId, exercise.tempId, [
                   ...sets,
@@ -210,8 +210,8 @@ function SetRow({
   onRemove: () => void;
 }) {
   const { presets } = useSetTypeRegistry();
-  const info = presets.find(p => p.id === set.tipo) || presets[0];
-  const fields = info.fields;
+  const info = presets.find((p: any) => p.id === set.tipo) || presets[0];
+  const fields = info.fields as SetFieldConfig[];
 
   return (
     <div className="group grid grid-cols-[1fr_auto] items-end gap-2 rounded-md border border-border/60 bg-background/70 p-2 transition-colors hover:border-border">
@@ -240,7 +240,7 @@ function SetRow({
             <Input
               className="h-9 text-center text-sm tabular-nums transition-colors focus-visible:ring-2 focus-visible:ring-ring/60"
               placeholder={f.placeholder}
-              value={(set[f.key] as string | undefined) ?? ""}
+              value={(set[f.key as keyof BuilderSet] as string | undefined) ?? ""}
               aria-label={`${f.label} da série ${index + 1}`}
               onChange={(e) => onChange({ [f.key]: e.target.value } as Partial<BuilderSet>)}
             />
@@ -275,10 +275,10 @@ function AddSetForm({
   defaultType: SetType;
   onSubmit: (draft: Partial<BuilderSet>) => void;
 }) {
-  const presets = useSetTypeRegistry((s) => s.presets);
+  const { presets } = useSetTypeRegistry();
   const [tipo, setTipo] = useState<SetType>(defaultType);
   const [values, setValues] = useState<Record<string, string>>({});
-  const fields = presets.find(p => p.id === tipo)?.fields || presets[0].fields;
+  const fields = (presets.find((p: any) => p.id === tipo)?.fields || presets[0].fields) as SetFieldConfig[];
 
   return (
     <div className="space-y-3">
@@ -337,6 +337,7 @@ function PresetList({
   onPick: (p: SetPreset) => void;
   onDelete: (p: SetPreset) => void;
 }) {
+  const { presets: setTypes } = useSetTypeRegistry();
   if (!presets.length) {
     return (
       <p className="p-3 text-center text-xs text-muted-foreground">
@@ -359,7 +360,7 @@ function PresetList({
             <div className="truncate text-sm font-medium text-foreground">{p.name}</div>
             <div className="truncate text-[11px] text-muted-foreground">
               {p.sets.length} {p.sets.length === 1 ? "série" : "séries"} ·{" "}
-              {useSetTypeRegistry.getState().presets.find(t => t.id === (p.sets[0]?.tipo))?.label || "Desconhecido"}
+              {setTypes.find((t: any) => t.id === (p.sets[0]?.tipo))?.label || "Desconhecido"}
             </div>
           </button>
           <Button

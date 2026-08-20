@@ -1,5 +1,10 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  listSetTypeDefinitions,
+  upsertSetTypeDefinition,
+  deleteSetTypeDefinition,
+} from "./catalog-sync.functions";
 
 export type SetFieldKey =
   | "serie_rep"
@@ -24,13 +29,6 @@ export interface SetTypePreset {
   label: string;
   fields: SetFieldConfig[];
   builtin?: boolean;
-}
-
-interface SetTypeRegistry {
-  presets: SetTypePreset[];
-  addCustom: (preset: Omit<SetTypePreset, "id" | "builtin">) => string;
-  updateCustom: (id: string, patch: Partial<SetTypePreset>) => void;
-  removePreset: (id: string) => void;
 }
 
 export const BUILTIN_SET_TYPES: SetTypePreset[] = [
@@ -105,30 +103,75 @@ export const BUILTIN_SET_TYPES: SetTypePreset[] = [
   },
 ];
 
-export const useSetTypeRegistry = create<SetTypeRegistry>()(
-  persist(
-    (set) => ({
-      presets: BUILTIN_SET_TYPES,
-      addCustom: (preset) => {
-        const id = `custom:${Date.now().toString(36)}`;
-        set((state) => ({
-          presets: [...state.presets, { ...preset, id, builtin: false }],
-        }));
-        return id;
-      },
-      updateCustom: (id, patch) => {
-        set((state) => ({
-          presets: state.presets.map((p) => (p.id === id ? { ...p, ...patch } : p)),
-        }));
-      },
-      removePreset: (id) => {
-        set((state) => ({
-          presets: state.presets.filter((p) => p.id !== id),
-        }));
-      },
-    }),
-    {
-      name: "shdt.set-type-registry.v1",
-    }
-  )
-);
+export function useSetTypeRegistry() {
+  const queryClient = useQueryClient();
+  const listFn = useServerFn(listSetTypeDefinitions);
+  const upsertFn = useServerFn(upsertSetTypeDefinition);
+  const deleteFn = useServerFn(deleteSetTypeDefinition);
+
+  const { data: definitions = [] } = useQuery({
+    queryKey: ["set-type-definitions"],
+    queryFn: () => listFn(),
+  });
+
+  const upsertMutation = useMutation({
+    mutationFn: (data: any) => upsertFn({ data }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["set-type-definitions"] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["set-type-definitions"] }),
+  });
+
+  const custom: SetTypePreset[] = definitions
+    .filter((d: any) => !d.is_builtin)
+    .map((d: any) => ({
+      id: d.id,
+      label: d.label,
+      fields: (d.fields as unknown as SetFieldConfig[]),
+      builtin: false,
+    }));
+
+  const presets: SetTypePreset[] = [...BUILTIN_SET_TYPES, ...custom].filter(p => {
+    const def = definitions.find((d: any) => d.id === p.id);
+    return def ? def.is_active : true;
+  });
+
+  return {
+    presets,
+    addCustom: (preset: Omit<SetTypePreset, "id" | "builtin">) => {
+      const id = `custom:${Date.now().toString(36)}`;
+      upsertMutation.mutate({
+        id,
+        label: preset.label,
+        fields: preset.fields,
+        is_builtin: false,
+        is_active: true,
+      });
+      return id;
+    },
+    updateCustom: (id: string, patch: Partial<SetTypePreset>) => {
+      const def = definitions.find((d: any) => d.id === id);
+      if (!def) return;
+      upsertMutation.mutate({
+        ...def,
+        label: patch.label ?? def.label,
+        fields: patch.fields ?? def.fields,
+      });
+    },
+    removePreset: (id: string) => {
+      if (id.startsWith("builtin:")) {
+        const def = definitions.find((d: any) => d.id === id);
+        upsertMutation.mutate({
+          id,
+          label: def?.label ?? id,
+          is_active: false,
+          is_builtin: true,
+        });
+      } else {
+        deleteMutation.mutate(id);
+      }
+    },
+  };
+}

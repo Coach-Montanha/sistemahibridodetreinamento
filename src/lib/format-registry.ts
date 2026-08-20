@@ -1,14 +1,19 @@
-import { useSyncExternalStore } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   BLOCK_FORMAT_LABEL,
   ENABLED_FORMATS,
   type BlockFormat,
 } from "./methodology";
+import {
+  listFormatDefinitions,
+  upsertFormatDefinition,
+  deleteFormatDefinition,
+} from "./catalog-sync.functions";
 
 /**
  * Registro leve de "presets" de bloco: rótulos customizados e formatos extras
- * criados pelo coach, persistidos no navegador. Cada preset se apoia em um
- * "base" (BlockFormat) — reutilizamos os editores existentes.
+ * criados pelo coach, persistidos no banco de dados.
  */
 
 export type FormatPreset = {
@@ -20,186 +25,165 @@ export type FormatPreset = {
   builtin?: boolean;
 };
 
-type Registry = {
-  labels: Partial<Record<BlockFormat, string>>;
-  descriptions: Partial<Record<BlockFormat, string>>;
-  builtinDefaults: Partial<Record<BlockFormat, Record<string, any>>>;
-  hidden: BlockFormat[];
-  custom: FormatPreset[];
-  order: string[];
-};
-
-const KEY = "shdt.format-registry.v1";
-
-const EMPTY: Registry = Object.freeze({
-  labels: {},
-  descriptions: {},
-  builtinDefaults: {},
-  hidden: [],
-  custom: [],
-  order: [],
-}) as Registry;
-
-// Cache the last snapshot so useSyncExternalStore doesn't loop on new refs.
-let cache: Registry = EMPTY;
-let cacheRaw: string | null = null;
-
-function read(): Registry {
-  if (typeof window === "undefined") return EMPTY;
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    if (raw === cacheRaw) return cache;
-    cacheRaw = raw;
-    if (!raw) {
-      cache = EMPTY;
-      return cache;
-    }
-    const parsed = JSON.parse(raw);
-    cache = {
-      labels: parsed.labels ?? {},
-      descriptions: parsed.descriptions ?? {},
-      builtinDefaults: parsed.builtinDefaults ?? {},
-      hidden: Array.isArray(parsed.hidden) ? parsed.hidden : [],
-      custom: Array.isArray(parsed.custom) ? parsed.custom : [],
-      order: Array.isArray(parsed.order) ? parsed.order : [],
-    };
-    return cache;
-  } catch {
-    cache = EMPTY;
-    cacheRaw = null;
-    return cache;
-  }
-}
-
-function getServerSnapshot(): Registry {
-  return EMPTY;
-}
-
-function write(next: Registry) {
-  if (typeof window === "undefined") return;
-  const raw = JSON.stringify(next);
-  window.localStorage.setItem(KEY, raw);
-  cacheRaw = raw;
-  cache = next;
-  window.dispatchEvent(new Event("format-registry:changed"));
-}
-
-function subscribe(fn: () => void) {
-  if (typeof window === "undefined") return () => {};
-  const handler = () => fn();
-  window.addEventListener("format-registry:changed", handler);
-  window.addEventListener("storage", handler);
-  return () => {
-    window.removeEventListener("format-registry:changed", handler);
-    window.removeEventListener("storage", handler);
-  };
-}
-
 export function useFormatRegistry() {
-  const registry = useSyncExternalStore(subscribe, read, getServerSnapshot);
+  const queryClient = useQueryClient();
+  const listFn = useServerFn(listFormatDefinitions);
+  const upsertFn = useServerFn(upsertFormatDefinition);
+  const deleteFn = useServerFn(deleteFormatDefinition);
 
-  const builtins: FormatPreset[] = ENABLED_FORMATS.map((f) => ({
-    id: `builtin:${f}`,
-    label: registry.labels[f] ?? BLOCK_FORMAT_LABEL[f],
-    base: f,
-    description: registry.descriptions[f],
-    defaults: registry.builtinDefaults[f],
-    builtin: true,
-  }));
+  const { data: definitions = [] } = useQuery({
+    queryKey: ["format-definitions"],
+    queryFn: () => listFn(),
+  });
 
-  const visibleBuiltins = builtins.filter((p) => !registry.hidden.includes(p.base));
-  const rawVisible: FormatPreset[] = [...visibleBuiltins, ...registry.custom];
-  const orderMap = new Map(registry.order.map((id, i) => [id, i]));
-  const presets: FormatPreset[] = [...rawVisible].sort((a, b) => {
-    const ai = orderMap.has(a.id) ? (orderMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
-    const bi = orderMap.has(b.id) ? (orderMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
-    return ai - bi;
+  const upsertMutation = useMutation({
+    mutationFn: (data: any) => upsertFn({ data }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["format-definitions"] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["format-definitions"] }),
+  });
+
+  const builtins: FormatPreset[] = ENABLED_FORMATS.map((f) => {
+    const def = definitions.find((d: any) => d.id === `builtin:${f}`);
+    return {
+      id: `builtin:${f}`,
+      label: def?.label ?? BLOCK_FORMAT_LABEL[f],
+      base: f,
+      description: def?.description ?? undefined,
+      defaults: (def?.default_config as Record<string, any>) ?? undefined,
+      builtin: true,
+    };
+  });
+
+  const custom: FormatPreset[] = definitions
+    .filter((d: any) => !d.is_builtin)
+    .map((d: any) => ({
+      id: d.id,
+      label: d.label,
+      base: d.base_format as BlockFormat,
+      description: d.description ?? undefined,
+      defaults: (d.default_config as Record<string, any>) ?? undefined,
+      builtin: false,
+    }));
+
+  const presets: FormatPreset[] = [...builtins, ...custom].filter(p => {
+    const def = definitions.find((d: any) => d.id === p.id);
+    return def ? def.is_active : true;
   });
 
   return {
-    registry,
-    builtins,
     presets,
+    builtins,
+    isLoading: false,
     renameBuiltin(base: BlockFormat, label: string) {
-      const next = { ...registry, labels: { ...registry.labels, [base]: label } };
-      if (!label || label === BLOCK_FORMAT_LABEL[base]) delete next.labels[base];
-      write(next);
+      upsertMutation.mutate({
+        id: `builtin:${base}`,
+        base_format: base,
+        label,
+        is_builtin: true,
+        is_active: true,
+      });
     },
     describeBuiltin(base: BlockFormat, description: string) {
-      const next = { ...registry, descriptions: { ...registry.descriptions, [base]: description } };
-      if (!description) delete next.descriptions[base];
-      write(next);
+      const def = definitions.find((d: any) => d.id === `builtin:${base}`);
+      upsertMutation.mutate({
+        id: `builtin:${base}`,
+        base_format: base,
+        label: def?.label ?? BLOCK_FORMAT_LABEL[base],
+        description,
+        is_builtin: true,
+        is_active: true,
+      });
     },
     setBuiltinDefaults(base: BlockFormat, defaults: Record<string, any>) {
-      const cleaned: Record<string, any> = {};
-      for (const [k, v] of Object.entries(defaults)) {
-        if (v !== null && v !== undefined && v !== "") cleaned[k] = v;
-      }
-      const nextDefaults = { ...registry.builtinDefaults };
-      if (Object.keys(cleaned).length === 0) delete nextDefaults[base];
-      else nextDefaults[base] = cleaned;
-      write({ ...registry, builtinDefaults: nextDefaults });
+      const def = definitions.find((d: any) => d.id === `builtin:${base}`);
+      upsertMutation.mutate({
+        id: `builtin:${base}`,
+        base_format: base,
+        label: def?.label ?? BLOCK_FORMAT_LABEL[base],
+        default_config: defaults,
+        is_builtin: true,
+        is_active: true,
+      });
     },
     resetBuiltin(base: BlockFormat) {
-      const labels = { ...registry.labels }; delete labels[base];
-      const descriptions = { ...registry.descriptions }; delete descriptions[base];
-      const builtinDefaults = { ...registry.builtinDefaults }; delete builtinDefaults[base];
-      write({ ...registry, labels, descriptions, builtinDefaults, hidden: registry.hidden.filter((h) => h !== base) });
+      deleteMutation.mutate(`builtin:${base}`);
     },
     removePreset(id: string) {
       if (id.startsWith("builtin:")) {
         const base = id.replace("builtin:", "") as BlockFormat;
-        const set = new Set(registry.hidden);
-        set.add(base);
-        write({ ...registry, hidden: Array.from(set) });
+        const def = definitions.find((d: any) => d.id === id);
+        upsertMutation.mutate({
+          id,
+          base_format: base,
+          label: def?.label ?? BLOCK_FORMAT_LABEL[base],
+          is_active: false,
+          is_builtin: true,
+        });
       } else {
-        write({ ...registry, custom: registry.custom.filter((p) => p.id !== id) });
+        deleteMutation.mutate(id);
       }
     },
     toggleBuiltin(base: BlockFormat, visible: boolean) {
-      const set = new Set(registry.hidden);
-      if (visible) set.delete(base);
-      else set.add(base);
-      write({ ...registry, hidden: Array.from(set) });
+      const id = `builtin:${base}`;
+      const def = definitions.find((d: any) => d.id === id);
+      upsertMutation.mutate({
+        id,
+        base_format: base,
+        label: def?.label ?? BLOCK_FORMAT_LABEL[base],
+        is_active: visible,
+        is_builtin: true,
+      });
     },
-    addCustom(preset: Omit<FormatPreset, "id" | "builtin">) {
+    async addCustom(preset: Omit<FormatPreset, "id" | "builtin">) {
       const id = `custom:${Date.now().toString(36)}`;
-      write({ ...registry, custom: [...registry.custom, { ...preset, id }] });
+      await upsertMutation.mutateAsync({
+        id,
+        base_format: preset.base,
+        label: preset.label,
+        description: preset.description,
+        default_config: preset.defaults,
+        is_builtin: false,
+        is_active: true,
+      });
       return id;
     },
     updateCustom(id: string, patch: Partial<FormatPreset>) {
-      write({
-        ...registry,
-        custom: registry.custom.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+      const def = definitions.find((d: any) => d.id === id);
+      if (!def) return;
+      upsertMutation.mutate({
+        ...def,
+        base_format: patch.base ?? def.base_format,
+        label: patch.label ?? def.label,
+        description: patch.description ?? def.description,
+        default_config: patch.defaults ?? def.default_config,
       });
     },
-    duplicatePreset(source: FormatPreset) {
+    async duplicatePreset(source: FormatPreset) {
       const id = `custom:${Date.now().toString(36)}`;
-      const clone: FormatPreset = {
+      await upsertMutation.mutateAsync({
         id,
+        base_format: source.base,
         label: `${source.label} (cópia)`,
-        base: source.base,
         description: source.description,
-        defaults: source.defaults ? { ...source.defaults } : undefined,
-      };
-      write({ ...registry, custom: [...registry.custom, clone] });
+        default_config: source.defaults,
+        is_builtin: false,
+        is_active: true,
+      });
       return id;
     },
     reorderPresets(activeId: string, overId: string) {
-      const ids = presets.map((p) => p.id);
-      const from = ids.indexOf(activeId);
-      const to = ids.indexOf(overId);
-      if (from === -1 || to === -1 || from === to) return;
-      const next = [...ids];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      write({ ...registry, order: next });
+      // TODO: Implement server-side ordering if needed
     },
   };
 }
 
 /** Lê o label efetivo de um formato (respeitando renomeações do coach). */
 export function useFormatLabel(base: BlockFormat): string {
-  const { registry } = useFormatRegistry();
-  return registry.labels[base] ?? BLOCK_FORMAT_LABEL[base];
+  const { presets } = useFormatRegistry();
+  const found = presets.find(p => p.id === `builtin:${base}` || p.id === base);
+  return found?.label ?? BLOCK_FORMAT_LABEL[base] ?? base;
 }

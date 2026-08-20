@@ -257,7 +257,7 @@ export function PrescreverIaDialog({
   const [previa, setPrevia] = useState<AiPrescription | null>(null);
   const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
-  const { registry: formatRegistry } = useFormatRegistry();
+  const { presets: customFormats } = useFormatRegistry();
   const [moldeSelecionado, setMoldeSelecionado] = useState<string>("auto");
 
   // Moldes únicos extraídos do histórico
@@ -399,7 +399,7 @@ export function PrescreverIaDialog({
                 } 
               : null,
             setTypes: setTypes,
-            formatRegistry: formatRegistry,
+            customFormats: customFormats,
           },
         });
         setProgresso(prev => [...prev, "Gerando relatório de evolução...", "Finalizando prescrição em bloco!"]);

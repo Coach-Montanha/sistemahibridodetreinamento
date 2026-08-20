@@ -36,6 +36,13 @@ export type ModalidadeHibrida = "hibrido" | "kettlebell_fitness";
 /** Mesmo vocabulário do BlockFormat já usado em session-builder/BlockFormats.tsx. */
 export type BlockFormatHibrido = string;
 
+export function resolveBaseFormat(formatId: string): string {
+  if (formatId.startsWith("builtin:")) return formatId.replace("builtin:", "");
+  if (formatId.startsWith("custom:")) return formatId; // Will need lookup if custom formats have different base
+  return formatId;
+}
+
+
 export type ModoExecucao = "circuito" | "series_fixas";
 export type SlotPreparacao = "mobilidade" | "aquecimento";
 export type SelecaoExercicios = "ia" | "manual";
@@ -146,7 +153,9 @@ export async function buscarCandidatosDoMolde(
     const metodologias = [...(bloco.fonteExercicios.metodologias ?? [])];
     const equipamentos = [...(bloco.fonteExercicios.equipamento ?? [])];
 
-    if (bloco.formato === "preparacao_movimento" || bloco.formato === "mobilidade") {
+    const formatBase = resolveBaseFormat(bloco.formato);
+    if (formatBase === "preparacao_movimento" || formatBase === "mobilidade") {
+
       if (bloco.slot === "mobilidade") {
         // Bloco de mobilidade só consegue solicitar e selecionar movimentos do equipamento mobilidade.
         equipamentos.push("Mobilidade");
@@ -213,9 +222,10 @@ export function montarHibridoPrompt(args: {
   instrucoes: string;
   resumoAnterior?: string | null;
   setTypeRegistry?: any[];
-  formatRegistry?: any;
+  customFormats?: any[];
 }): string {
-  const { payload, candidatos, instrucoes, resumoAnterior, setTypeRegistry, formatRegistry } = args;
+  const { payload, candidatos, instrucoes, resumoAnterior, setTypeRegistry, customFormats } = args;
+
 
   const filosofia =
     payload.modalidade === "kettlebell_fitness" ? FILOSOFIA_KETTLEBELL_FITNESS : FILOSOFIA_HIBRIDO;
@@ -262,7 +272,7 @@ export function montarHibridoPrompt(args: {
     `- Gere ${payload.numeroSessoes} sessão(ões) que expandam logicamente o programa anterior, mas com NOVOS exercícios.`,
     "",
     setTypeRegistry ? `TIPOS DE SÉRIES DISPONÍVEIS: ${setTypeRegistry.map(t => `${t.label} (ID: ${t.id})`).join(" | ")}` : "",
-    formatRegistry?.custom?.length > 0 ? `FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS: ${formatRegistry.custom.map((f: any) => `${f.label} (ID: ${f.id})`).join(" | ")}` : "",
+    customFormats && customFormats.length > 0 ? `FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS: ${customFormats.map((f: any) => `${f.label} (ID: ${f.id})`).join(" | ")}` : "",
     resumoAnterior ? `\nCONTEXTO DO PROGRAMA (HISTÓRICO E PROGRESSÃO):\n${resumoAnterior}` : "",
     "",
     "Molde estrutural:",
