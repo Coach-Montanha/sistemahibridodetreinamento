@@ -169,7 +169,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
     const { data: approved, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
-      .select("*")
+      .select("*, exercise_catalog_translations(*)")
       .eq("approved_for_projection", true)
       .is("projected_exercise_id", null);
 
@@ -179,15 +179,17 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
     let projectedCount = 0;
 
     for (const item of approved) {
-      const equipLower = item.equipment_original?.toLowerCase() || "";
-      const equipment = [
-        equipLower === "kettlebell" ? "Kettlebell" :
-        equipLower === "barbell" ? "Barbell" :
-        equipLower === "dumbbell" ? "Dumbbell" :
-        equipLower === "body weight" ? "Ginásticos" :
-        ["cable", "machine", "plate"].includes(equipLower) ? "Alternativos Musculação" :
-        "Objetos Alternativos"
-      ];
+      // Pega a tradução ativa aprovada
+      const translation = Array.isArray(item.exercise_catalog_translations) 
+        ? item.exercise_catalog_translations.find((t: any) => t.translation_status === 'approved')
+        : (item.exercise_catalog_translations as any)?.translation_status === 'approved' 
+          ? item.exercise_catalog_translations 
+          : null;
+
+      if (!translation) continue;
+
+      const equipLower = (translation.equipment_pt_br || item.equipment_original)?.toLowerCase() || "";
+      const equipment = [normalizarEquipamento(equipLower) || "Objetos Alternativos"];
 
       const methodologies: MethodologyKey[] = [];
       if (equipment.includes("Kettlebell") || equipment.includes("Ginásticos")) {
@@ -196,20 +198,23 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
       methodologies.push("hibrido");
 
       const muscleGroups = [
-        item.muscle_group,
-        ...(Array.isArray(item.secondary_muscles) ? (item.secondary_muscles as string[]) : [])
+        translation.muscle_group_pt_br || item.muscle_group,
+        ...(Array.isArray(translation.secondary_muscles_pt_br) 
+          ? (translation.secondary_muscles_pt_br as string[]) 
+          : Array.isArray(item.secondary_muscles) 
+            ? (item.secondary_muscles as string[]) 
+            : [])
       ].filter((m): m is string => typeof m === "string" && m.length > 0);
 
-      const instructions = typeof item.instructions === "object" && item.instructions !== null
-        ? (item.instructions as any).en 
-        : typeof item.instruction_steps === "object" && item.instruction_steps !== null && Array.isArray((item.instruction_steps as any).en)
-          ? (item.instruction_steps as any).en.join("\n")
-          : "";
+      const instructions = translation.instructions_pt_br || 
+        (typeof item.instructions === "object" && item.instructions !== null
+          ? (item.instructions as any).en 
+          : "");
 
       const exerciseRow: Database["public"]["Tables"]["exercises"]["Insert"] = {
         coach_id: null,
         nome_en: item.name_original,
-        nome_pt: item.name_original,
+        nome_pt: translation.name_pt_br || item.name_original,
         instrucoes: instructions || null,
         equipamento: equipment,
         metodologias: methodologies,
@@ -234,7 +239,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
       await supabaseAdmin
         .from("exercise_catalog")
-        .update({ projected_exercise_id: newEx.id })
+        .update({ projected_exercise_id: newEx.id } as any)
         .eq("id", item.id);
 
       projectedCount++;
@@ -242,4 +247,5 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
     return { projected: projectedCount };
   });
+
 
