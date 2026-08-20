@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Json } from "@/integrations/supabase/types";
+import { ENABLED_FORMATS, BLOCK_FORMAT_LABEL } from "./methodology";
 
 // Note: Using broad validation as z.object({ ... }).parse(raw) without refinements
 // to stay compatible with the server function environment's specific schema handling.
@@ -111,4 +112,42 @@ export const deleteSetTypeDefinition = createServerFn({ method: "POST" })
       .eq("id", typed.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const getAvailableBlockFormats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: coach } = await context.supabase.from("coaches").select("id").maybeSingle();
+    const { data: definitions, error } = await context.supabase
+      .from("format_definitions")
+      .select("*")
+      .eq("is_active", true)
+      .or(`coach_id.is.null,coach_id.eq.${coach?.id}`);
+
+    if (error) throw new Error(error.message);
+
+    const builtins = ENABLED_FORMATS.map(f => {
+      const def = definitions?.find(d => d.id === `builtin:${f}`);
+      return {
+        id: `builtin:${f}`,
+        base: f,
+        label: def?.label || BLOCK_FORMAT_LABEL[f],
+        description: def?.description || "",
+        defaults: (def?.default_config as Record<string, any>) || {},
+        builtin: true
+      };
+    });
+
+    const custom = (definitions || [])
+      .filter(d => !d.is_builtin)
+      .map(d => ({
+        id: d.id,
+        base: d.base_format,
+        label: d.label,
+        description: d.description || "",
+        defaults: (d.default_config as Record<string, any>) || {},
+        builtin: false
+      }));
+
+    return [...builtins, ...custom];
   });

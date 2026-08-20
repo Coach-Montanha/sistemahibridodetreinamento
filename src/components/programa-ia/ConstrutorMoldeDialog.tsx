@@ -101,9 +101,7 @@ function ContagemFiltro({
   );
 }
 
-// Mapeamento dinâmico via useFormatRegistry agora cuida das labels
-const FORMATO_LABEL: Record<string, string> = {};
-
+// O dropdown deve consumir presets ativos de useFormatRegistry
 function getFormatosDisponiveis(presets: any[]): string[] {
   return presets.map(p => p.id);
 }

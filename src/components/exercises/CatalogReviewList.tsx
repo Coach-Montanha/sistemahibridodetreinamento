@@ -30,18 +30,36 @@ import { Label } from "@/components/ui/label";
 export function CatalogReviewList() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const pageSize = 50;
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["exercise-catalog-list", page],
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["exercise-catalog-list", page, search, statusFilter],
     queryFn: async () => {
-      const { data, error, count } = await supabase
+      let query = supabase
         .from("exercise_catalog")
         .select(`
           *,
           exercise_catalog_translations (*)
-        `, { count: 'exact' })
-        .order("imported_at", { ascending: false })
+        `, { count: 'exact' });
+
+      if (search) {
+        query = query.ilike("name_original", `%${search}%`);
+      }
+
+      if (statusFilter !== "all") {
+        if (statusFilter === "pending") {
+          query = query.eq("review_status", "pending");
+        } else if (statusFilter === "approved") {
+          query = query.eq("review_status", "approved");
+        } else if (statusFilter === "rejected") {
+          query = query.eq("review_status", "rejected");
+        }
+      }
+
+      const { data, error, count } = await query
+        .order("name_original", { ascending: true })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (error) throw error;
@@ -94,20 +112,57 @@ export function CatalogReviewList() {
     );
   }
 
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Exercício (EN / PT)</TableHead>
-            <TableHead>Equipamento</TableHead>
-            <TableHead>Tradução</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Projeção</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
+  if (error) {
+    return (
+      <div className="rounded-md border border-destructive/50 bg-destructive/5 p-8 text-center">
+        <p className="text-sm font-medium text-destructive mb-2">Erro ao carregar catálogo</p>
+        <p className="text-xs text-muted-foreground mb-4">{(error as any).message}</p>
+        <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] })}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
 
-          </TableRow>
-        </TableHeader>
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
+        <div className="flex-1 max-w-sm">
+          <Input 
+            placeholder="Buscar por nome..." 
+            value={search} 
+            onChange={e => { setSearch(e.target.value); setPage(0); }}
+            className="h-9"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Status:</Label>
+          <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(0); }}>
+            <SelectTrigger className="h-9 w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
+              <SelectItem value="approved">Aprovado</SelectItem>
+              <SelectItem value="rejected">Rejeitado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Exercício (EN / PT)</TableHead>
+              <TableHead>Equipamento</TableHead>
+              <TableHead>Tradução</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Projeção</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
         <TableBody>
           {!items || items.length === 0 ? (
             <TableRow>

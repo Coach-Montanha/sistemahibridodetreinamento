@@ -103,18 +103,25 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { translateExercise } = await import("./exercises-translate.server");
 
-    // Buscamos candidatos que NÃO têm tradução, respeitando offset e limit
-    const { data: candidates, error: candError } = await supabaseAdmin
+    // Buscamos candidatos que NÃO têm tradução
+    const { data: translatedIds } = await supabaseAdmin
+      .from("exercise_catalog_translations")
+      .select("catalog_exercise_id");
+
+    const idsToExclude = (translatedIds || []).map(t => t.catalog_exercise_id);
+
+    let query = supabaseAdmin
       .from("exercise_catalog")
       .select(`
         id, name_original, category, body_part, equipment_original, 
         target, muscle_group, secondary_muscles, instructions, instruction_steps
-      `)
-      .not("id", "in", (
-        supabaseAdmin
-          .from("exercise_catalog_translations")
-          .select("catalog_exercise_id")
-      ))
+      `);
+
+    if (idsToExclude.length > 0) {
+      query = query.not("id", "in", `(${idsToExclude.join(",")})`);
+    }
+
+    const { data: candidates, error: candError } = await query
       .range(offset, offset + limit - 1);
 
 
