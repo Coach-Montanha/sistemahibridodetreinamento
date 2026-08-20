@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { Database } from "@/integrations/supabase/types";
+
+type MethodologyKey = Database["public"]["Enums"]["methodology_key"];
 
 const DATASET_SHA = "fe2e63a4a2cbf634c88e38644ec86068d9127735";
 const DATASET_URL = `https://raw.githubusercontent.com/Coach-Montanha/exercises-dataset/${DATASET_SHA}/data/exercises.json`;
@@ -33,9 +36,8 @@ export const importExercises = createServerFn({ method: "POST" })
 
       if (dryRun) return report;
 
-      // Mapeamento de equipamentos conforme solicitado
       const mapEquipment = (equip: string): string => {
-        const e = equip.toLowerCase();
+        const e = equip?.toLowerCase() || "";
         if (e === "kettlebell") return "Kettlebell";
         if (e === "barbell") return "Barbell";
         if (e === "dumbbell") return "Dumbbell";
@@ -44,20 +46,11 @@ export const importExercises = createServerFn({ method: "POST" })
         return "Pendente";
       };
 
-      // Processamento em lotes para evitar timeouts
       const batchSize = 100;
       for (let i = 0; i < exercisesToProcess.length; i += batchSize) {
         const batch = exercisesToProcess.slice(i, i + batchSize);
         
         const rows = batch.map((ex: any) => {
-          const equipment = mapEquipment(ex.equipment);
-          const methodologies: string[] = [];
-          
-          // Regra automática sugerida: Kettlebell/Ginásticos -> kettlebell_fitness
-          if (["Kettlebell", "Ginásticos"].includes(equipment)) {
-            methodologies.push("kettlebell_fitness");
-          }
-          
           return {
             source: "coach-montanha-exercises-dataset",
             source_commit: DATASET_SHA,
@@ -68,12 +61,12 @@ export const importExercises = createServerFn({ method: "POST" })
             equipment_original: ex.equipment,
             target: ex.target,
             muscle_group: ex.muscle_group,
-            secondary_muscles: ex.secondary_muscles,
+            secondary_muscles: Array.isArray(ex.secondary_muscles) ? ex.secondary_muscles : [],
             instructions: ex.instructions || {},
             instruction_steps: ex.instruction_steps || {},
             attribution: ex.attribution || "© Gym visual — https://gymvisual.com/",
-            image_path: ex.image, // Apenas metadados
-            gif_path: ex.gif_url,   // Apenas metadados
+            image_path: ex.image,
+            gif_path: ex.gif_url,
             review_status: "pending",
             approved_for_projection: false
           };
@@ -102,7 +95,6 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1. Buscar itens aprovados no catálogo que ainda não foram projetados
     const { data: approved, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
       .select("*")
@@ -115,35 +107,46 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
     let projectedCount = 0;
 
     for (const item of approved) {
-      // Mapear para o formato da tabela exercises
+      const equipLower = item.equipment_original?.toLowerCase() || "";
       const equipment = [
-        item.equipment_original === "kettlebell" ? "Kettlebell" :
-        item.equipment_original === "barbell" ? "Barbell" :
-        item.equipment_original === "dumbbell" ? "Dumbbell" :
-        item.equipment_original === "body weight" ? "Ginásticos" :
-        ["cable", "machine", "plate"].includes(item.equipment_original?.toLowerCase()) ? "Alternativos Musculação" :
+        equipLower === "kettlebell" ? "Kettlebell" :
+        equipLower === "barbell" ? "Barbell" :
+        equipLower === "dumbbell" ? "Dumbbell" :
+        equipLower === "body weight" ? "Ginásticos" :
+        ["cable", "machine", "plate"].includes(equipLower) ? "Alternativos Musculação" :
         "Objetos Alternativos"
       ];
 
-      const methodologies = [];
+      const methodologies: MethodologyKey[] = [];
       if (equipment.includes("Kettlebell") || equipment.includes("Ginásticos")) {
         methodologies.push("kettlebell_fitness");
       }
-      // Híbrido é uma projeção ampla
       methodologies.push("hibrido");
 
-      const exerciseRow = {
-        coach_id: null, // Global
+      const muscleGroups = [
+        item.muscle_group,
+        ...(Array.isArray(item.secondary_muscles) ? (item.secondary_muscles as string[]) : [])
+      ].filter((m): m is string => typeof m === "string" && m.length > 0);
+
+      const instructions = typeof item.instructions === "object" && item.instructions !== null
+        ? (item.instructions as any).en 
+        : typeof item.instruction_steps === "object" && item.instruction_steps !== null && Array.isArray((item.instruction_steps as any).en)
+          ? (item.instruction_steps as any).en.join("\n")
+          : "";
+
+      const exerciseRow: Database["public"]["Tables"]["exercises"]["Insert"] = {
+        coach_id: null,
         nome_en: item.name_original,
-        nome_pt: item.name_original, // Fallback inicial conforme plano
-        instrucoes: item.instructions?.en || (Array.isArray(item.instruction_steps?.en) ? item.instruction_steps.en.join("\n") : ""),
+        nome_pt: item.name_original,
+        instrucoes: instructions || null,
         equipamento: equipment,
         metodologias: methodologies,
-        grupos_musculares: [item.muscle_group, ...(Array.isArray(item.secondary_muscles) ? item.secondary_muscles : [])].filter(Boolean),
+        grupos_musculares: muscleGroups,
         source: item.source,
         source_id: item.source_exercise_id,
         source_commit: item.source_commit,
-        criado_por_ia: false
+        criado_por_ia: false,
+        unilateral: false
       };
 
       const { data: newEx, error: insError } = await supabaseAdmin
@@ -157,7 +160,6 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
         continue;
       }
 
-      // Atualizar o catálogo com o ID projetado
       await supabaseAdmin
         .from("exercise_catalog")
         .update({ projected_exercise_id: newEx.id })
@@ -168,3 +170,4 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
     return { projected: projectedCount };
   });
+
