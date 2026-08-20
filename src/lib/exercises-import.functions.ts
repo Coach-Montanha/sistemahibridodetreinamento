@@ -5,7 +5,7 @@ import { normalizarEquipamento } from "./hibrido-ia.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function translateExercise(item: any) {
-  const { aiGateway } = await import("@/lib/ai-gateway.server");
+  const { aiGateway } = await import("./ai-gateway.server");
   const prompt = `Traduza os detalhes técnicos deste exercício de musculação do Inglês para o Português do Brasil (PT-BR).
   Mantenha a terminologia técnica padrão usada em academias brasileiras.
   
