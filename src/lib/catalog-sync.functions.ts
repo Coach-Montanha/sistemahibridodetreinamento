@@ -36,7 +36,7 @@ export const upsertFormatDefinition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: any) => FORMAT_DEF_SCHEMA.parse(raw))
   .handler(async ({ data, context }) => {
-    const typed = data as z.infer<typeof FORMAT_DEF_SCHEMA>;
+    const typed = data as any;
     const { data: coach } = await context.supabase.from("coaches").select("id").maybeSingle();
     const { error } = await context.supabase
       .from("format_definitions")
@@ -58,7 +58,7 @@ export const deleteFormatDefinition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: any) => z.object({ id: z.string() }).parse(raw))
   .handler(async ({ data, context }) => {
-    const typed = data as { id: string };
+    const typed = data as any;
     const { error } = await context.supabase
       .from("format_definitions")
       .delete()
@@ -82,7 +82,7 @@ export const upsertSetTypeDefinition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: any) => SET_TYPE_DEF_SCHEMA.parse(raw))
   .handler(async ({ data, context }) => {
-    const typed = data as z.infer<typeof SET_TYPE_DEF_SCHEMA>;
+    const typed = data as any;
     const { data: coach } = await context.supabase.from("coaches").select("id").maybeSingle();
     const { error } = await context.supabase
       .from("set_type_definitions")
@@ -102,7 +102,7 @@ export const deleteSetTypeDefinition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: any) => z.object({ id: z.string() }).parse(raw))
   .handler(async ({ data, context }) => {
-    const typed = data as { id: string };
+    const typed = data as any;
     const { error } = await context.supabase
       .from("set_type_definitions")
       .delete()
