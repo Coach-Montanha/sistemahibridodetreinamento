@@ -3,22 +3,24 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Json } from "@/integrations/supabase/types";
 
+// Note: Using broad validation as z.object({ ... }).parse(raw) without refinements
+// to stay compatible with the server function environment's specific schema handling.
 const FORMAT_DEF_SCHEMA = z.object({
   id: z.string(),
   base_format: z.string(),
   label: z.string(),
   description: z.string().nullable().optional(),
-  default_config: z.record(z.any()).default({}),
-  is_active: z.boolean().default(true),
-  is_builtin: z.boolean().default(false),
+  default_config: z.any().optional(),
+  is_active: z.boolean().optional(),
+  is_builtin: z.boolean().optional(),
 });
 
 const SET_TYPE_DEF_SCHEMA = z.object({
   id: z.string(),
   label: z.string(),
-  fields: z.array(z.record(z.any())).default([]),
-  is_active: z.boolean().default(true),
-  is_builtin: z.boolean().default(false),
+  fields: z.any().optional(),
+  is_active: z.boolean().optional(),
+  is_builtin: z.boolean().optional(),
 });
 
 export const listFormatDefinitions = createServerFn({ method: "GET" })
@@ -45,9 +47,9 @@ export const upsertFormatDefinition = createServerFn({ method: "POST" })
         base_format: typed.base_format,
         label: typed.label,
         description: typed.description,
-        default_config: typed.default_config as Json,
-        is_active: typed.is_active,
-        is_builtin: typed.is_builtin,
+        default_config: (typed.default_config ?? {}) as Json,
+        is_active: typed.is_active ?? true,
+        is_builtin: typed.is_builtin ?? false,
         coach_id: coach?.id 
       });
     if (error) throw new Error(error.message);
@@ -89,9 +91,9 @@ export const upsertSetTypeDefinition = createServerFn({ method: "POST" })
       .upsert({ 
         id: typed.id,
         label: typed.label,
-        fields: typed.fields as unknown as Json,
-        is_active: typed.is_active,
-        is_builtin: typed.is_builtin,
+        fields: (typed.fields ?? []) as unknown as Json,
+        is_active: typed.is_active ?? true,
+        is_builtin: typed.is_builtin ?? false,
         coach_id: coach?.id 
       });
     if (error) throw new Error(error.message);
