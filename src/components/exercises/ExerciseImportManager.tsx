@@ -24,29 +24,31 @@ export function ExerciseImportManager() {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["exercise-catalog-stats"],
     queryFn: async () => {
-      const { data: catalog, error: catError } = await supabase
-        .from("exercise_catalog")
-        .select("id, review_status, approved_for_projection, projected_exercise_id");
+      // Cálculo dinâmico do esperado via fetch do dataset
+      const DATASET_SHA = "fe2e63a4a2cbf634c88e38644ec86068d9127735";
+      const DATASET_URL = `https://raw.githubusercontent.com/Coach-Montanha/exercises-dataset/${DATASET_SHA}/data/exercises.json`;
       
-      if (catError) throw catError;
+      const [res, catalogRes, transRes] = await Promise.all([
+        fetch(DATASET_URL).then(r => r.json()),
+        supabase.from("exercise_catalog").select("id, review_status, approved_for_projection, projected_exercise_id", { count: 'exact' }),
+        supabase.from("exercise_catalog_translations").select("catalog_exercise_id", { count: 'exact' })
+      ]);
 
-      const { data: translations, error: transError } = await supabase
-        .from("exercise_catalog_translations")
-        .select("catalog_exercise_id, translation_status");
-      
-      if (transError) throw transError;
-
-      const translatedIds = new Set((translations || []).map(t => t.catalog_exercise_id));
+      const expectedTotal = Array.isArray(res) ? res.length : 0;
+      const catalog = catalogRes.data || [];
+      const translatedCount = transRes.count || 0;
 
       return {
-        total: catalog.length,
+        expected: expectedTotal,
+        total: catalogRes.count || 0,
         pending: catalog.filter(d => d.review_status === 'pending').length,
-        needTranslation: catalog.length - translatedIds.size,
+        needTranslation: (catalogRes.count || 0) - translatedCount,
         approved: catalog.filter(d => d.approved_for_projection && !d.projected_exercise_id).length,
         projected: catalog.filter(d => !!d.projected_exercise_id).length,
       };
     }
   });
+
 
 
   const handleImport = async () => {
@@ -96,11 +98,13 @@ export function ExerciseImportManager() {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard 
-          title="Total no Catálogo" 
-          value={stats?.total ?? 0} 
+          title="Fonte vs Catálogo" 
+          value={`${stats?.total ?? 0} / ${stats?.expected ?? 0}`} 
           icon={Database} 
           loading={statsLoading} 
+          color={(stats?.total || 0) < (stats?.expected || 0) ? "text-amber-500" : "text-green-500"}
         />
+
         <StatCard 
           title="Aguardando Revisão" 
           value={stats?.pending ?? 0} 
