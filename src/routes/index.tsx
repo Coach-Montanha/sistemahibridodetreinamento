@@ -23,7 +23,7 @@ export const Route = createFileRoute("/")({
 function AuthPage() {
   const { modo } = Route.useSearch();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"login" | "cadastro">(modo ?? "login");
+  const [tab, setTab] = useState<"login" | "cadastro">(modo === "cadastro" ? "cadastro" : "login");
 
   async function routeAfterLogin() {
     const { data: u } = await supabase.auth.getUser();
@@ -47,15 +47,18 @@ function AuthPage() {
           <span className="text-xl font-bold">Coach Montanha</span>
         </Link>
         <Card className="p-6">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+          <Tabs 
+            value={tab} 
+            onValueChange={(v) => setTab(v === "cadastro" ? "cadastro" : "login")}
+          >
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="cadastro">Criar conta</TabsTrigger>
+              <TabsTrigger value="login" id="home-tab-login">Entrar</TabsTrigger>
+              <TabsTrigger value="cadastro" id="home-tab-cadastro">Criar conta</TabsTrigger>
             </TabsList>
-            <TabsContent value="login">
+            <TabsContent value="login" id="home-content-login">
               <LoginForm onDone={routeAfterLogin} />
             </TabsContent>
-            <TabsContent value="cadastro">
+            <TabsContent value="cadastro" id="home-content-cadastro">
               <SignupForm onDone={() => navigate({ to: "/app" })} />
             </TabsContent>
           </Tabs>
