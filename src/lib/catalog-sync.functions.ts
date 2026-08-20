@@ -5,7 +5,6 @@ import type { Json } from "@/integrations/supabase/types";
 
 const FORMAT_DEF_SCHEMA = z.object({
   id: z.string(),
-
   base_format: z.string(),
   label: z.string(),
   description: z.string().nullable().optional(),
@@ -35,7 +34,7 @@ export const listFormatDefinitions = createServerFn({ method: "GET" })
 
 export const upsertFormatDefinition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw) => FORMAT_DEF_SCHEMA.parse(raw))
+  .inputValidator((raw: any) => FORMAT_DEF_SCHEMA.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: coach } = await context.supabase.from("coaches").select("id").maybeSingle();
     const { error } = await context.supabase
@@ -56,7 +55,7 @@ export const upsertFormatDefinition = createServerFn({ method: "POST" })
 
 export const deleteFormatDefinition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw) => z.object({ id: z.string() }).parse(raw))
+  .inputValidator((raw: any) => z.object({ id: z.string() }).parse(raw))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("format_definitions")
@@ -79,7 +78,7 @@ export const listSetTypeDefinitions = createServerFn({ method: "GET" })
 
 export const upsertSetTypeDefinition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw) => SET_TYPE_DEF_SCHEMA.parse(raw))
+  .inputValidator((raw: any) => SET_TYPE_DEF_SCHEMA.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: coach } = await context.supabase.from("coaches").select("id").maybeSingle();
     const { error } = await context.supabase
@@ -98,7 +97,7 @@ export const upsertSetTypeDefinition = createServerFn({ method: "POST" })
 
 export const deleteSetTypeDefinition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw) => z.object({ id: z.string() }).parse(raw))
+  .inputValidator((raw: any) => z.object({ id: z.string() }).parse(raw))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("set_type_definitions")

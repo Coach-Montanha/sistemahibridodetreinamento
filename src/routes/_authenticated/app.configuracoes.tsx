@@ -1105,8 +1105,10 @@ function FormatosPanel() {
                   onEdit={() => setEditing(p)}
                   onDuplicate={async () => {
                     const id = await duplicatePreset(p);
-                    setEditing({ ...p, id, label: `${p.label} (cópia)`, builtin: false });
+                    const newPreset = presets.find(pr => pr.id === id);
+                    if (newPreset) setEditing(newPreset);
                   }}
+
 
                   onReset={p.builtin ? () => resetBuiltin(p.base) : undefined}
                   onDelete={() => setConfirmDelete(p)}

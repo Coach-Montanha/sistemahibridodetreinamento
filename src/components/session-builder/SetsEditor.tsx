@@ -29,7 +29,7 @@ import {
   type SetPreset,
 } from "@/lib/exercise-set-presets";
 
-import { useSetTypeRegistry, type SetFieldKey } from "@/lib/set-type-registry";
+import { useSetTypeRegistry, type SetFieldConfig } from "@/lib/set-type-registry";
 
 function useSetTypeInfo(typeId: string) {
   const { presets } = useSetTypeRegistry();
@@ -211,7 +211,7 @@ function SetRow({
 }) {
   const { presets } = useSetTypeRegistry();
   const info = presets.find((p: any) => p.id === set.tipo) || presets[0];
-  const fields = info.fields;
+  const fields = info.fields as SetFieldConfig[];
 
   return (
     <div className="group grid grid-cols-[1fr_auto] items-end gap-2 rounded-md border border-border/60 bg-background/70 p-2 transition-colors hover:border-border">
@@ -234,13 +234,13 @@ function SetRow({
             </SelectContent>
           </Select>
         </div>
-        {(fields as any[]).map((f) => (
+        {fields.map((f) => (
           <div key={f.key} className={f.wide ? "col-span-2 sm:col-span-3" : ""}>
             <FieldLabel>{f.label}</FieldLabel>
             <Input
               className="h-9 text-center text-sm tabular-nums transition-colors focus-visible:ring-2 focus-visible:ring-ring/60"
               placeholder={f.placeholder}
-              value={(set[f.key] as string | undefined) ?? ""}
+              value={(set[f.key as keyof BuilderSet] as string | undefined) ?? ""}
               aria-label={`${f.label} da série ${index + 1}`}
               onChange={(e) => onChange({ [f.key]: e.target.value } as Partial<BuilderSet>)}
             />
@@ -278,7 +278,7 @@ function AddSetForm({
   const { presets } = useSetTypeRegistry();
   const [tipo, setTipo] = useState<SetType>(defaultType);
   const [values, setValues] = useState<Record<string, string>>({});
-  const fields = presets.find((p: any) => p.id === tipo)?.fields || presets[0].fields;
+  const fields = (presets.find((p: any) => p.id === tipo)?.fields || presets[0].fields) as SetFieldConfig[];
 
   return (
     <div className="space-y-3">
@@ -304,7 +304,7 @@ function AddSetForm({
         </Select>
       </div>
       <div className={`grid gap-2 ${fields.length > 2 ? "grid-cols-2" : "grid-cols-1"}`}>
-        {(fields as any[]).map((f) => (
+        {fields.map((f) => (
           <div key={f.key} className={f.wide ? "col-span-2" : ""}>
             <FieldLabel>{f.label}</FieldLabel>
             <Input
