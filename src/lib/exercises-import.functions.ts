@@ -190,8 +190,9 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
       if (!translation) continue;
 
-      const equipLower = (translation.equipment_pt_br || item.equipment_original)?.toLowerCase() || "";
-      const equipment = [normalizarEquipamento(equipLower) || "Objetos Alternativos"];
+      const equipRaw = (translation.equipment_pt_br || item.equipment_original) || "";
+      const equipment = [normalizarEquipamento(equipRaw) || "Objetos Alternativos"];
+
 
       const methodologies: MethodologyKey[] = [];
       if (equipment.includes("Kettlebell") || equipment.includes("Ginásticos")) {
