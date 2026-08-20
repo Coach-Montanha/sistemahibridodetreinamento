@@ -288,104 +288,39 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       (w: any) => (w.sessions ?? []).map((s: any) => s.titulo ?? null),
     );
     
-    // Busca o histórico detalhado do programa
-    const programWeeks = (programa as any).program_weeks || [];
-    const weekIds = programWeeks.map((w: any) => w.id);
-    
-    let resumoAnterior = null;
-    let historicoCompleto: any[] = [];
+    // Busca o histórico detalhado do programa via buildContinuationContext
     const nHistorico = data.historicoSessoes ?? 6;
-
-    if (weekIds.length > 0 && nHistorico > 0) {
-      // Busca todas as sessões das semanas para extrair blocos e exercícios
-      const { data: sessoes } = await supabase
-        .from("sessions")
-        .select("id, titulo, numero_dia, program_week_id, program_weeks(numero_semana)")
-        .in("program_week_id", weekIds)
-        .order("created_at", { ascending: true });
-      
-      const sessaoIds = (sessoes ?? []).map((s: any) => s.id);
-      
-      if (sessaoIds.length > 0) {
-        const { data: blocosSessao } = await supabase
-          .from("session_blocks")
-          .select("id, session_id, formato, titulo, config")
-          .in("session_id", sessaoIds)
-          .order("ordem", { ascending: true });
-        
-        const blocoIds = (blocosSessao ?? []).map((b: any) => b.id);
-        
-        if (blocoIds.length > 0) {
-          const { data: exerciciosPassados } = await supabase
-            .from("session_block_exercises")
-            .select("session_block_id, nome_livre, series, reps, carga_kg, pct_1rm, descanso_seg, observacoes")
-            .in("session_block_id", blocoIds)
-            .order("ordem", { ascending: true });
-
-          // Constrói um resumo estruturado para a IA
-          historicoCompleto = (sessoes ?? []).map(s => {
-            const blocos = (blocosSessao ?? [])
-              .filter(b => b.session_id === s.id)
-              .map(b => {
-                const exercicios = (exerciciosPassados ?? [])
-                  .filter(e => e.session_block_id === b.id)
-                  .map(e => ({
-                    nome: e.nome_livre,
-                    sets: e.series,
-                    reps: e.reps,
-                    carga: e.carga_kg ? `${e.carga_kg}kg` : e.pct_1rm ? `${e.pct_1rm}%` : "Livre",
-                    obs: e.observacoes
-                  }));
-                return { titulo: b.titulo, formato: b.formato, exercicios };
-              });
-            return {
-              semana: (s.program_weeks as any)?.numero_semana,
-              dia: s.numero_dia,
-              titulo: s.titulo,
-              blocos
-            };
-          });
-
-          const nomesUsados = Array.from(new Set((exerciciosPassados ?? []).map((e: any) => e.nome_livre)));
-          const recentes = historicoCompleto.slice(-nHistorico);
-          let corpo = JSON.stringify(recentes, null, 2);
-          // Guarda-chuva contra erro 400 (limite de tokens do gateway):
-          // se o histórico detalhado for grande demais, degrada para um resumo estrutural.
-          if (corpo.length > 12000) {
-            const compacto = recentes.map((s: any) => ({
-              semana: s.semana,
-              dia: s.dia,
-              blocos: (s.blocos ?? []).map((b: any) => ({
-                formato: b.formato,
-                exercicios: (b.exercicios ?? []).map((e: any) => e.nome).filter(Boolean),
-              })),
-            }));
-            corpo = JSON.stringify(compacto);
-            if (corpo.length > 12000) corpo = JSON.stringify(compacto.slice(-2));
-          }
-          resumoAnterior = `HISTÓRICO DO PROGRAMA (últimas ${recentes.length} sessões — use para sobrecarga progressiva):\n` +
-            corpo +
-            `\n\nResumo de exercícios já utilizados: ${nomesUsados.slice(-20).join(", ")}`;
-        }
-      }
-    }
+    const cooldown = data.cooldownSessoes ?? 3;
+    
+    const { buildContinuationContext } = await import("./continuation.server");
+    const continuation = await buildContinuationContext(
+      supabase,
+      data.programId,
+      nHistorico,
+      cooldown
+    );
 
     const ctx: RotinaContexto = {
       titulo: programa.titulo ?? "Programa",
       metodologia: metodologiaEfetiva as string,
-      duracao_semanas: data.hibrido?.numeroSessoes && data.diasPorSemana 
-        ? Math.ceil(data.hibrido.numeroSessoes / data.diasPorSemana) 
-        : (programa.duracao_semanas ?? 1),
+      duracao_semanas: data.semanasNovas,
       data_inicio: programa.data_inicio ?? null,
-      data_fim: calcularDataFim(programa.data_inicio ?? null, programa.duracao_semanas ?? 1),
+      data_fim: calcularDataFim(programa.data_inicio ?? null, data.semanasNovas),
       nomenclatura: "numerico" as const, // Fallback seguro
       sessoes_existentes: titulos.length,
       objetivos: programa.descricao ?? null,
       dias_por_semana: data.diasPorSemana ?? null,
-      escopo_label: data.escopoLabel ?? null,
-      resumo_anterior: resumoAnterior || null,
+      escopo_label: data.escopoLabel ?? `${data.semanasNovas} semana(s)`,
+      continuation: continuation,
       aluno_info: programa.descricao ?? null,
     };
+
+    // Fallback de histórico legível para prompts que ainda não usam o objeto estruturado
+    const resumoAnterior = ctx.continuation 
+      ? `CONTEXTO RECENTE: Analisadas ${ctx.continuation.sourceSessionCount} sessões. ` +
+        `IDs evitáveis: ${ctx.continuation.softAvoidIds.join(", ")}. ` +
+        `Exercícios anteriores: ${ctx.continuation.recentSessions.flatMap(s => s.exerciseNames).slice(-20).join(", ")}`
+      : null;
 
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("Serviço de IA indisponível no momento");
