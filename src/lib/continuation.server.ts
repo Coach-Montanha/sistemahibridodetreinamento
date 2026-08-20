@@ -17,7 +17,7 @@ export type ContinuationContext = {
   hardExcludeIds: string[];
   softAvoidIds: string[];
   recentFormats: string[];
-  lastSessionStructure: Array<{ titulo: string | null; formato: string }> | null;
+  lastSessionStructure: Array<{ titulo: string | null; formato: string; chave: string; numeroExercicios: number; fonteExercicios: any }> | null;
   progressionNotes: string;
 };
 
