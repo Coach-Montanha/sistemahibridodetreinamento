@@ -23,7 +23,7 @@ export const Route = createFileRoute("/")({
 function AuthPage() {
   const { modo } = Route.useSearch();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"login" | "cadastro">(modo ?? "login");
+  const [tab, setTab] = useState<"login" | "cadastro">(modo === "cadastro" ? "cadastro" : "login");
 
   async function routeAfterLogin() {
     const { data: u } = await supabase.auth.getUser();
@@ -47,15 +47,19 @@ function AuthPage() {
           <span className="text-xl font-bold">Coach Montanha</span>
         </Link>
         <Card className="p-6">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+          <Tabs value={tab} onValueChange={(v) => setTab(v === "cadastro" ? "cadastro" : "login")}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="cadastro">Criar conta</TabsTrigger>
+              <TabsTrigger value="login" id="home-tab-login">
+                Entrar
+              </TabsTrigger>
+              <TabsTrigger value="cadastro" id="home-tab-cadastro">
+                Criar conta
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="login">
+            <TabsContent value="login" id="home-content-login">
               <LoginForm onDone={routeAfterLogin} />
             </TabsContent>
-            <TabsContent value="cadastro">
+            <TabsContent value="cadastro" id="home-content-cadastro">
               <SignupForm onDone={() => navigate({ to: "/app" })} />
             </TabsContent>
           </Tabs>
@@ -90,11 +94,23 @@ function LoginForm({ onDone }: { onDone: () => void }) {
     <form onSubmit={handle} className="mt-4 space-y-4">
       <div>
         <Label htmlFor="li-email">E-mail</Label>
-        <Input id="li-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input
+          id="li-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
       </div>
       <div>
         <Label htmlFor="li-pw">Senha</Label>
-        <Input id="li-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Input
+          id="li-pw"
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
       </div>
       <label className="flex items-center gap-2 text-sm text-muted-foreground">
         <Checkbox defaultChecked disabled /> Lembrar de mim (sessão persistente)
@@ -133,7 +149,9 @@ function SignupForm({ onDone }: { onDone: () => void }) {
       });
       if (cErr) {
         setLoading(false);
-        return toast.error("Cadastro criado, mas falhou ao criar perfil de treinador: " + cErr.message);
+        return toast.error(
+          "Cadastro criado, mas falhou ao criar perfil de treinador: " + cErr.message,
+        );
       }
     }
     setLoading(false);
@@ -149,11 +167,24 @@ function SignupForm({ onDone }: { onDone: () => void }) {
       </div>
       <div>
         <Label htmlFor="su-email">E-mail</Label>
-        <Input id="su-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input
+          id="su-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
       </div>
       <div>
         <Label htmlFor="su-pw">Senha</Label>
-        <Input id="su-pw" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Input
+          id="su-pw"
+          type="password"
+          required
+          minLength={8}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
         <p className="mt-1 text-xs text-muted-foreground">Mínimo 8 caracteres.</p>
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
