@@ -50,6 +50,7 @@ import {
   EyeOff,
   Pencil,
   RotateCcw,
+  Database,
 } from "lucide-react";
 import { Copy, Wand2 } from "lucide-react";
 import { Palette, FolderArchive, KeyRound } from "lucide-react";
