@@ -2,6 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { normalizarEquipamento } from "./hibrido-ia.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { translateExercise } from "./exercises-translate.server";
+
+
 
 
 type MethodologyKey = Database["public"]["Enums"]["methodology_key"];
@@ -103,18 +107,25 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { translateExercise } = await import("./exercises-translate.server");
 
-    // Buscamos candidatos que NÃO têm tradução, respeitando offset e limit
-    const { data: candidates, error: candError } = await supabaseAdmin
+    // Buscamos candidatos que NÃO têm tradução
+    const { data: translatedIds } = await supabaseAdmin
+      .from("exercise_catalog_translations")
+      .select("catalog_exercise_id");
+
+    const idsToExclude = (translatedIds || []).map(t => t.catalog_exercise_id);
+
+    let query = supabaseAdmin
       .from("exercise_catalog")
       .select(`
         id, name_original, category, body_part, equipment_original, 
         target, muscle_group, secondary_muscles, instructions, instruction_steps
-      `)
-      .not("id", "in", (
-        supabaseAdmin
-          .from("exercise_catalog_translations")
-          .select("catalog_exercise_id")
-      ))
+      `);
+
+    if (idsToExclude.length > 0) {
+      query = query.not("id", "in", `(${idsToExclude.join(",")})`);
+    }
+
+    const { data: candidates, error: candError } = await query
       .range(offset, offset + limit - 1);
 
 
@@ -169,6 +180,53 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
     }
 
     return results;
+  });
+
+export const translateSingleExercise = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
+  .handler(async ({ data: { id } }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    const { data: item, error: fetchError } = await supabaseAdmin
+      .from("exercise_catalog")
+      .select("*")
+      .eq("id", id)
+      .single();
+      
+    if (fetchError || !item) throw new Error("Exercício não encontrado");
+
+    const translated = await translateExercise(item);
+    
+    const { data: translation, error: transError } = await supabaseAdmin
+      .from("exercise_catalog_translations")
+      .upsert({
+        catalog_exercise_id: item.id,
+        locale: "pt-BR",
+        name_pt_br: translated.name,
+        category_pt_br: translated.category,
+        body_part_pt_br: translated.body_part,
+        equipment_pt_br: translated.equipment,
+        target_pt_br: translated.target,
+        muscle_group_pt_br: translated.muscle_group,
+        secondary_muscles_pt_br: translated.secondary_muscles,
+        instructions_pt_br: translated.instructions,
+        instruction_steps_pt_br: translated.instruction_steps,
+        translation_status: "draft",
+        translation_source: "llm",
+        translation_model: "gemini-2.0-flash-exp"
+      })
+      .select("id")
+      .single();
+
+    if (transError) throw transError;
+
+    await supabaseAdmin
+      .from("exercise_catalog")
+      .update({ active_translation_id: translation.id })
+      .eq("id", item.id);
+
+    return { success: true, translation };
   });
 
 export const projectApprovedExercises = createServerFn({ method: "POST" })

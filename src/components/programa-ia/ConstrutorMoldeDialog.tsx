@@ -101,12 +101,6 @@ function ContagemFiltro({
   );
 }
 
-// Mapeamento dinâmico via useFormatRegistry agora cuida das labels
-const FORMATO_LABEL: Record<string, string> = {};
-
-function getFormatosDisponiveis(presets: any[]): string[] {
-  return presets.map(p => p.id);
-}
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
 const USA_SERIES: string[] = [
@@ -284,6 +278,22 @@ function BlocoConfigForm({
   return (
     <div className="space-y-4 border-t border-border/60 pt-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Formato</Label>
+          <Select value={bloco.formato} onValueChange={(v) => onChange({ formato: v as BlockFormatHibrido })}>
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {useFormatRegistry().presets.map((p: any) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Título do bloco — opcional</Label>
           <Input
@@ -677,10 +687,10 @@ export function ConstrutorMoldeDialog({
   }
 
 
-  const formatosDisponiveis = getFormatosDisponiveis(presets);
+  const formatosDisponiveis = presets.map((p: any) => p.id);
 
   const getFormatLabel = (f: string) => {
-    const p = presets.find((p: any) => p.id === f || `builtin:${p.base}` === f);
+    const p = presets.find((p: any) => p.id === f);
     return p?.label ?? f;
   };
 
