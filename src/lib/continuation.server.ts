@@ -114,10 +114,18 @@ export async function buildContinuationContext(
     .filter(b => b.session_id === lastSessao.id)
     .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
   
-  const lastSessionStructure = lastBlocos.map(b => ({
-    titulo: b.titulo,
-    formato: b.formato
-  }));
+  const lastSessionStructure = lastBlocos.map(b => {
+    const bExs = (exercicios ?? []).filter(e => e.session_block_id === b.id);
+    const config = b.config as any;
+    
+    return {
+      titulo: b.titulo,
+      formato: b.formato,
+      chave: b.id,
+      numeroExercicios: bExs.length || 1,
+      fonteExercicios: config?.fonteExercicios || { metodologias: [] }
+    };
+  });
 
   const usageMap = new Map<string, { id: string; name: string; count: number; lastIdx: number }>();
   exercicios?.forEach((e) => {
