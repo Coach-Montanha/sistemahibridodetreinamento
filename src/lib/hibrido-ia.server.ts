@@ -118,6 +118,7 @@ export function normalizarEquipamento(valor: string): string | null {
   const achado = EQUIPAMENTOS_CANONICOS.find((c) => chaveEquip(c) === k);
   if (achado) return achado;
   if (k === "ginastico" || k === "ginasticos") return "Ginásticos";
+  if (["cable", "machine", "plate"].includes(k)) return "Alternativos Musculação";
   return null;
 }
 
