@@ -329,8 +329,31 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
     category_pt_br: translation?.category_pt_br || "",
     body_part_pt_br: translation?.body_part_pt_br || "",
     muscle_group_pt_br: translation?.muscle_group_pt_br || "",
-    instructions_pt_br: translation?.instructions_pt_br || ""
+    instructions_pt_br: translation?.instructions_pt_br || "",
+    body_part: item.body_part || "",
+    target: item.target || "",
+    muscle_group: item.muscle_group || "",
+    equipment_original: item.equipment_original || ""
   });
+
+  // Efeito para atualizar campos quando a tradução mudar (após Wand2)
+  useState(() => {
+    if (translation) {
+      setEdited({
+        name_pt_br: translation.name_pt_br || "",
+        equipment_pt_br: translation.equipment_pt_br || "",
+        category_pt_br: translation.category_pt_br || "",
+        body_part_pt_br: translation.body_part_pt_br || "",
+        muscle_group_pt_br: translation.muscle_group_pt_br || "",
+        instructions_pt_br: translation.instructions_pt_br || "",
+        body_part: item.body_part || "",
+        target: item.target || "",
+        muscle_group: item.muscle_group || "",
+        equipment_original: item.equipment_original || ""
+      });
+    }
+  }, [translation]);
+
 
   const translateMutation = useMutation({
     mutationFn: async () => {
