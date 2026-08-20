@@ -100,6 +100,7 @@ export const EQUIPAMENTOS_CANONICOS = [
   "Dumbbell",
   "Barbell",
   "Mobilidade",
+  "Alternativos Musculação",
   "Objetos Alternativos",
 ] as const;
 
