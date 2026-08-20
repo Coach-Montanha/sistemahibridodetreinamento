@@ -319,7 +319,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const resumoAnterior = ctx.continuation 
       ? `CONTEXTO RECENTE: Analisadas ${ctx.continuation.sourceSessionCount} sessões. ` +
         `IDs evitáveis: ${ctx.continuation.softAvoidIds.join(", ")}. ` +
-        `Exercícios anteriores: ${ctx.continuation.recentSessions.flatMap(s => s.exerciseNames).slice(-20).join(", ")}`
+        `Exercícios anteriores: ${ctx.continuation.recentSessions.flatMap(s => s.exerciseNames).slice(-10).join(", ")}`
       : null;
 
     const apiKey = process.env.LOVABLE_API_KEY;
@@ -429,13 +429,13 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             const template = data.hibrido.sessaoTemplate?.length > 0 
               ? data.hibrido.sessaoTemplate 
               : continuation.lastSessionStructure 
-                ? continuation.lastSessionStructure.map((b: any, idx: number) => ({
-                    chave: `b_${idx}`,
+                ? continuation.lastSessionStructure.map((b: any) => ({
+                    chave: b.chave,
                     formato: b.formato,
                     titulo: b.titulo,
                     selecaoExercicios: "ia",
-                    numeroExercicios: 1, // Fallback default
-                    fonteExercicios: { metodologias: [metodologiaEfetiva] }
+                    numeroExercicios: b.numeroExercicios,
+                    fonteExercicios: b.fonteExercicios
                   }))
                 : [];
             
@@ -484,13 +484,13 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       const templateFinal = data.hibrido.sessaoTemplate?.length > 0 
         ? data.hibrido.sessaoTemplate 
         : continuation.lastSessionStructure
-          ? continuation.lastSessionStructure.map((b: any, idx: number) => ({
-              chave: `b_${idx}`,
+          ? continuation.lastSessionStructure.map((b: any) => ({
+              chave: b.chave,
               formato: b.formato,
               titulo: b.titulo,
               selecaoExercicios: "ia",
-              numeroExercicios: 1,
-              fonteExercicios: { metodologias: [metodologiaEfetiva] }
+              numeroExercicios: b.numeroExercicios,
+              fonteExercicios: b.fonteExercicios
             }))
           : [];
 

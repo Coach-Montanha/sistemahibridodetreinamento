@@ -261,6 +261,30 @@ export function PrescreverIaDialog({
   const { presets: customFormats } = useFormatRegistry();
   const [moldeSelecionado, setMoldeSelecionado] = useState<string>("auto");
 
+  // Efeito para carregar as regras persistidas do programa
+  useEffect(() => {
+    async function carregarRegras() {
+      if (!programa?.id) return;
+      const { data, error } = await supabase
+        .from("programs")
+        .select("regras_progressao")
+        .eq("id", programa.id)
+        .maybeSingle();
+      
+      if (data?.regras_progressao) {
+        const r = data.regras_progressao as any;
+        if (r.metodologia) setMetodologia(r.metodologia);
+        if (r.escola) setEscola(r.escola);
+        if (r.dias_por_semana) setDiasPorSemana(r.dias_por_semana);
+        if (r.semanas) setSemanas(r.semanas);
+        if (r.historico_sessoes !== undefined) setHistoricoSessoes(r.historico_sessoes);
+        if (r.cooldown_sessoes !== undefined) setCooldownSessoes(r.cooldown_sessoes);
+        if (r.prompt) setPrompt(r.prompt);
+      }
+    }
+    carregarRegras();
+  }, [programa?.id]);
+
   // Moldes únicos extraídos do histórico
   const moldesHistoricos = useMemo(() => {
     if (!escopoInicial?.hibrido?.historicoSessoes) return [];
@@ -368,7 +392,21 @@ export function PrescreverIaDialog({
   const gerarMut = useMutation({
     mutationFn: async () => {
       if (!programa) throw new Error("Programa não selecionado");
-      setProgresso(["Analisando histórico, limitações e escola metodológica..."]);
+      setProgresso(["Salvando perfil e analisando histórico..."]);
+      
+      // Salva o perfil no programa para persistência
+      await supabase.from("programs").update({
+        regras_progressao: {
+          metodologia,
+          escola,
+          dias_por_semana: diasPorSemana,
+          semanas,
+          historico_sessoes: historicoSessoes,
+          cooldown_sessoes: cooldownSessoes,
+          prompt: prompt.trim()
+        }
+      }).eq("id", programa.id);
+
       
       const totalSessoes = semanas * diasPorSemana;
       
@@ -390,9 +428,10 @@ export function PrescreverIaDialog({
             wl: wlInicial ?? null,
             tf: tfInicial ?? null,
             co: coInicial ?? null,
-            hibrido: (metodologia === "hibrido" || metodologia === "kettlebell_fitness") && escopoInicial?.hibrido?.sessaoTemplate
+            hibrido: (metodologia === "hibrido" || metodologia === "kettlebell_fitness")
               ? { 
-                  ...escopoInicial.hibrido,
+                  ...(escopoInicial?.hibrido || {}),
+                  sessaoTemplate: escopoInicial?.hibrido?.sessaoTemplate || null,
                   modalidade: metodologia,
                   tituloPrograma: programa.titulo ?? "Continuar Progressão",
                   numeroSessoes: totalSessoes,
