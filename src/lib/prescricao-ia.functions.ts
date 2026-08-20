@@ -514,7 +514,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               instrucoes: data.prompt,
               resumoAnterior: resumoAnterior,
               setTypeRegistry: data.setTypes || BUILTIN_SET_TYPES,
-              customFormats: data.formatRegistry?.custom || [],
+              customFormats: data.formatRegistry || [],
             });
           })()
         : montarUserPrompt({ ...ctx, set_types: data.setTypes || BUILTIN_SET_TYPES }, data.prompt);
