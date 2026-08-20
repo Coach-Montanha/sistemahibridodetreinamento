@@ -482,13 +482,13 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     if (isHibrido) {
       const templateFinal = data.hibrido.sessaoTemplate?.length > 0 
         ? data.hibrido.sessaoTemplate 
-        : historicoCompleto.length > 0
-          ? historicoCompleto[historicoCompleto.length - 1].blocos.map((b: any, idx: number) => ({
+        : continuation.lastSessionStructure
+          ? continuation.lastSessionStructure.map((b: any, idx: number) => ({
               chave: `b_${idx}`,
               formato: b.formato,
               titulo: b.titulo,
               selecaoExercicios: "ia",
-              numeroExercicios: b.exercicios?.length || 1,
+              numeroExercicios: 1,
               fonteExercicios: { metodologias: [metodologiaEfetiva] }
             }))
           : [];
