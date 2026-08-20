@@ -3,36 +3,8 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { normalizarEquipamento } from "./hibrido-ia.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { translateExercise } from "./exercises-translate.server";
 
-async function translateExercise(item: any) {
-  const { aiGateway } = await import("./ai-gateway.server");
-  const prompt = `Traduza os detalhes técnicos deste exercício de musculação do Inglês para o Português do Brasil (PT-BR).
-  Mantenha a terminologia técnica padrão usada em academias brasileiras.
-  
-  Exercício: ${item.name_original}
-  Equipamento Original: ${item.equipment_original}
-  Categoria: ${item.category}
-  Instruções Originais: ${item.instructions}
-  
-  Retorne APENAS um objeto JSON com:
-  - name: (tradução do nome)
-  - category: (tradução da categoria)
-  - body_part: (tradução da parte do corpo)
-  - equipment: (tradução do equipamento)
-  - target: (tradução do músculo alvo)
-  - muscle_group: (tradução do grupo muscular)
-  - secondary_muscles: (tradução dos músculos secundários)
-  - instructions: (tradução livre das instruções em texto corrido)
-  - instruction_steps: (tradução das instruções como array de strings)`;
-
-  const response = await aiGateway.create({
-    model: "gemini-2.0-flash-exp",
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" }
-  });
-
-  return JSON.parse(response.choices[0].message.content || "{}");
-}
 
 
 
