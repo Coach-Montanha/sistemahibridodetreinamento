@@ -39,7 +39,8 @@ FORMATO DE RETORNO (JSON):
 `;
 
 export async function translateExercise(exercise: any) {
-  const { aiGateway } = await import("./ai-gateway.server");
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) throw new Error("Serviço de IA indisponível no momento");
 
   const prompt = `
 Traduza o seguinte exercício:
@@ -54,23 +55,42 @@ Instruções (EN): ${JSON.stringify(exercise.instructions)}
 Passos (EN): ${JSON.stringify(exercise.instruction_steps)}
   `;
 
-  const response = await aiGateway.chat({
-    model: "gemini-2.0-flash",
-    system: SYSTEM_PROMPT_TRANSLATION,
-    messages: [{ role: "user", content: prompt }],
-    temperature: 0.1,
-    response_format: { type: "json_object" }
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
+    body: JSON.stringify({
+      model: "google/gemini-2.0-flash-exp",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT_TRANSLATION },
+        { role: "user", content: prompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+    }),
   });
 
+  if (!res.ok) {
+    const corpo = await res.text().catch(() => "");
+    console.error(`AI gateway [${res.status}]: ${corpo}`);
+    throw new Error(`Falha na tradução via IA (erro ${res.status})`);
+  }
+
+  const payload: any = await res.json();
+  const conteudo = payload?.choices?.[0]?.message?.content;
+
+  if (typeof conteudo !== "string" || conteudo.trim().length === 0) {
+    throw new Error("A IA não retornou conteúdo. Tente novamente.");
+  }
+
   try {
-    const result = JSON.parse(response.content);
+    const result = JSON.parse(conteudo);
     
     // Validação extra de equipamento
     result.equipment = normalizarEquipamento(result.equipment) || "Objetos Alternativos";
     
     return result;
   } catch (err) {
-    console.error("Erro ao processar JSON da IA:", response.content);
+    console.error("Erro ao processar JSON da IA:", conteudo);
     throw new Error("Resposta da IA inválida");
   }
 }
