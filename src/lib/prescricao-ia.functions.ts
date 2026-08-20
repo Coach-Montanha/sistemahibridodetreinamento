@@ -208,16 +208,18 @@ const INPUT = z.object({
   prompt: z.string().max(4000).default(""),
   diasPorSemana: z.number().int().min(1).max(7).nullable().optional(),
   escopoLabel: z.string().max(80).nullable().optional(),
+  semanasNovas: z.number().int().min(1).max(12).default(1),
   metodologiaOverride: z.string().nullable().optional(),
   escolaOverride: z.string().optional(),
   historicoSessoes: z.number().int().min(0).max(12).nullable().optional(),
+  cooldownSessoes: z.number().int().min(0).max(8).default(3),
   kb: KB,
   wl: WL,
   tf: TF,
   co: CO,
   hibrido: z.any().optional(),
   setTypes: z.array(z.any()).optional(),
-  formatRegistry: z.any().optional(),
+  formatRegistry: z.array(z.any()).optional(),
 });
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
