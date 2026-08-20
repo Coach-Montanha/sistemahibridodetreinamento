@@ -321,6 +321,7 @@ function TranslationStatusBadge({ translation }: { translation: any }) {
 }
 
 function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => void }) {
+  const queryClient = useQueryClient();
   const translation = item.exercise_catalog_translations?.[0];
   const [edited, setEdited] = useState({
     name_pt_br: translation?.name_pt_br || "",
@@ -329,6 +330,21 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
     body_part_pt_br: translation?.body_part_pt_br || "",
     muscle_group_pt_br: translation?.muscle_group_pt_br || "",
     instructions_pt_br: translation?.instructions_pt_br || ""
+  });
+
+  const translateMutation = useMutation({
+    mutationFn: async () => {
+      await translateSingleExercise({ data: { id: item.id } });
+    },
+    onSuccess: () => {
+      toast.success("Tradução via IA concluída");
+      onUpdated();
+      // Recarregar os campos editados se a tradução mudou
+      queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message);
+    }
   });
 
   const saveMutation = useMutation({
@@ -343,6 +359,15 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
           translation_source: "human"
         });
       if (error) throw error;
+
+      // Também aprovar o exercício para projeção ao salvar manualmente
+      await supabase
+        .from("exercise_catalog")
+        .update({ 
+          review_status: 'approved',
+          approved_for_projection: true
+        })
+        .eq("id", item.id);
     },
     onSuccess: () => {
       toast.success("Tradução salva e aprovada");
@@ -352,7 +377,28 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
 
   return (
     <div className="space-y-6 py-4">
+      <div className="flex justify-between items-center px-1">
+        <div className="flex items-center gap-2">
+          <Badge variant={translation ? "default" : "outline"}>
+            {translation ? "Possui Tradução" : "Sem Tradução"}
+          </Badge>
+          {translation?.translation_status === 'draft' && (
+            <Badge variant="secondary" className="bg-amber-100 text-amber-700">Rascunho IA</Badge>
+          )}
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => translateMutation.mutate()}
+          disabled={translateMutation.isPending}
+          className="gap-2"
+        >
+          {translateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+          Regerar via IA
+        </Button>
+      </div>
       <ScrollArea className="max-h-[70vh] px-1">
+
         <div className="grid grid-cols-2 gap-8">
           <div className="space-y-4 opacity-70">
             <h3 className="font-bold flex items-center gap-2 border-b pb-2">
