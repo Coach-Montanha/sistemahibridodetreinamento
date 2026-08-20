@@ -73,6 +73,7 @@ export type RotinaContexto = {
   dias_por_semana: number | null;
   escopo_label: string | null;
   resumo_anterior?: string | null;
+  continuation?: import("./continuation.server").ContinuationContext | null;
   set_types?: any[];
   aluno_info?: string | null;
 };
