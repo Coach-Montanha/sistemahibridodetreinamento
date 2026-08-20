@@ -333,7 +333,7 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
   });
 
   // Efeito para atualizar campos quando a tradução mudar (após Wand2)
-  useState(() => {
+  useEffect(() => {
     if (translation) {
       setEdited({
         name_pt_br: translation.name_pt_br || "",
@@ -344,7 +344,7 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
         instructions_pt_br: translation.instructions_pt_br || ""
       });
     }
-  });
+  }, [translation]);
 
 
   const translateMutation = useMutation({
