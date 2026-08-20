@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, Loader2, Save, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, X, Eye, Loader2, Save, ChevronLeft, ChevronRight, Wand2 } from "lucide-react";
 
 import { toast } from "sonner";
 import {
@@ -27,6 +27,7 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { translateSingleExercise } from "@/lib/exercises-import.functions";
 
 export function CatalogReviewList() {
   const queryClient = useQueryClient();
@@ -204,6 +205,22 @@ export function CatalogReviewList() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Traduzir via IA"
+                        onClick={async () => {
+                          try {
+                            await translateSingleExercise({ data: { id: item.id } });
+                            queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
+                            toast.success("Tradução solicitada");
+                          } catch (err: any) {
+                            toast.error(err.message);
+                          }
+                        }}
+                      >
+                        <Wand2 className="h-4 w-4" />
+                      </Button>
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="ghost" size="icon">
