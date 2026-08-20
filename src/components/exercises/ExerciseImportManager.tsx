@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { importExercises, projectApprovedExercises } from "@/lib/exercises-import.functions";
+import { importExercises, projectApprovedExercises, translateCatalogBatch } from "@/lib/exercises-import.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,10 @@ export function ExerciseImportManager() {
   const queryClient = useQueryClient();
   const runImport = useServerFn(importExercises);
   const runProjection = useServerFn(projectApprovedExercises);
-  const { translateCatalogBatch } = await import("@/lib/exercises-import.functions");
   const runTranslation = useServerFn(translateCatalogBatch);
   const [isImporting, setIsImporting] = useState(false);
   const [isProjecting, setIsProjecting] = useState(false);
+
   const [isTranslating, setIsTranslating] = useState(false);
 
 
