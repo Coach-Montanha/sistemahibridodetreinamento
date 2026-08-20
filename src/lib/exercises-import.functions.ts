@@ -120,9 +120,8 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
 
     if (candError) throw candError;
 
-    const toTranslate = (candidates || [])
-      .filter(c => !existingIds.has(c.id))
-      .slice(0, limit);
+    const toTranslate = candidates || [];
+
 
     const results = {
       total: toTranslate.length,
