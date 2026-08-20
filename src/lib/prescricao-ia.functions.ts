@@ -448,6 +448,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
               candidatos: await buscarCandidatosDoMolde(supabase, template),
               instrucoes: data.prompt,
               resumoAnterior: resumoAnterior,
+              continuation: continuation,
               setTypeRegistry: data.setTypes || BUILTIN_SET_TYPES,
               customFormats: data.formatRegistry || [],
             });

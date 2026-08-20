@@ -221,14 +221,26 @@ export function montarHibridoPrompt(args: {
   candidatos: CandidatosPorBloco;
   instrucoes: string;
   resumoAnterior?: string | null;
+  continuation?: import("./continuation.server").ContinuationContext | null;
   setTypeRegistry?: any[];
   customFormats?: any[];
 }): string {
-  const { payload, candidatos, instrucoes, resumoAnterior, setTypeRegistry, customFormats } = args;
-
+  const { payload, candidatos, instrucoes, resumoAnterior, continuation, setTypeRegistry, customFormats } = args;
 
   const filosofia =
     payload.modalidade === "kettlebell_fitness" ? FILOSOFIA_KETTLEBELL_FITNESS : FILOSOFIA_HIBRIDO;
+
+  const historySection = continuation 
+    ? [
+        "RESUMO ESTRUTURADO DO HISTÓRICO RECENTE (Para Progressão):",
+        `- Sessões analisadas: ${continuation.sourceSessionCount}`,
+        `- Exercícios recentes: ${continuation.recentSessions.flatMap(s => s.exerciseNames).join(", ")}`,
+        `- BLOQUEIO DE REPETIÇÃO (Soft Avoid): Tente NÃO utilizar estes IDs se possível: ${continuation.softAvoidIds.join(", ")}`,
+        `- Exercícios frequentes: ${continuation.usage.slice(0, 5).map(u => u.name).join(", ")}`,
+        `- Formatos recentes: ${continuation.recentFormats.join(", ")}`,
+        `- NOTAS DE PROGRESSÃO: ${continuation.progressionNotes}`,
+      ].join("\n")
+    : resumoAnterior;
 
   const blocosDescricao = payload.sessaoTemplate.map((b) => {
     const pool = candidatos[b.chave] ?? [];
@@ -273,7 +285,7 @@ export function montarHibridoPrompt(args: {
     "",
     setTypeRegistry ? `TIPOS DE SÉRIES DISPONÍVEIS: ${setTypeRegistry.map(t => `${t.label} (ID: ${t.id})`).join(" | ")}` : "",
     customFormats && customFormats.length > 0 ? `FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS: ${customFormats.map((f: any) => `${f.label} (ID: ${f.id})`).join(" | ")}` : "",
-    resumoAnterior ? `\nCONTEXTO DO PROGRAMA (HISTÓRICO E PROGRESSÃO):\n${resumoAnterior}` : "",
+    historySection ? `\nCONTEXTO DO PROGRAMA (HISTÓRICO E PROGRESSÃO):\n${historySection}` : "",
     "",
     "Molde estrutural:",
     JSON.stringify(blocosDescricao, null, 2),
