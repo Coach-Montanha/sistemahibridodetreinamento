@@ -40,11 +40,16 @@ export function CatalogReviewList() {
         `)
         .order("imported_at", { ascending: false });
 
-      
       if (error) throw error;
-      return data;
+      return (data as any[]).map(item => ({
+        ...item,
+        exercise_catalog_translations: Array.isArray(item.exercise_catalog_translations) 
+          ? item.exercise_catalog_translations 
+          : item.exercise_catalog_translations ? [item.exercise_catalog_translations] : []
+      }));
     }
   });
+
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status, approved }: { id: string, status: string, approved: boolean }) => {
