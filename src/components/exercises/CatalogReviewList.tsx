@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, ExternalLink, Loader2, Save, Languages } from "lucide-react";
+import { Check, X, Eye, ExternalLink, Loader2, Save, Languages, ChevronLeft, ChevronRight } from "lucide-react";
+
 import { toast } from "sonner";
 import {
   Dialog,
