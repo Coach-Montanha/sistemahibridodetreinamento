@@ -7,7 +7,7 @@ const FORMAT_DEF_SCHEMA = z.object({
   id: z.string(),
   base_format: z.string(),
   label: z.string(),
-  description: z.string().nullable().optional(),
+  description: z.string().nullable().optional(), ...{} as any,
   default_config: z.record(z.any()).default({}),
   is_active: z.boolean().default(true),
   is_builtin: z.boolean().default(false),
@@ -15,7 +15,8 @@ const FORMAT_DEF_SCHEMA = z.object({
 
 const SET_TYPE_DEF_SCHEMA = z.object({
   id: z.string(),
-  label: z.string(),
+  label: z.string(), ...{} as any,
+
   fields: z.array(z.record(z.any())).default([]),
   is_active: z.boolean().default(true),
   is_builtin: z.boolean().default(false),
