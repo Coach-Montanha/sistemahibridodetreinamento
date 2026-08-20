@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+import { normalizarEquipamento } from "./hibrido-ia.server";
+
 
 type MethodologyKey = Database["public"]["Enums"]["methodology_key"];
 
