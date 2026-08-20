@@ -296,6 +296,81 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_catalog: {
+        Row: {
+          approved_for_projection: boolean
+          attribution: string | null
+          body_part: string | null
+          category: string | null
+          equipment_original: string | null
+          gif_path: string | null
+          id: string
+          image_path: string | null
+          imported_at: string
+          instruction_steps: Json
+          instructions: Json
+          muscle_group: string | null
+          name_original: string
+          projected_exercise_id: string | null
+          raw_hash: string | null
+          review_status: string
+          secondary_muscles: Json | null
+          source: string
+          source_commit: string
+          source_exercise_id: string
+          target: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_for_projection?: boolean
+          attribution?: string | null
+          body_part?: string | null
+          category?: string | null
+          equipment_original?: string | null
+          gif_path?: string | null
+          id?: string
+          image_path?: string | null
+          imported_at?: string
+          instruction_steps?: Json
+          instructions?: Json
+          muscle_group?: string | null
+          name_original: string
+          projected_exercise_id?: string | null
+          raw_hash?: string | null
+          review_status?: string
+          secondary_muscles?: Json | null
+          source?: string
+          source_commit: string
+          source_exercise_id: string
+          target?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_for_projection?: boolean
+          attribution?: string | null
+          body_part?: string | null
+          category?: string | null
+          equipment_original?: string | null
+          gif_path?: string | null
+          id?: string
+          image_path?: string | null
+          imported_at?: string
+          instruction_steps?: Json
+          instructions?: Json
+          muscle_group?: string | null
+          name_original?: string
+          projected_exercise_id?: string | null
+          raw_hash?: string | null
+          review_status?: string
+          secondary_muscles?: Json | null
+          source?: string
+          source_commit?: string
+          source_exercise_id?: string
+          target?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exercise_media: {
         Row: {
           criado_em: string
@@ -350,6 +425,9 @@ export type Database = {
           nome_pt: string
           observacoes_tecnicas: string | null
           padrao_movimento: string | null
+          source: string | null
+          source_commit: string | null
+          source_id: string | null
           unilateral: boolean
           variante_lado: string | null
         }
@@ -368,6 +446,9 @@ export type Database = {
           nome_pt: string
           observacoes_tecnicas?: string | null
           padrao_movimento?: string | null
+          source?: string | null
+          source_commit?: string | null
+          source_id?: string | null
           unilateral?: boolean
           variante_lado?: string | null
         }
@@ -386,6 +467,9 @@ export type Database = {
           nome_pt?: string
           observacoes_tecnicas?: string | null
           padrao_movimento?: string | null
+          source?: string | null
+          source_commit?: string | null
+          source_id?: string | null
           unilateral?: boolean
           variante_lado?: string | null
         }
