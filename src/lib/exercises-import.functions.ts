@@ -95,21 +95,28 @@ export const importExercises = createServerFn({ method: "POST" })
 
 
 export const translateCatalogBatch = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({ limit: z.number().optional().default(10) }).parse(data))
-  .handler(async ({ data: { limit } }) => {
+  .inputValidator((data) => z.object({ 
+    limit: z.number().optional().default(10),
+    offset: z.number().optional().default(0)
+  }).parse(data))
+  .handler(async ({ data: { limit, offset } }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { translateExercise } = await import("./exercises-translate.server");
 
-    const { data: existingTranslations } = await supabaseAdmin
-      .from("exercise_catalog_translations")
-      .select("catalog_exercise_id");
-    
-    const existingIds = new Set((existingTranslations || []).map(t => t.catalog_exercise_id));
-    
+    // Buscamos candidatos que NÃO têm tradução, respeitando offset e limit
     const { data: candidates, error: candError } = await supabaseAdmin
       .from("exercise_catalog")
-      .select("*")
-      .limit(limit * 2);
+      .select(`
+        id, name_original, category, body_part, equipment_original, 
+        target, muscle_group, secondary_muscles, instructions, instruction_steps
+      `)
+      .not("id", "in", (
+        supabaseAdmin
+          .from("exercise_catalog_translations")
+          .select("catalog_exercise_id")
+      ))
+      .range(offset, offset + limit - 1);
+
 
     if (candError) throw candError;
 
