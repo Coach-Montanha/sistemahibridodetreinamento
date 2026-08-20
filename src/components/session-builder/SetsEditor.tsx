@@ -36,7 +36,6 @@ function useSetTypeInfo(typeId: string) {
   return presets.find((p: any) => p.id === typeId) || presets[0];
 }
 
-
 export function SetsEditor({
   block,
   exercise,
@@ -50,7 +49,7 @@ export function SetsEditor({
   const replicateLastSet = useBuilder((s) => s.replicateLastSet);
   const setExerciseSets = useBuilder((s) => s.setExerciseSets);
 
-  const { presets, save: savePreset, remove: removePreset } = useSetPresets();
+  const { presets: setPresets, save: savePreset, remove: removePreset } = useSetPresets();
   const sets = exercise.sets ?? [];
 
   const [addOpen, setAddOpen] = useState(false);
@@ -126,7 +125,7 @@ export function SetsEditor({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-[min(92vw,340px)] p-2">
             <PresetList
-              presets={presets}
+              presets={setPresets}
               onPick={(p) => {
                 setExerciseSets(block.tempId, exercise.tempId, [
                   ...sets,
@@ -211,7 +210,7 @@ function SetRow({
   onRemove: () => void;
 }) {
   const { presets } = useSetTypeRegistry();
-  const info = presets.find(p => p.id === set.tipo) || presets[0];
+  const info = presets.find((p: any) => p.id === set.tipo) || presets[0];
   const fields = info.fields;
 
   return (
@@ -235,7 +234,7 @@ function SetRow({
             </SelectContent>
           </Select>
         </div>
-        {fields.map((f) => (
+        {(fields as any[]).map((f) => (
           <div key={f.key} className={f.wide ? "col-span-2 sm:col-span-3" : ""}>
             <FieldLabel>{f.label}</FieldLabel>
             <Input
@@ -281,7 +280,6 @@ function AddSetForm({
   const [values, setValues] = useState<Record<string, string>>({});
   const fields = presets.find((p: any) => p.id === tipo)?.fields || presets[0].fields;
 
-
   return (
     <div className="space-y-3">
       <div>
@@ -306,7 +304,7 @@ function AddSetForm({
         </Select>
       </div>
       <div className={`grid gap-2 ${fields.length > 2 ? "grid-cols-2" : "grid-cols-1"}`}>
-        {fields.map((f) => (
+        {(fields as any[]).map((f) => (
           <div key={f.key} className={f.wide ? "col-span-2" : ""}>
             <FieldLabel>{f.label}</FieldLabel>
             <Input
@@ -339,6 +337,7 @@ function PresetList({
   onPick: (p: SetPreset) => void;
   onDelete: (p: SetPreset) => void;
 }) {
+  const { presets: setTypes } = useSetTypeRegistry();
   if (!presets.length) {
     return (
       <p className="p-3 text-center text-xs text-muted-foreground">
@@ -361,8 +360,7 @@ function PresetList({
             <div className="truncate text-sm font-medium text-foreground">{p.name}</div>
             <div className="truncate text-[11px] text-muted-foreground">
               {p.sets.length} {p.sets.length === 1 ? "série" : "séries"} ·{" "}
-              {presets.find((t: any) => t.id === (p.sets[0]?.tipo))?.label || "Desconhecido"}
-
+              {setTypes.find((t: any) => t.id === (p.sets[0]?.tipo))?.label || "Desconhecido"}
             </div>
           </button>
           <Button
