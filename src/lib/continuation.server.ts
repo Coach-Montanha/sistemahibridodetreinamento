@@ -79,7 +79,7 @@ export async function buildContinuationContext(
   
   const { data: blocos } = await supabase
     .from("session_blocks")
-    .select("id, session_id, formato, titulo, ordem")
+    .select("id, session_id, formato, titulo, ordem, config")
     .in("session_id", sessaoIds)
     .order("ordem", { ascending: true });
 
