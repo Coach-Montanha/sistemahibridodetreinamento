@@ -179,7 +179,9 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
       .from("exercise_catalog")
       .select("*, exercise_catalog_translations(*)")
       .eq("approved_for_projection", true)
-      .is("projected_exercise_id", null);
+      .is("projected_exercise_id", null)
+      .range(0, 99); // Processa em lotes de 100 por vez para evitar timeout do gateway
+
 
     if (fetchError) throw fetchError;
     if (!approved || approved.length === 0) return { projected: 0 };
