@@ -32,9 +32,10 @@ import {
 import { useSetTypeRegistry, type SetFieldKey } from "@/lib/set-type-registry";
 
 function useSetTypeInfo(typeId: string) {
-  const presets = useSetTypeRegistry((s) => s.presets);
-  return presets.find((p) => p.id === typeId) || presets[0];
+  const { presets } = useSetTypeRegistry();
+  return presets.find((p: any) => p.id === typeId) || presets[0];
 }
+
 
 export function SetsEditor({
   block,
@@ -275,10 +276,11 @@ function AddSetForm({
   defaultType: SetType;
   onSubmit: (draft: Partial<BuilderSet>) => void;
 }) {
-  const presets = useSetTypeRegistry((s) => s.presets);
+  const { presets } = useSetTypeRegistry();
   const [tipo, setTipo] = useState<SetType>(defaultType);
   const [values, setValues] = useState<Record<string, string>>({});
-  const fields = presets.find(p => p.id === tipo)?.fields || presets[0].fields;
+  const fields = presets.find((p: any) => p.id === tipo)?.fields || presets[0].fields;
+
 
   return (
     <div className="space-y-3">
@@ -359,7 +361,7 @@ function PresetList({
             <div className="truncate text-sm font-medium text-foreground">{p.name}</div>
             <div className="truncate text-[11px] text-muted-foreground">
               {p.sets.length} {p.sets.length === 1 ? "série" : "séries"} ·{" "}
-              {useSetTypeRegistry.getState().presets.find(t => t.id === (p.sets[0]?.tipo))?.label || "Desconhecido"}
+              {presets.find((t: any) => t.id === (p.sets[0]?.tipo))?.label || "Desconhecido"}
             </div>
           </button>
           <Button

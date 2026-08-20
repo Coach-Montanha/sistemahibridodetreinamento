@@ -993,8 +993,8 @@ function StatChip({ label, value, hint }: { label: string; value: string; hint?:
 
 function FormatosPanel() {
   const {
-    registry,
     builtins,
+
     presets,
     renameBuiltin,
     describeBuiltin,
@@ -1012,7 +1012,7 @@ function FormatosPanel() {
   const [showHidden, setShowHidden] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<FormatPreset | null>(null);
 
-  const hiddenBuiltins = builtins.filter((p) => registry.hidden.includes(p.base));
+  const hiddenBuiltins = builtins.filter((p) => !presets.find(pr => pr.id === p.id));
   const activeCount = presets.length;
 
   const sensors = useSensors(
