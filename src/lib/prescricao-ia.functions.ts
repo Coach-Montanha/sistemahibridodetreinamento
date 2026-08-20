@@ -429,13 +429,13 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             const template = data.hibrido.sessaoTemplate?.length > 0 
               ? data.hibrido.sessaoTemplate 
               : continuation.lastSessionStructure 
-                ? continuation.lastSessionStructure.map((b: any, idx: number) => ({
-                    chave: `b_${idx}`,
+                ? continuation.lastSessionStructure.map((b: any) => ({
+                    chave: b.chave,
                     formato: b.formato,
                     titulo: b.titulo,
                     selecaoExercicios: "ia",
-                    numeroExercicios: 1, // Fallback default
-                    fonteExercicios: { metodologias: [metodologiaEfetiva] }
+                    numeroExercicios: b.numeroExercicios,
+                    fonteExercicios: b.fonteExercicios
                   }))
                 : [];
             
