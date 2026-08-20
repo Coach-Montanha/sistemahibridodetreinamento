@@ -101,10 +101,6 @@ function ContagemFiltro({
   );
 }
 
-// O dropdown deve consumir presets ativos de useFormatRegistry
-function getFormatosDisponiveis(presets: any[]): string[] {
-  return presets.map(p => p.id);
-}
 
 /** Formatos cujo bloco tem faixa/valor fixo de séries (rounds). */
 const USA_SERIES: string[] = [
