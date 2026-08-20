@@ -184,9 +184,9 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
 
 export const translateSingleExercise = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string() }))
-  .handler(async ({ input }) => {
-    const { supabaseAdmin } = await import("./supabase/client.server");
+  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
+  .handler(async ({ data: { id } }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     const { data: item, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
