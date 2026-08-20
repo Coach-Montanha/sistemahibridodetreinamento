@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, ExternalLink, Loader2, Save, Languages, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, X, Eye, Loader2, Save, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { toast } from "sonner";
 import {
@@ -23,9 +23,10 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export function CatalogReviewList() {
   const queryClient = useQueryClient();
@@ -49,13 +50,7 @@ export function CatalogReviewList() {
       }
 
       if (statusFilter !== "all") {
-        if (statusFilter === "pending") {
-          query = query.eq("review_status", "pending");
-        } else if (statusFilter === "approved") {
-          query = query.eq("review_status", "approved");
-        } else if (statusFilter === "rejected") {
-          query = query.eq("review_status", "rejected");
-        }
+        query = query.eq("review_status", statusFilter);
       }
 
       const { data, error, count } = await query
@@ -78,8 +73,6 @@ export function CatalogReviewList() {
   const items = data?.items;
   const totalCount = data?.total || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
-
-
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status, approved }: { id: string, status: string, approved: boolean }) => {
@@ -163,97 +156,96 @@ export function CatalogReviewList() {
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
-        <TableBody>
-          {!items || items.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                Nenhum exercício no catálogo.
-              </TableCell>
-            </TableRow>
-          ) : (
-            items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">
-                  <div className="flex flex-col">
-                    <span>{item.name_original}</span>
-                    {item.exercise_catalog_translations?.[0]?.name_pt_br && (
-                      <span className="text-sm text-primary">{item.exercise_catalog_translations[0].name_pt_br}</span>
-                    )}
-                    <span className="text-xs text-muted-foreground">{item.muscle_group} / {item.body_part}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1">
-                    <Badge variant="outline">{item.equipment_original}</Badge>
-                    {item.exercise_catalog_translations?.[0]?.equipment_pt_br && (
-                      <Badge variant="secondary" className="text-[10px]">{item.exercise_catalog_translations[0].equipment_pt_br}</Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <TranslationStatusBadge translation={item.exercise_catalog_translations?.[0]} />
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={item.review_status} />
-                </TableCell>
-
-                <TableCell>
-                  {item.projected_exercise_id ? (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      Concluída
-                    </Badge>
-                  ) : item.approved_for_projection ? (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                      Aprovada
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">Pendente</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Revisão: {item.name_original}</DialogTitle>
-                        </DialogHeader>
-                        <CatalogItemReview item={item} onUpdated={() => queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] })} />
-
-                      </DialogContent>
-                    </Dialog>
-
-                    {!item.projected_exercise_id && (
-                      <>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                          onClick={() => updateStatus.mutate({ id: item.id, status: 'approved', approved: true })}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="text-destructive"
-                          onClick={() => updateStatus.mutate({ id: item.id, status: 'rejected', approved: false })}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
+          <TableBody>
+            {!items || items.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  Nenhum exercício no catálogo.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex flex-col">
+                      <span>{item.name_original}</span>
+                      {item.exercise_catalog_translations?.[0]?.name_pt_br && (
+                        <span className="text-sm text-primary">{item.exercise_catalog_translations[0].name_pt_br}</span>
+                      )}
+                      <span className="text-xs text-muted-foreground">{item.muscle_group} / {item.body_part}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <Badge variant="outline">{item.equipment_original}</Badge>
+                      {item.exercise_catalog_translations?.[0]?.equipment_pt_br && (
+                        <Badge variant="secondary" className="text-[10px]">{item.exercise_catalog_translations[0].equipment_pt_br}</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <TranslationStatusBadge translation={item.exercise_catalog_translations?.[0]} />
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={item.review_status} />
+                  </TableCell>
+                  <TableCell>
+                    {item.projected_exercise_id ? (
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        Concluída
+                      </Badge>
+                    ) : item.approved_for_projection ? (
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                        Aprovada
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">Pendente</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh]">
+                          <DialogHeader>
+                            <DialogTitle>Revisão: {item.name_original}</DialogTitle>
+                          </DialogHeader>
+                          <CatalogItemReview item={item} onUpdated={() => queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] })} />
+                        </DialogContent>
+                      </Dialog>
+
+                      {!item.projected_exercise_id && (
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => updateStatus.mutate({ id: item.id, status: 'approved', approved: true })}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => updateStatus.mutate({ id: item.id, status: 'rejected', approved: false })}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-4 border-t">
@@ -286,7 +278,6 @@ export function CatalogReviewList() {
     </div>
   );
 }
-
 
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
@@ -346,7 +337,6 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
     <div className="space-y-6 py-4">
       <ScrollArea className="max-h-[70vh] px-1">
         <div className="grid grid-cols-2 gap-8">
-          {/* Lado Esquerdo: Original EN */}
           <div className="space-y-4 opacity-70">
             <h3 className="font-bold flex items-center gap-2 border-b pb-2">
               Original (EN)
@@ -378,7 +368,6 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
             </div>
           </div>
 
-          {/* Lado Direito: Tradução PT-BR */}
           <div className="space-y-4 border-l pl-8">
             <h3 className="font-bold flex items-center gap-2 border-b pb-2 text-primary">
               Tradução (PT-BR)
@@ -419,7 +408,7 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
                   value={edited.instructions_pt_br} 
                   onChange={e => setEdited(prev => ({ ...prev, instructions_pt_br: e.target.value }))}
                   placeholder="Passo a passo em português..."
-                  rows={8}
+                  rows={12}
                   className="text-sm"
                 />
               </div>
@@ -439,4 +428,3 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
     </div>
   );
 }
-
