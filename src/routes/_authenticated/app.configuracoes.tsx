@@ -1100,18 +1100,14 @@ function FormatosPanel() {
                 <FormatoCard
                   key={p.id}
                   preset={p}
-                  customized={
-                    p.builtin
-                      ? !!registry.labels[p.base] ||
-                        !!registry.descriptions[p.base] ||
-                        !!registry.builtinDefaults[p.base]
-                      : false
-                  }
+                  customized={false}
+
                   onEdit={() => setEditing(p)}
-                  onDuplicate={() => {
-                    const id = duplicatePreset(p);
+                  onDuplicate={async () => {
+                    const id = await duplicatePreset(p);
                     setEditing({ ...p, id, label: `${p.label} (cópia)`, builtin: false });
                   }}
+
                   onReset={p.builtin ? () => resetBuiltin(p.base) : undefined}
                   onDelete={() => setConfirmDelete(p)}
                 />
@@ -1150,11 +1146,8 @@ function FormatosPanel() {
                   key={p.id}
                   preset={p}
                   hidden
-                  customized={
-                    !!registry.labels[p.base] ||
-                    !!registry.descriptions[p.base] ||
-                    !!registry.builtinDefaults[p.base]
-                  }
+                  customized={false}
+
                   onEdit={() => setEditing(p)}
                   onShow={() => toggleBuiltin(p.base, true)}
                   onReset={() => resetBuiltin(p.base)}

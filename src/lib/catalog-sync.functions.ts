@@ -5,6 +5,7 @@ import type { Json } from "@/integrations/supabase/types";
 
 const FORMAT_DEF_SCHEMA = z.object({
   id: z.string(),
+
   base_format: z.string(),
   label: z.string(),
   description: z.string().nullable().optional(),

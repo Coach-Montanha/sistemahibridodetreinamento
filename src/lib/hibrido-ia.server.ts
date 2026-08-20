@@ -272,7 +272,7 @@ export function montarHibridoPrompt(args: {
     `- Gere ${payload.numeroSessoes} sessão(ões) que expandam logicamente o programa anterior, mas com NOVOS exercícios.`,
     "",
     setTypeRegistry ? `TIPOS DE SÉRIES DISPONÍVEIS: ${setTypeRegistry.map(t => `${t.label} (ID: ${t.id})`).join(" | ")}` : "",
-    customFormats?.length > 0 ? `FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS: ${customFormats.map((f: any) => `${f.label} (ID: ${f.id})`).join(" | ")}` : "",
+    customFormats && customFormats.length > 0 ? `FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS: ${customFormats.map((f: any) => `${f.label} (ID: ${f.id})`).join(" | ")}` : "",
     resumoAnterior ? `\nCONTEXTO DO PROGRAMA (HISTÓRICO E PROGRESSÃO):\n${resumoAnterior}` : "",
     "",
     "Molde estrutural:",

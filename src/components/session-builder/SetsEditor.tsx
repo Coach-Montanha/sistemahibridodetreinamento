@@ -362,6 +362,7 @@ function PresetList({
             <div className="truncate text-[11px] text-muted-foreground">
               {p.sets.length} {p.sets.length === 1 ? "série" : "séries"} ·{" "}
               {presets.find((t: any) => t.id === (p.sets[0]?.tipo))?.label || "Desconhecido"}
+
             </div>
           </button>
           <Button
