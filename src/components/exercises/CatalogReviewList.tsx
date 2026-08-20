@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, ExternalLink, Loader2 } from "lucide-react";
+import { Check, X, Eye, ExternalLink, Loader2, Save, Languages } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -20,6 +20,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useState, useEffect } from "react";
+import { Label } from "@/components/ui/label";
+
 
 export function CatalogReviewList() {
   const queryClient = useQueryClient();
@@ -29,13 +34,22 @@ export function CatalogReviewList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("exercise_catalog")
-        .select("*")
+        .select(`
+          *,
+          exercise_catalog_translations (*)
+        `)
         .order("imported_at", { ascending: false });
-      
+
       if (error) throw error;
-      return data;
+      return (data as any[]).map(item => ({
+        ...item,
+        exercise_catalog_translations: Array.isArray(item.exercise_catalog_translations) 
+          ? item.exercise_catalog_translations 
+          : item.exercise_catalog_translations ? [item.exercise_catalog_translations] : []
+      }));
     }
   });
+
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status, approved }: { id: string, status: string, approved: boolean }) => {
@@ -73,11 +87,13 @@ export function CatalogReviewList() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Exercício</TableHead>
-            <TableHead>Equipamento (Original)</TableHead>
+            <TableHead>Exercício (EN / PT)</TableHead>
+            <TableHead>Equipamento</TableHead>
+            <TableHead>Tradução</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Projeção</TableHead>
             <TableHead className="text-right">Ações</TableHead>
+
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -93,15 +109,27 @@ export function CatalogReviewList() {
                 <TableCell className="font-medium">
                   <div className="flex flex-col">
                     <span>{item.name_original}</span>
+                    {item.exercise_catalog_translations?.[0]?.name_pt_br && (
+                      <span className="text-sm text-primary">{item.exercise_catalog_translations[0].name_pt_br}</span>
+                    )}
                     <span className="text-xs text-muted-foreground">{item.muscle_group} / {item.body_part}</span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{item.equipment_original}</Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant="outline">{item.equipment_original}</Badge>
+                    {item.exercise_catalog_translations?.[0]?.equipment_pt_br && (
+                      <Badge variant="secondary" className="text-[10px]">{item.exercise_catalog_translations[0].equipment_pt_br}</Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <TranslationStatusBadge translation={item.exercise_catalog_translations?.[0]} />
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={item.review_status} />
                 </TableCell>
+
                 <TableCell>
                   {item.projected_exercise_id ? (
                     <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
@@ -125,41 +153,10 @@ export function CatalogReviewList() {
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl">
                         <DialogHeader>
-                          <DialogTitle>{item.name_original}</DialogTitle>
+                          <DialogTitle>Revisão: {item.name_original}</DialogTitle>
                         </DialogHeader>
-                        <ScrollArea className="max-h-[60vh] p-4">
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <h4 className="text-sm font-semibold text-muted-foreground">Categoria</h4>
-                                <p>{item.category}</p>
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-semibold text-muted-foreground">Equipamento</h4>
-                                <p>{item.equipment_original}</p>
-                              </div>
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-semibold text-muted-foreground">Instruções</h4>
-                              <pre className="mt-2 whitespace-pre-wrap text-sm bg-muted p-3 rounded">
-                                {JSON.stringify(item.instructions, null, 2)}
-                              </pre>
-                            </div>
-                            {item.gif_path && (
-                              <div>
-                                <h4 className="text-sm font-semibold text-muted-foreground mb-2">GIF / Imagem</h4>
-                                <a 
-                                  href={item.gif_path} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline flex items-center gap-1 text-sm"
-                                >
-                                  Ver mídia externa <ExternalLink className="h-3 w-3" />
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </ScrollArea>
+                        <CatalogItemReview item={item} onUpdated={() => queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] })} />
+
                       </DialogContent>
                     </Dialog>
 
@@ -204,3 +201,145 @@ function StatusBadge({ status }: { status: string }) {
       return <Badge variant="outline">Pendente</Badge>;
   }
 }
+
+function TranslationStatusBadge({ translation }: { translation: any }) {
+  if (!translation) return <Badge variant="outline" className="opacity-50">Nenhuma</Badge>;
+  
+  switch (translation.translation_status) {
+    case 'approved':
+      return <Badge className="bg-green-500">Traduzido</Badge>;
+    case 'draft':
+      return <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">IA (Rascunho)</Badge>;
+    default:
+      return <Badge variant="outline">Pendente</Badge>;
+  }
+}
+
+function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => void }) {
+  const translation = item.exercise_catalog_translations?.[0];
+  const [edited, setEdited] = useState({
+    name_pt_br: translation?.name_pt_br || "",
+    equipment_pt_br: translation?.equipment_pt_br || "",
+    category_pt_br: translation?.category_pt_br || "",
+    body_part_pt_br: translation?.body_part_pt_br || "",
+    muscle_group_pt_br: translation?.muscle_group_pt_br || "",
+    instructions_pt_br: translation?.instructions_pt_br || ""
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("exercise_catalog_translations")
+        .upsert({
+          catalog_exercise_id: item.id,
+          locale: "pt-BR",
+          ...edited,
+          translation_status: "approved",
+          translation_source: "human"
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Tradução salva e aprovada");
+      onUpdated();
+    }
+  });
+
+  return (
+    <div className="space-y-6 py-4">
+      <ScrollArea className="max-h-[70vh] px-1">
+        <div className="grid grid-cols-2 gap-8">
+          {/* Lado Esquerdo: Original EN */}
+          <div className="space-y-4 opacity-70">
+            <h3 className="font-bold flex items-center gap-2 border-b pb-2">
+              Original (EN)
+            </h3>
+            
+            <div>
+              <Label className="text-xs">Name</Label>
+              <p className="font-medium">{item.name_original}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">Equipment</Label>
+                <p className="text-sm">{item.equipment_original}</p>
+              </div>
+              <div>
+                <Label className="text-xs">Category</Label>
+                <p className="text-sm">{item.category}</p>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs">Instructions</Label>
+              <div className="text-xs bg-muted p-2 rounded whitespace-pre-wrap">
+                {typeof item.instructions === 'string' 
+                  ? item.instructions 
+                  : JSON.stringify(item.instructions, null, 2)}
+              </div>
+            </div>
+          </div>
+
+          {/* Lado Direito: Tradução PT-BR */}
+          <div className="space-y-4 border-l pl-8">
+            <h3 className="font-bold flex items-center gap-2 border-b pb-2 text-primary">
+              Tradução (PT-BR)
+            </h3>
+
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Nome do Exercício</Label>
+                <Input 
+                  value={edited.name_pt_br} 
+                  onChange={e => setEdited(prev => ({ ...prev, name_pt_br: e.target.value }))}
+                  placeholder="Ex: Supino Reto com Halteres"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs">Equipamento</Label>
+                  <Input 
+                    value={edited.equipment_pt_br} 
+                    onChange={e => setEdited(prev => ({ ...prev, equipment_pt_br: e.target.value }))}
+                    placeholder="Ex: Halteres"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Categoria</Label>
+                  <Input 
+                    value={edited.category_pt_br} 
+                    onChange={e => setEdited(prev => ({ ...prev, category_pt_br: e.target.value }))}
+                    placeholder="Ex: Força"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs">Instruções Traduzidas</Label>
+                <Textarea 
+                  value={edited.instructions_pt_br} 
+                  onChange={e => setEdited(prev => ({ ...prev, instructions_pt_br: e.target.value }))}
+                  placeholder="Passo a passo em português..."
+                  rows={8}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+
+            <Button 
+              className="w-full" 
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Salvar Tradução e Aprovar
+            </Button>
+          </div>
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+

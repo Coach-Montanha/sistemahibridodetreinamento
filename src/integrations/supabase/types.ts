@@ -298,6 +298,7 @@ export type Database = {
       }
       exercise_catalog: {
         Row: {
+          active_translation_id: string | null
           approved_for_projection: boolean
           attribution: string | null
           body_part: string | null
@@ -322,6 +323,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_translation_id?: string | null
           approved_for_projection?: boolean
           attribution?: string | null
           body_part?: string | null
@@ -346,6 +348,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_translation_id?: string | null
           approved_for_projection?: boolean
           attribution?: string | null
           body_part?: string | null
@@ -369,7 +372,86 @@ export type Database = {
           target?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exercise_catalog_active_translation_id_fkey"
+            columns: ["active_translation_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_catalog_translations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_catalog_translations: {
+        Row: {
+          body_part_pt_br: string | null
+          catalog_exercise_id: string
+          category_pt_br: string | null
+          created_at: string
+          equipment_pt_br: string | null
+          id: string
+          instruction_steps_pt_br: Json | null
+          instructions_pt_br: string | null
+          locale: string
+          muscle_group_pt_br: string | null
+          name_pt_br: string | null
+          review_notes: string | null
+          secondary_muscles_pt_br: Json | null
+          target_pt_br: string | null
+          translation_model: string | null
+          translation_source: string | null
+          translation_status: string
+          updated_at: string
+        }
+        Insert: {
+          body_part_pt_br?: string | null
+          catalog_exercise_id: string
+          category_pt_br?: string | null
+          created_at?: string
+          equipment_pt_br?: string | null
+          id?: string
+          instruction_steps_pt_br?: Json | null
+          instructions_pt_br?: string | null
+          locale?: string
+          muscle_group_pt_br?: string | null
+          name_pt_br?: string | null
+          review_notes?: string | null
+          secondary_muscles_pt_br?: Json | null
+          target_pt_br?: string | null
+          translation_model?: string | null
+          translation_source?: string | null
+          translation_status?: string
+          updated_at?: string
+        }
+        Update: {
+          body_part_pt_br?: string | null
+          catalog_exercise_id?: string
+          category_pt_br?: string | null
+          created_at?: string
+          equipment_pt_br?: string | null
+          id?: string
+          instruction_steps_pt_br?: Json | null
+          instructions_pt_br?: string | null
+          locale?: string
+          muscle_group_pt_br?: string | null
+          name_pt_br?: string | null
+          review_notes?: string | null
+          secondary_muscles_pt_br?: Json | null
+          target_pt_br?: string | null
+          translation_model?: string | null
+          translation_source?: string | null
+          translation_status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_catalog_translations_catalog_exercise_id_fkey"
+            columns: ["catalog_exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       exercise_media: {
         Row: {

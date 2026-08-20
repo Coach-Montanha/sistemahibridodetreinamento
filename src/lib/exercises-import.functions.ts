@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+import { normalizarEquipamento } from "./hibrido-ia.server";
+
 
 type MethodologyKey = Database["public"]["Enums"]["methodology_key"];
 
@@ -91,13 +93,85 @@ export const importExercises = createServerFn({ method: "POST" })
     }
   });
 
+
+export const translateCatalogBatch = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ limit: z.number().optional().default(10) }).parse(data))
+  .handler(async ({ data: { limit } }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { translateExercise } = await import("./exercises-translate.server");
+
+    const { data: existingTranslations } = await supabaseAdmin
+      .from("exercise_catalog_translations")
+      .select("catalog_exercise_id");
+    
+    const existingIds = new Set((existingTranslations || []).map(t => t.catalog_exercise_id));
+    
+    const { data: candidates, error: candError } = await supabaseAdmin
+      .from("exercise_catalog")
+      .select("*")
+      .limit(limit * 2);
+
+    if (candError) throw candError;
+
+    const toTranslate = (candidates || [])
+      .filter(c => !existingIds.has(c.id))
+      .slice(0, limit);
+
+    const results = {
+      total: toTranslate.length,
+      success: 0,
+      errors: 0,
+    };
+
+    for (const item of toTranslate) {
+      try {
+        const translated = await translateExercise(item);
+        
+        const { data: translation, error: transError } = await supabaseAdmin
+          .from("exercise_catalog_translations")
+          .upsert({
+            catalog_exercise_id: item.id,
+            locale: "pt-BR",
+            name_pt_br: translated.name,
+            category_pt_br: translated.category,
+            body_part_pt_br: translated.body_part,
+            equipment_pt_br: translated.equipment,
+            target_pt_br: translated.target,
+            muscle_group_pt_br: translated.muscle_group,
+            secondary_muscles_pt_br: translated.secondary_muscles,
+            instructions_pt_br: translated.instructions,
+            instruction_steps_pt_br: translated.instruction_steps,
+            translation_status: "draft",
+            translation_source: "llm",
+            translation_model: "gemini-2.0-flash-exp"
+          })
+          .select("id")
+          .single();
+
+        if (transError) throw transError;
+
+        await supabaseAdmin
+          .from("exercise_catalog")
+          .update({ active_translation_id: translation.id })
+          .eq("id", item.id);
+
+        results.success++;
+      } catch (err) {
+        console.error(`Erro ao traduzir exercício ${item.id}:`, err);
+        results.errors++;
+      }
+    }
+
+    return results;
+  });
+
 export const projectApprovedExercises = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: approved, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
-      .select("*")
+      .select("*, exercise_catalog_translations(*)")
       .eq("approved_for_projection", true)
       .is("projected_exercise_id", null);
 
@@ -107,15 +181,18 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
     let projectedCount = 0;
 
     for (const item of approved) {
-      const equipLower = item.equipment_original?.toLowerCase() || "";
-      const equipment = [
-        equipLower === "kettlebell" ? "Kettlebell" :
-        equipLower === "barbell" ? "Barbell" :
-        equipLower === "dumbbell" ? "Dumbbell" :
-        equipLower === "body weight" ? "Ginásticos" :
-        ["cable", "machine", "plate"].includes(equipLower) ? "Alternativos Musculação" :
-        "Objetos Alternativos"
-      ];
+      // Pega a tradução ativa aprovada
+      const translation = Array.isArray(item.exercise_catalog_translations) 
+        ? item.exercise_catalog_translations.find((t: any) => t.translation_status === 'approved')
+        : (item.exercise_catalog_translations as any)?.translation_status === 'approved' 
+          ? item.exercise_catalog_translations 
+          : null;
+
+      if (!translation) continue;
+
+      const equipRaw = (translation.equipment_pt_br || item.equipment_original) || "";
+      const equipment = [normalizarEquipamento(equipRaw) || "Objetos Alternativos"];
+
 
       const methodologies: MethodologyKey[] = [];
       if (equipment.includes("Kettlebell") || equipment.includes("Ginásticos")) {
@@ -124,20 +201,23 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
       methodologies.push("hibrido");
 
       const muscleGroups = [
-        item.muscle_group,
-        ...(Array.isArray(item.secondary_muscles) ? (item.secondary_muscles as string[]) : [])
+        translation.muscle_group_pt_br || item.muscle_group,
+        ...(Array.isArray(translation.secondary_muscles_pt_br) 
+          ? (translation.secondary_muscles_pt_br as string[]) 
+          : Array.isArray(item.secondary_muscles) 
+            ? (item.secondary_muscles as string[]) 
+            : [])
       ].filter((m): m is string => typeof m === "string" && m.length > 0);
 
-      const instructions = typeof item.instructions === "object" && item.instructions !== null
-        ? (item.instructions as any).en 
-        : typeof item.instruction_steps === "object" && item.instruction_steps !== null && Array.isArray((item.instruction_steps as any).en)
-          ? (item.instruction_steps as any).en.join("\n")
-          : "";
+      const instructions = translation.instructions_pt_br || 
+        (typeof item.instructions === "object" && item.instructions !== null
+          ? (item.instructions as any).en 
+          : "");
 
       const exerciseRow: Database["public"]["Tables"]["exercises"]["Insert"] = {
         coach_id: null,
         nome_en: item.name_original,
-        nome_pt: item.name_original,
+        nome_pt: translation.name_pt_br || item.name_original,
         instrucoes: instructions || null,
         equipamento: equipment,
         metodologias: methodologies,
@@ -162,7 +242,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
       await supabaseAdmin
         .from("exercise_catalog")
-        .update({ projected_exercise_id: newEx.id })
+        .update({ projected_exercise_id: newEx.id } as any)
         .eq("id", item.id);
 
       projectedCount++;
@@ -170,4 +250,5 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
     return { projected: projectedCount };
   });
+
 
