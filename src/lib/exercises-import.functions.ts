@@ -191,7 +191,7 @@ export const translateSingleExercise = createServerFn({ method: "POST" })
     const { data: item, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
       .select("*")
-      .eq("id", input.id)
+      .eq("id", id)
       .single();
       
     if (fetchError || !item) throw new Error("Exercício não encontrado");
