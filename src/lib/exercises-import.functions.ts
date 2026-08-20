@@ -95,27 +95,33 @@ export const importExercises = createServerFn({ method: "POST" })
 
 
 export const translateCatalogBatch = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({ limit: z.number().optional().default(10) }).parse(data))
-  .handler(async ({ data: { limit } }) => {
+  .inputValidator((data) => z.object({ 
+    limit: z.number().optional().default(10),
+    offset: z.number().optional().default(0)
+  }).parse(data))
+  .handler(async ({ data: { limit, offset } }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { translateExercise } = await import("./exercises-translate.server");
 
-    const { data: existingTranslations } = await supabaseAdmin
-      .from("exercise_catalog_translations")
-      .select("catalog_exercise_id");
-    
-    const existingIds = new Set((existingTranslations || []).map(t => t.catalog_exercise_id));
-    
+    // Buscamos candidatos que NÃO têm tradução, respeitando offset e limit
     const { data: candidates, error: candError } = await supabaseAdmin
       .from("exercise_catalog")
-      .select("*")
-      .limit(limit * 2);
+      .select(`
+        id, name_original, category, body_part, equipment_original, 
+        target, muscle_group, secondary_muscles, instructions, instruction_steps
+      `)
+      .not("id", "in", (
+        supabaseAdmin
+          .from("exercise_catalog_translations")
+          .select("catalog_exercise_id")
+      ))
+      .range(offset, offset + limit - 1);
+
 
     if (candError) throw candError;
 
-    const toTranslate = (candidates || [])
-      .filter(c => !existingIds.has(c.id))
-      .slice(0, limit);
+    const toTranslate = candidates || [];
+
 
     const results = {
       total: toTranslate.length,
@@ -173,7 +179,9 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
       .from("exercise_catalog")
       .select("*, exercise_catalog_translations(*)")
       .eq("approved_for_projection", true)
-      .is("projected_exercise_id", null);
+      .is("projected_exercise_id", null)
+      .range(0, 99); // Processa em lotes de 100 por vez para evitar timeout do gateway
+
 
     if (fetchError) throw fetchError;
     if (!approved || approved.length === 0) return { projected: 0 };

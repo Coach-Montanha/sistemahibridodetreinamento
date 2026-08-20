@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, ExternalLink, Loader2, Save, Languages } from "lucide-react";
+import { Check, X, Eye, ExternalLink, Loader2, Save, Languages, ChevronLeft, ChevronRight } from "lucide-react";
+
 import { toast } from "sonner";
 import {
   Dialog,
@@ -28,27 +29,38 @@ import { Label } from "@/components/ui/label";
 
 export function CatalogReviewList() {
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(0);
+  const pageSize = 50;
 
-  const { data: items, isLoading } = useQuery({
-    queryKey: ["exercise-catalog-list"],
+  const { data, isLoading } = useQuery({
+    queryKey: ["exercise-catalog-list", page],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from("exercise_catalog")
         .select(`
           *,
           exercise_catalog_translations (*)
-        `)
-        .order("imported_at", { ascending: false });
+        `, { count: 'exact' })
+        .order("imported_at", { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (error) throw error;
-      return (data as any[]).map(item => ({
-        ...item,
-        exercise_catalog_translations: Array.isArray(item.exercise_catalog_translations) 
-          ? item.exercise_catalog_translations 
-          : item.exercise_catalog_translations ? [item.exercise_catalog_translations] : []
-      }));
+      return {
+        items: (data as any[]).map(item => ({
+          ...item,
+          exercise_catalog_translations: Array.isArray(item.exercise_catalog_translations) 
+            ? item.exercise_catalog_translations 
+            : item.exercise_catalog_translations ? [item.exercise_catalog_translations] : []
+        })),
+        total: count || 0
+      };
     }
   });
+
+  const items = data?.items;
+  const totalCount = data?.total || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+
 
 
   const updateStatus = useMutation({
@@ -187,9 +199,39 @@ export function CatalogReviewList() {
           )}
         </TableBody>
       </Table>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {page * pageSize + 1} a {Math.min((page + 1) * pageSize, totalCount)} de {totalCount} exercícios
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+            </Button>
+            <div className="text-sm font-medium">
+              Página {page + 1} de {totalPages}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+            >
+              Próxima <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
