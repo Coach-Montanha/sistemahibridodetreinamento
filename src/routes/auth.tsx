@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, Outlet, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +21,13 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { modo } = Route.useSearch();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"login" | "cadastro">(modo ?? "login");
+  const routerState = useRouterState();
+  const isExactAuth = routerState.location.pathname === "/auth";
+  const [tab, setTab] = useState<"login" | "cadastro">(modo === "cadastro" ? "cadastro" : "login");
+
+  if (!isExactAuth) {
+    return <Outlet />;
+  }
 
   async function routeAfterLogin() {
     const { data: u } = await supabase.auth.getUser();
@@ -45,15 +51,18 @@ function AuthPage() {
           <span className="text-xl font-bold">Coach Montanha</span>
         </Link>
         <Card className="p-6">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+          <Tabs 
+            value={tab} 
+            onValueChange={(v) => setTab(v === "cadastro" ? "cadastro" : "login")}
+          >
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="cadastro">Criar conta</TabsTrigger>
+              <TabsTrigger value="login" id="auth-tab-login">Entrar</TabsTrigger>
+              <TabsTrigger value="cadastro" id="auth-tab-cadastro">Criar conta</TabsTrigger>
             </TabsList>
-            <TabsContent value="login">
+            <TabsContent value="login" id="auth-content-login">
               <LoginForm onDone={routeAfterLogin} />
             </TabsContent>
-            <TabsContent value="cadastro">
+            <TabsContent value="cadastro" id="auth-content-cadastro">
               <SignupForm onDone={() => navigate({ to: "/app" })} />
             </TabsContent>
           </Tabs>
