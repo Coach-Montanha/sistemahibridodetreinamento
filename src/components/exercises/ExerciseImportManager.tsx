@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Database, Download, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { Loader2, Database, Download, CheckCircle2, AlertCircle, RefreshCw, Languages } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { CatalogReviewList } from "./CatalogReviewList";
@@ -14,26 +14,40 @@ export function ExerciseImportManager() {
   const queryClient = useQueryClient();
   const runImport = useServerFn(importExercises);
   const runProjection = useServerFn(projectApprovedExercises);
+  const { translateCatalogBatch } = await import("@/lib/exercises-import.functions");
+  const runTranslation = useServerFn(translateCatalogBatch);
   const [isImporting, setIsImporting] = useState(false);
   const [isProjecting, setIsProjecting] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["exercise-catalog-stats"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: catalog, error: catError } = await supabase
         .from("exercise_catalog")
-        .select("review_status, approved_for_projection, projected_exercise_id");
+        .select("id, review_status, approved_for_projection, projected_exercise_id");
       
-      if (error) throw error;
+      if (catError) throw catError;
+
+      const { data: translations, error: transError } = await supabase
+        .from("exercise_catalog_translations")
+        .select("catalog_exercise_id, translation_status");
+      
+      if (transError) throw transError;
+
+      const translatedIds = new Set((translations || []).map(t => t.catalog_exercise_id));
 
       return {
-        total: data.length,
-        pending: data.filter(d => d.review_status === 'pending').length,
-        approved: data.filter(d => d.approved_for_projection && !d.projected_exercise_id).length,
-        projected: data.filter(d => !!d.projected_exercise_id).length,
+        total: catalog.length,
+        pending: catalog.filter(d => d.review_status === 'pending').length,
+        needTranslation: catalog.length - translatedIds.size,
+        approved: catalog.filter(d => d.approved_for_projection && !d.projected_exercise_id).length,
+        projected: catalog.filter(d => !!d.projected_exercise_id).length,
       };
     }
   });
+
 
   const handleImport = async () => {
     setIsImporting(true);
@@ -63,7 +77,22 @@ export function ExerciseImportManager() {
     }
   };
 
+  const handleTranslation = async () => {
+    setIsTranslating(true);
+    try {
+      const result = await runTranslation({ data: { limit: 10 } });
+      toast.success(`Tradução concluída: ${result.success} exercícios traduzidos.`);
+      queryClient.invalidateQueries({ queryKey: ["exercise-catalog-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
+    } catch (error: any) {
+      toast.error(`Falha na tradução: ${error.message}`);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   return (
+
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard 
@@ -110,7 +139,15 @@ export function ExerciseImportManager() {
                 disabled={isImporting}
               >
                 {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                Sincronizar GitHub
+                GitHub
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleTranslation} 
+                disabled={isTranslating || (stats?.needTranslation ?? 0) === 0}
+              >
+                {isTranslating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Languages className="mr-2 h-4 w-4" />}
+                Traduzir via IA
               </Button>
               <Button 
                 onClick={handleProjection} 
@@ -120,6 +157,7 @@ export function ExerciseImportManager() {
                 Projetar Aprovados
               </Button>
             </div>
+
           </div>
         </CardHeader>
         <CardContent>
