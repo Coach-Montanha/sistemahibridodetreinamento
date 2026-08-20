@@ -181,33 +181,42 @@ export type Database = {
           coach_id: string | null
           config: Json
           criado_em: string
+          display_order: number | null
           duracao_min: number | null
+          format_definition_id: string | null
           formato: string
           id: string
           metodologia: Database["public"]["Enums"]["methodology_key"]
           nome: string
+          origin: Database["public"]["Enums"]["block_origin"] | null
         }
         Insert: {
           ativo?: boolean
           coach_id?: string | null
           config?: Json
           criado_em?: string
+          display_order?: number | null
           duracao_min?: number | null
+          format_definition_id?: string | null
           formato: string
           id?: string
           metodologia: Database["public"]["Enums"]["methodology_key"]
           nome: string
+          origin?: Database["public"]["Enums"]["block_origin"] | null
         }
         Update: {
           ativo?: boolean
           coach_id?: string | null
           config?: Json
           criado_em?: string
+          display_order?: number | null
           duracao_min?: number | null
+          format_definition_id?: string | null
           formato?: string
           id?: string
           metodologia?: Database["public"]["Enums"]["methodology_key"]
           nome?: string
+          origin?: Database["public"]["Enums"]["block_origin"] | null
         }
         Relationships: [
           {
@@ -215,6 +224,13 @@ export type Database = {
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "block_templates_format_definition_id_fkey"
+            columns: ["format_definition_id"]
+            isOneToOne: false
+            referencedRelation: "format_definitions"
             referencedColumns: ["id"]
           },
         ]
@@ -681,6 +697,53 @@ export type Database = {
           },
         ]
       }
+      format_definitions: {
+        Row: {
+          base_format: string
+          coach_id: string | null
+          created_at: string
+          default_config: Json
+          description: string | null
+          id: string
+          is_active: boolean
+          is_builtin: boolean
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          base_format: string
+          coach_id?: string | null
+          created_at?: string
+          default_config?: Json
+          description?: string | null
+          id: string
+          is_active?: boolean
+          is_builtin?: boolean
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          base_format?: string
+          coach_id?: string | null
+          created_at?: string
+          default_config?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_builtin?: boolean
+          label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "format_definitions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generator_preferences: {
         Row: {
           blocos: Json
@@ -1004,6 +1067,47 @@ export type Database = {
           },
         ]
       }
+      set_type_definitions: {
+        Row: {
+          coach_id: string | null
+          created_at: string
+          fields: Json
+          id: string
+          is_active: boolean
+          is_builtin: boolean
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string
+          fields?: Json
+          id: string
+          is_active?: boolean
+          is_builtin?: boolean
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string
+          fields?: Json
+          id?: string
+          is_active?: boolean
+          is_builtin?: boolean
+          label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "set_type_definitions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_group_members: {
         Row: {
           group_id: string
@@ -1167,6 +1271,7 @@ export type Database = {
         | "builtin:wod"
         | "builtin:recovery"
         | "builtin:complex"
+      block_origin: "system" | "coach"
       coach_plan: "trial" | "individual" | "studio" | "revenda"
       export_format: "pdf" | "xlsx" | "docx"
       media_kind: "video" | "imagem" | "gif"
@@ -1340,6 +1445,7 @@ export const Constants = {
         "builtin:recovery",
         "builtin:complex",
       ],
+      block_origin: ["system", "coach"],
       coach_plan: ["trial", "individual", "studio", "revenda"],
       export_format: ["pdf", "xlsx", "docx"],
       media_kind: ["video", "imagem", "gif"],
