@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, ExternalLink, Loader2 } from "lucide-react";
+import { Check, X, Eye, ExternalLink, Loader2, Save, Languages } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -20,6 +20,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useState, useEffect } from "react";
+import { Label } from "@/components/ui/label";
+
 
 export function CatalogReviewList() {
   const queryClient = useQueryClient();
