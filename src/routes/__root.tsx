@@ -81,7 +81,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Coach Montanha — Sistema Híbrido de Treinamento" },
-      { name: "description", content: "Plataforma de prescrição de treinos para treinadores: híbrido, kettlebell sport, kettlebell fitness, levantamento de peso e musculação." },
+      {
+        name: "description",
+        content:
+          "Plataforma de prescrição de treinos para treinadores: híbrido, kettlebell sport, kettlebell fitness, levantamento de peso e musculação.",
+      },
       { name: "author", content: "Coach Montanha" },
       { name: "theme-color", content: "#0F1115" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
@@ -89,7 +93,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-title", content: "Coach Montanha" },
       { name: "mobile-web-app-capable", content: "yes" },
       { property: "og:title", content: "Coach Montanha — Sistema Híbrido de Treinamento" },
-      { property: "og:description", content: "Prescrição de treinos em 5 modalidades, com construtor de sessão por blocos." },
+      {
+        property: "og:description",
+        content: "Prescrição de treinos em 5 modalidades, com construtor de sessão por blocos.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -103,11 +110,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;800&display=swap",
+      },
     ],
-    scripts: [
-      { children: themeInitScript },
-    ],
+    scripts: [{ children: themeInitScript }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
