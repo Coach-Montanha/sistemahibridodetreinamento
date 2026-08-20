@@ -91,6 +91,78 @@ export const importExercises = createServerFn({ method: "POST" })
     }
   });
 
+
+export const translateCatalogBatch = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ limit: z.number().optional().default(10) }).parse(data))
+  .handler(async ({ data: { limit } }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { translateExercise } = await import("./exercises-translate.server");
+
+    const { data: existingTranslations } = await supabaseAdmin
+      .from("exercise_catalog_translations")
+      .select("catalog_exercise_id");
+    
+    const existingIds = new Set((existingTranslations || []).map(t => t.catalog_exercise_id));
+    
+    const { data: candidates, error: candError } = await supabaseAdmin
+      .from("exercise_catalog")
+      .select("*")
+      .limit(limit * 2);
+
+    if (candError) throw candError;
+
+    const toTranslate = (candidates || [])
+      .filter(c => !existingIds.has(c.id))
+      .slice(0, limit);
+
+    const results = {
+      total: toTranslate.length,
+      success: 0,
+      errors: 0,
+    };
+
+    for (const item of toTranslate) {
+      try {
+        const translated = await translateExercise(item);
+        
+        const { data: translation, error: transError } = await supabaseAdmin
+          .from("exercise_catalog_translations")
+          .upsert({
+            catalog_exercise_id: item.id,
+            locale: "pt-BR",
+            name_pt_br: translated.name,
+            category_pt_br: translated.category,
+            body_part_pt_br: translated.body_part,
+            equipment_pt_br: translated.equipment,
+            target_pt_br: translated.target,
+            muscle_group_pt_br: translated.muscle_group,
+            secondary_muscles_pt_br: translated.secondary_muscles,
+            instructions_pt_br: translated.instructions,
+            instruction_steps_pt_br: translated.instruction_steps,
+            translation_status: "draft",
+            translation_source: "llm",
+            translation_model: "gemini-2.0-flash-exp"
+          })
+          .select("id")
+          .single();
+
+        if (transError) throw transError;
+
+        await supabaseAdmin
+          .from("exercise_catalog")
+          .update({ active_translation_id: translation.id })
+          .eq("id", item.id);
+
+        results.success++;
+      } catch (err) {
+        console.error(`Erro ao traduzir exercício ${item.id}:`, err);
+        results.errors++;
+      }
+    }
+
+    return results;
+  });
+
 export const projectApprovedExercises = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
