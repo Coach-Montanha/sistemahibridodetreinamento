@@ -178,6 +178,53 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
     return results;
   });
 
+export const translateSingleExercise = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string() }))
+  .handler(async ({ input }) => {
+    const { supabaseAdmin } = await import("./supabase/client.server");
+    
+    const { data: item, error: fetchError } = await supabaseAdmin
+      .from("exercise_catalog")
+      .select("*")
+      .eq("id", input.id)
+      .single();
+      
+    if (fetchError || !item) throw new Error("Exercício não encontrado");
+
+    const translated = await translateExercise(item);
+    
+    const { data: translation, error: transError } = await supabaseAdmin
+      .from("exercise_catalog_translations")
+      .upsert({
+        catalog_exercise_id: item.id,
+        locale: "pt-BR",
+        name_pt_br: translated.name,
+        category_pt_br: translated.category,
+        body_part_pt_br: translated.body_part,
+        equipment_pt_br: translated.equipment,
+        target_pt_br: translated.target,
+        muscle_group_pt_br: translated.muscle_group,
+        secondary_muscles_pt_br: translated.secondary_muscles,
+        instructions_pt_br: translated.instructions,
+        instruction_steps_pt_br: translated.instruction_steps,
+        translation_status: "draft",
+        translation_source: "llm",
+        translation_model: "gemini-2.0-flash-exp"
+      })
+      .select("id")
+      .single();
+
+    if (transError) throw transError;
+
+    await supabaseAdmin
+      .from("exercise_catalog")
+      .update({ active_translation_id: translation.id })
+      .eq("id", item.id);
+
+    return { success: true, translation };
+  });
+
 export const projectApprovedExercises = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
