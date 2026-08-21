@@ -521,14 +521,16 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
            throw new Error("AI_NO_TEMPLATE: O molde da sessão está vazio ou inválido.");
         }
 
-        return normalizarPrescricaoHibrido(
+        const result = normalizarPrescricaoHibrido(
           conteudo,
           templateFinal,
           await buscarCandidatosDoMolde(supabase, templateFinal)
-        ) as any;
+        );
+        return { ...result, generation_source: "ai" } as any;
       }
 
-      return normalizarPrescricao(conteudo);
+      const result = normalizarPrescricao(conteudo);
+      return { ...result, generation_source: "ai" } as any;
     } catch (parseErr: any) {
       console.error(`[AI_PARSE_ERROR][${requestId}] Falha ao processar resposta:`, parseErr);
       // Se for um erro amigável já mapeado, repassa. Caso contrário, lança genérico de schema.

@@ -408,30 +408,5 @@ export function normalizarPrescricaoHibrido(
     return { blocos };
   });
 
-  return { sessoes, notes: json.notes || "" };
-}
-
-      // Completa com candidatos não usados se a IA retornou de menos ou inválido.
-      if (validos.length < bt.numeroExercicios) {
-        const restantes = (candidatos[bt.chave] ?? [])
-          .map((c) => c.id)
-          .filter((id) => !validos.includes(id) && !usadosNaSessao.has(id));
-        for (const id of restantes) {
-          if (validos.length >= bt.numeroExercicios) break;
-          validos.push(id);
-        }
-      }
-
-      validos.forEach((id) => usadosNaSessao.add(id));
-      return { chave: bt.chave, exerciciosIds: validos };
-    });
-
-    return { blocos };
-  });
-
-  // Referenciar porChave evita import não utilizado quando o TS estiver estrito
-  // com noUnusedLocals; mantém a validação legível caso precise checar formato/duracao.
-  void porChave;
-
   return { sessoes, notes: typeof json?.notes === "string" ? json.notes : "" };
 }

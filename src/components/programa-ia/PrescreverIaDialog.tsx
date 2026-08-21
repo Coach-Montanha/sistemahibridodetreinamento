@@ -474,39 +474,13 @@ export function PrescreverIaDialog({
         msg = "A estrutura do treino gerado pela IA é incompatível com o molde.";
       } else if (errorStr.includes("Server function info not found")) {
         msg = "Detectamos JS antigo no seu navegador. Por favor, limpe o cache ou faça um 'Hard Reload' (Ctrl+F5).";
+      } else if (errorStr.includes("400") || errorStr.includes("token")) {
+        msg = "Histórico muito longo. Tente reduzir o número de semanas ou o histórico analisado.";
       }
 
       toast.error("Falha na Prescrição", {
         description: msg,
       });
-    },
-      const msg = e?.message || "";
-      
-      if (msg.includes("POOL_VAZIO")) {
-        toast.error("Pool de Exercícios Insuficiente", {
-          description: "Os filtros do molde (equipamento/metodologia) são restritivos demais para a biblioteca atual."
-        });
-      } else if (msg.includes("AI_GATEWAY_ERROR")) {
-        toast.error("Erro no Gateway de IA", {
-          description: "O serviço de IA está temporariamente indisponível. Tente novamente em alguns segundos."
-        });
-      } else if (msg.includes("AI_EMPTY_CONTENT")) {
-        toast.error("Resposta Vazia da IA", {
-          description: "A IA não conseguiu gerar o conteúdo estruturado. Tente simplificar as instruções."
-        });
-      } else if (msg.includes("AI_SCHEMA_MISMATCH")) {
-        toast.error("Erro de Estrutura", {
-          description: "A IA gerou um treino, mas ele não encaixa no molde solicitado. Tente gerar novamente."
-        });
-      } else if (msg.includes("400") || msg.includes("token")) {
-        toast.error("Histórico muito longo", {
-          description: "Tente reduzir o número de semanas ou o histórico analisado."
-        });
-      } else {
-        toast.error("Falha na Prescrição", {
-          description: msg || "Ocorreu um erro inesperado ao processar a IA."
-        });
-      }
     }
   });
 
