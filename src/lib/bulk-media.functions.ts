@@ -83,15 +83,19 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
       const mediaType = data.type.startsWith('video/') ? 'video' : 
                         (data.name.toLowerCase().endsWith('.gif') ? 'gif' : 'imagem');
 
-      console.log(`[bulk-media:register] Attempting insert into exercise_media for exercise ${targetExerciseId}`);
+      console.log(`[bulk-media:register] Attempting idempotent upsert into exercise_media for exercise ${targetExerciseId}`);
+      
+      // Upsert idempotente baseado no exercise_id + storage_path
       const { error: dbError } = await supabaseAdmin
         .from("exercise_media")
-        .insert({
+        .upsert({
           exercise_id: targetExerciseId,
           storage_path: data.storagePath,
           url_publica: urlData.signedUrl,
           tipo: mediaType as any,
           ordem: 0
+        }, { 
+          onConflict: 'exercise_id,storage_path' 
         });
         
       if (dbError) {
@@ -102,7 +106,7 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
       return { 
         success: true, 
         storagePath: data.storagePath, 
-        linked: true, // Sempre vinculado agora (seja real ou placeholder)
+        linked: true,
         targetExerciseId 
       };
     } catch (err: any) {
