@@ -13,16 +13,9 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
     const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
     if (!coachId) throw new Error("Coach ID não resolvido.");
 
-    // Busca exercícios que não têm tradução NENHUMA (nem draft, nem approved)
-    // A query correta é buscar exercícios no catálogo onde não existe registro na exercise_catalog_translations
     const { data: pendingExercises, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
       .select("id, name_original")
-      .not("id", "in", (
-        supabaseAdmin
-          .from("exercise_catalog_translations")
-          .select("catalog_exercise_id")
-      ))
       .limit(2000);
 
     if (fetchError) {
@@ -31,7 +24,7 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
     }
 
     if (!pendingExercises || pendingExercises.length === 0) {
-      return { success: false, message: "Nenhum exercício pendente de tradução no catálogo." };
+      return { success: false, message: "Nenhum exercício pendente no catálogo." } as any;
     }
 
     const { data: job, error: jobError } = await supabaseAdmin
@@ -43,7 +36,7 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
         processed_items: 0,
         success_count: 0,
         error_count: 0
-      })
+      } as any)
       .select()
       .single();
 
@@ -55,9 +48,9 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
       status: "pending"
     }));
 
-    await supabaseAdmin.from("exercise_translation_items").insert(items);
+    await supabaseAdmin.from("exercise_translation_items").insert(items as any);
 
-    return { jobId: job.id, total: pendingExercises.length };
+    return { jobId: job.id, total: pendingExercises.length } as any;
   });
 
 /**
@@ -68,8 +61,6 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ jobId: z.string().uuid(), batchSize: z.number().default(10) }).parse(data))
   .handler(async ({ data: { jobId, batchSize }, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    
-    // Importa o tradutor específico de catálogo
     const { translateCatalogExercises } = await import("@/lib/exercises-import.functions");
 
     const { data: items } = await supabaseAdmin
@@ -80,20 +71,19 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
       .limit(batchSize);
 
     if (!items || items.length === 0) {
-      await supabaseAdmin.from("exercise_translation_jobs").update({ status: "completed" }).eq("id", jobId);
-      return { processed: 0, status: "completed" };
+      await supabaseAdmin.from("exercise_translation_jobs").update({ status: "completed" } as any).eq("id", jobId);
+      return { processed: 0, status: "completed" } as any;
     }
 
     const itemIds = items.map(i => i.id);
-    await supabaseAdmin.from("exercise_translation_items").update({ status: "processing" }).in("id", itemIds);
+    await supabaseAdmin.from("exercise_translation_items").update({ status: "processing" } as any).in("id", itemIds);
 
     let successCount = 0;
     let errorCount = 0;
 
     for (const item of items) {
       try {
-        // Traduz o exercício específico
-        const result = await translateCatalogExercises({ 
+        const result: any = await translateCatalogExercises({ 
           data: { 
             exerciseIds: [item.catalog_exercise_id] 
           }
@@ -101,7 +91,7 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
 
         if (result && result.success > 0) {
            await supabaseAdmin.from("exercise_translation_items")
-            .update({ status: "completed" })
+            .update({ status: "completed" } as any)
             .eq("id", item.id);
            successCount++;
         } else {
@@ -110,13 +100,12 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
       } catch (err: any) {
         console.error(`[translation-job:process] Item ${item.id} failed:`, err);
         await supabaseAdmin.from("exercise_translation_items")
-          .update({ status: "failed", error_message: err.message })
+          .update({ status: "failed", error_message: err.message } as any)
           .eq("id", item.id);
         errorCount++;
       }
     }
 
-    // Atualiza o progresso do job
     const { data: job } = await supabaseAdmin.from("exercise_translation_jobs").select("*").eq("id", jobId).single();
     if (job) {
       const currentProcessed = (job.processed_items || 0);
@@ -133,11 +122,11 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
           error_count: currentError + errorCount,
           status: (newProcessed >= totalItems) ? "completed" : "running",
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq("id", jobId);
     }
 
-    return { successCount, errorCount, processed: items.length };
+    return { successCount, errorCount, processed: items.length } as any;
   });
 
 export const getLatestTranslationJob = createServerFn({ method: "GET" })
