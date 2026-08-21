@@ -60,7 +60,7 @@ import { ArquivosPanel } from "@/components/settings/arquivos-panel";
 import { ExerciseImportManager } from "@/components/exercises/ExerciseImportManager";
 import { ExerciseBulkMediaUpload } from "@/components/admin/ExerciseBulkMediaUpload";
 import { MediaCorrelationDashboard } from "@/components/admin/MediaCorrelationDashboard";
-import { SettingsHeader, Fold } from "@/components/settings/settings-shell";
+import { SettingsHeader, Fold, DiagnosticPanel } from "@/components/settings/settings-shell";
 import { KpiRow, type Kpi } from "@/components/settings/kpi-row";
 import { useCoachFiles, formatBytes } from "@/components/settings/use-coach-files";
 import { useCoach } from "@/hooks/use-coach";
@@ -492,6 +492,10 @@ function ConfiguracoesPage() {
 
             <Fold>
               <ApiPanel />
+            </Fold>
+
+            <Fold title="Diagnóstico de Sistema" description="Informações técnicas para suporte e depuração.">
+              <DiagnosticPanel />
             </Fold>
           </>
         )}
