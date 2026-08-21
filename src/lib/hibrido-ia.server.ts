@@ -149,7 +149,11 @@ export async function buscarCandidatosDoMolde(
   for (const bloco of template) {
     if (bloco.selecaoExercicios !== "ia") continue;
 
-    let query = supabase.from("exercises").select("id, nome_pt").order("nome_pt").limit(60);
+    let query = supabase.from("exercises")
+      .select("id, nome_pt")
+      .not("nome_pt", "ilike", "[Pendente] %")
+      .order("nome_pt")
+      .limit(60);
 
     // Regras de conexão Bloco -> Equipamento (e Metodologia quando implícito)
     const metodologias = [...(bloco.fonteExercicios.metodologias ?? [])];
