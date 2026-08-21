@@ -244,12 +244,18 @@ export function CatalogReviewList() {
                         size="icon"
                         title="Traduzir via IA"
                         onClick={async () => {
+                          const tid = toast.loading("Traduzindo exercício...");
                           try {
-                            await translateSingleExercise({ data: { id: item.id } });
-                            queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
-                            toast.success("Tradução solicitada");
+                            const res = await translateSingleExercise({ data: { id: item.id } });
+                            if (res && res.success > 0) {
+                              queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
+                              queryClient.invalidateQueries({ queryKey: ["exercise-catalog-stats"] });
+                              toast.success("Tradução concluída com sucesso", { id: tid });
+                            } else {
+                              toast.error(res.errors?.[0] || "IA não retornou tradução", { id: tid });
+                            }
                           } catch (err: any) {
-                            toast.error(err.message);
+                            toast.error(err.message, { id: tid });
                           }
                         }}
                       >
