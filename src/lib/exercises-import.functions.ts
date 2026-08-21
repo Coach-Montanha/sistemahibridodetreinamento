@@ -181,7 +181,10 @@ async function translateCatalogExerciseInternal(catalogId: string, locale: strin
         instruction_steps_pt_br: translated.instruction_steps,
         translation_status: "draft",
         translation_source: "llm",
-        translation_model: "gemini-2.0-flash"
+        translation_model: "gemini-2.0-flash",
+        updated_at: new Date().toISOString()
+      }, { 
+        onConflict: "catalog_exercise_id,locale" 
       })
       .select("id")
       .single();
@@ -319,7 +322,10 @@ export const saveCatalogTranslationDraft = createServerFn({ method: "POST" })
         locale: "pt-BR",
         ...fields,
         translation_status: "approved",
-        translation_source: "human"
+        translation_source: "human",
+        updated_at: new Date().toISOString()
+      }, { 
+        onConflict: "catalog_exercise_id,locale" 
       });
 
     if (transError) throw new Error(`Falha ao salvar tradução: ${transError.message}`);
@@ -348,6 +354,26 @@ export const approveCatalogTranslation = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data: { catalogId, status, approved } }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Se estiver aprovando, garantir que existe uma tradução draft para ser aprovada
+    if (status === 'approved') {
+      const { data: translation } = await supabaseAdmin
+        .from("exercise_catalog_translations")
+        .select("id")
+        .eq("catalog_exercise_id", catalogId)
+        .eq("locale", "pt-BR")
+        .maybeSingle();
+
+      if (translation) {
+        await supabaseAdmin
+          .from("exercise_catalog_translations")
+          .update({ 
+            translation_status: "approved",
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", translation.id);
+      }
+    }
 
     const { error } = await supabaseAdmin
       .from("exercise_catalog")
