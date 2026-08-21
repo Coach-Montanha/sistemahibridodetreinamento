@@ -53,12 +53,13 @@ import {
   Database,
 } from "lucide-react";
 import { Copy, Wand2 } from "lucide-react";
-import { Palette, FolderArchive, KeyRound } from "lucide-react";
+import { Palette, FolderArchive, KeyRound, Link } from "lucide-react";
 import { ApiPanel } from "@/components/settings/api-panel";
 import { MarcaPanel } from "@/components/settings/marca-panel";
 import { ArquivosPanel } from "@/components/settings/arquivos-panel";
 import { ExerciseImportManager } from "@/components/exercises/ExerciseImportManager";
 import { ExerciseBulkMediaUpload } from "@/components/admin/ExerciseBulkMediaUpload";
+import { MediaCorrelationDashboard } from "@/components/admin/MediaCorrelationDashboard";
 import { SettingsHeader, Fold } from "@/components/settings/settings-shell";
 import { KpiRow, type Kpi } from "@/components/settings/kpi-row";
 import { useCoachFiles, formatBytes } from "@/components/settings/use-coach-files";
@@ -144,6 +145,12 @@ const SECTIONS = [
     icon: FolderArchive,
   },
   { key: "marca", label: "Marca", hint: "Logo, cores e rodapé", icon: Palette },
+  {
+    key: "media-sync",
+    label: "Sincronizar Mídias",
+    hint: "Correlacionar GIFs/Vídeos existentes",
+    icon: Link,
+  },
   { key: "arquivos", label: "Arquivos", hint: "Planilhas, PDFs e mídias", icon: FolderArchive },
 ] as const;
 
@@ -385,6 +392,14 @@ function ConfiguracoesPage() {
             description="Gerencie a importação e curadoria de exercícios do repositório oficial."
           >
             <ExerciseImportManager />
+          </Fold>
+        )}
+        {section === "media-sync" && (
+          <Fold
+            title="Sincronização de Mídias Existentes"
+            description="Correlacione arquivos já presentes no Storage com exercícios importados sem necessidade de novo upload."
+          >
+            <MediaCorrelationDashboard />
           </Fold>
         )}
         {section === "bulk-media" && (

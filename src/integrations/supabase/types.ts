@@ -779,6 +779,95 @@ export type Database = {
           },
         ]
       }
+      media_correlation_items: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          filename: string
+          id: string
+          job_id: string
+          match_confidence: number | null
+          match_type: string
+          matched_exercise_id: string | null
+          status: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          filename: string
+          id?: string
+          job_id: string
+          match_confidence?: number | null
+          match_type: string
+          matched_exercise_id?: string | null
+          status?: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          filename?: string
+          id?: string
+          job_id?: string
+          match_confidence?: number | null
+          match_type?: string
+          matched_exercise_id?: string | null
+          status?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_correlation_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "media_correlation_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_correlation_items_matched_exercise_id_fkey"
+            columns: ["matched_exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_correlation_jobs: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          id: string
+          stats: Json | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          id?: string
+          stats?: Json | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          id?: string
+          stats?: Json | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_correlation_jobs_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       program_weeks: {
         Row: {
           data_inicio: string | null
