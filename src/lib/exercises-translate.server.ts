@@ -39,68 +39,42 @@ FORMATO DE RETORNO (JSON):
 `;
 
 export async function translateExercise(exercise: any) {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("Serviço de IA indisponível no momento");
+  const { callLovableAiJson } = await import("./ai-gateway.server");
+
+  const texto = (v: unknown, max = 4000) => {
+    if (v == null) return "";
+    const s = typeof v === "string" ? v : JSON.stringify(v);
+    return s.slice(0, max);
+  };
 
   const prompt = `
 Traduza o seguinte exercício:
-Nome Original: ${exercise.name_original}
-Categoria: ${exercise.category}
-Parte do Corpo: ${exercise.body_part}
-Equipamento: ${exercise.equipment_original}
-Alvo: ${exercise.target}
-Grupo Muscular: ${exercise.muscle_group}
-Músculos Secundários: ${JSON.stringify(exercise.secondary_muscles)}
-Instruções (EN): ${JSON.stringify(exercise.instructions)}
-Passos (EN): ${JSON.stringify(exercise.instruction_steps)}
-  `;
+Nome Original: ${texto(exercise.name_original, 300)}
+Categoria: ${texto(exercise.category, 200)}
+Parte do Corpo: ${texto(exercise.body_part, 200)}
+Equipamento: ${texto(exercise.equipment_original, 200)}
+Alvo: ${texto(exercise.target, 200)}
+Grupo Muscular: ${texto(exercise.muscle_group, 200)}
+Músculos Secundários: ${texto(exercise.secondary_muscles, 600)}
+Instruções (EN): ${texto(exercise.instructions, 4000)}
+Passos (EN): ${texto(exercise.instruction_steps, 4000)}
+  `.trim();
 
-  // Gemini 2.0 Flash é o modelo recomendado por estabilidade e custo/performance
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT_TRANSLATION },
-        { role: "user", content: prompt },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-    }),
+  const { json } = await callLovableAiJson<any>({
+    scope: "traducao-catalogo",
+    system: SYSTEM_PROMPT_TRANSLATION,
+    prompt,
+    temperature: 0.1,
   });
 
-  if (!res.ok) {
-    const corpo = await res.text().catch(() => "");
-    console.error(`AI gateway translation error [${res.status}]:`, corpo);
-    
-    // Tratamento de erro 400 específico para ajudar no diagnóstico
-    if (res.status === 400) {
-      throw new Error(`Falha na tradução via IA (erro 400): O Gateway rejeitou o request. Verifique o conteúdo do exercício ou o modelo.`);
-    }
-    
-    throw new Error(`Falha na tradução via IA (erro ${res.status})`);
+  if (!json || typeof json.name !== "string" || json.name.trim().length === 0) {
+    throw new Error("A IA não retornou um nome traduzido válido.");
   }
 
-  const payload: any = await res.json();
-  const conteudo = payload?.choices?.[0]?.message?.content;
-
-  if (typeof conteudo !== "string" || conteudo.trim().length === 0) {
-    throw new Error("A IA não retornou conteúdo. Tente novamente.");
-  }
-
-  try {
-    const result = JSON.parse(conteudo);
-    
-    // Validação extra de equipamento
-    result.equipment = normalizarEquipamento(result.equipment) || "Objetos Alternativos";
-    
-    return result;
-  } catch (err) {
-    console.error("Erro ao processar JSON da IA:", conteudo);
-    throw new Error("Resposta da IA inválida");
-  }
+  json.equipment = normalizarEquipamento(json.equipment) || "Objetos Alternativos";
+  return json;
 }
+
 
 /**
  * Tradutor específico para o Catálogo de Exercícios.

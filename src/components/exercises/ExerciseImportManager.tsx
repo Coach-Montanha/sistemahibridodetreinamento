@@ -69,8 +69,23 @@ export function ExerciseImportManager() {
     setIsProjecting(true);
     try {
       const result = await runProjection();
-      toast.success(`${result.projected} exercícios projetados para a biblioteca global.`);
+      const motivos = Object.entries(result.reasons ?? {})
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(" · ");
+
+      if (result.projected === 0 && result.updated === 0) {
+        toast.error(
+          `Nenhum exercício projetado. ${result.skipped} ignorado(s).${motivos ? ` Motivos — ${motivos}` : ""}`,
+          { duration: 10000 },
+        );
+      } else {
+        toast.success(
+          `${result.projected} projetado(s), ${result.updated} atualizado(s), ${result.skipped} ignorado(s).${motivos ? ` (${motivos})` : ""}`,
+          { duration: 8000 },
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ["exercise-catalog-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
       queryClient.invalidateQueries({ queryKey: ["exercises"] });
     } catch (error: any) {
       toast.error(`Falha na projeção: ${error.message}`);
@@ -78,6 +93,7 @@ export function ExerciseImportManager() {
       setIsProjecting(false);
     }
   };
+
 
   const handleTranslation = async () => {
     setIsTranslating(true);

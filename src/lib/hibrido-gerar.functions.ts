@@ -9,6 +9,7 @@ import {
   type HibridoPayload,
   type SessaoTemplate,
 } from "@/lib/hibrido-ia.server";
+import { validarLimitesDoMolde } from "@/lib/format-limits";
 
 // ---------------------------------------------------------------------------
 // Validação de entrada — espelha 1:1 os campos de BlocoTemplate/HibridoPayload
@@ -31,7 +32,7 @@ const BLOCO = z.object({
   duracaoMin: z.number().nullable(),
   seriesMin: z.number().nullable(),
   seriesMax: z.number().nullable(),
-  numeroExercicios: z.number().int().min(1).max(30),
+  numeroExercicios: z.number().int().min(1),
   repsPorExercicio: z.union([z.string(), z.number()]).nullable(),
   modoExecucao: z.enum(["circuito", "series_fixas"]),
   descansoAposSeg: z.number().min(0).default(0),
@@ -44,16 +45,34 @@ const BLOCO = z.object({
   fonteExercicios: FONTE_EXERCICIOS,
 });
 
-const INPUT = z.object({
-  modalidade: z.enum(["hibrido", "kettlebell_fitness"]),
-  tituloPrograma: z.string().min(1).max(120),
-  numeroSessoes: z.number().int().min(1).max(52),
-  /** Quantas sessões cabem por semana antes de abrir uma nova program_week. Padrão 6 (D1-D6, como nas planilhas). */
-  diasPorSemana: z.number().int().min(1).max(7).default(6),
-  dataInicio: z.string().nullable().optional(),
-  sessaoTemplate: z.array(BLOCO).min(1),
-  instrucoes: z.string().max(4000).default(""),
-});
+const INPUT = z
+  .object({
+    modalidade: z.enum(["hibrido", "kettlebell_fitness"]),
+    tituloPrograma: z.string().min(1).max(120),
+    numeroSessoes: z.number().int().min(1).max(52),
+    /** Quantas sessões cabem por semana antes de abrir uma nova program_week. Padrão 6 (D1-D6, como nas planilhas). */
+    diasPorSemana: z.number().int().min(1).max(7).default(6),
+    dataInicio: z.string().nullable().optional(),
+    sessaoTemplate: z.array(BLOCO).min(1),
+    instrucoes: z.string().max(4000).default(""),
+  })
+  // Limites por formato vêm do contrato compartilhado com o construtor.
+  .superRefine((val, ctx) => {
+    const violacoes = validarLimitesDoMolde(
+      val.sessaoTemplate.map((b) => ({
+        formato: b.formato,
+        numeroExercicios: b.numeroExercicios,
+        seriesMax: b.seriesMax,
+      })),
+    );
+    for (const v of violacoes) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["sessaoTemplate"],
+        message: `FORMAT_LIMIT_EXCEEDED: o formato "${v.formato}" aceita no máximo ${v.maximo} em ${v.campo} (recebido ${v.valor}).`,
+      });
+    }
+  });
 
 // ---------------------------------------------------------------------------
 // Config por formato — espelha exatamente o que BlockFormats.tsx grava em
@@ -135,9 +154,8 @@ export const gerarSessoesHibrido = createServerFn({ method: "POST" })
       }
     }
 
-    // 3. Monta o prompt único (cobre todas as numeroSessoes de uma vez) e chama o gateway.
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("Serviço de IA indisponível no momento");
+    // 3. Monta o prompt único (cobre todas as numeroSessoes de uma vez) e chama o adaptador único.
+    const { callLovableAiJson, AiGatewayError } = await import("@/lib/ai-gateway.server");
 
     const prompt = montarHibridoPrompt({
       payload: data as unknown as HibridoPayload,
@@ -145,38 +163,20 @@ export const gerarSessoesHibrido = createServerFn({ method: "POST" })
       instrucoes: data.instrucoes,
     });
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
-        body: JSON.stringify({
-          model: "google/gemini-2.0-flash",
-          messages: [{ role: "user", content: prompt }],
-          response_format: { type: "json_object" },
-        }),
-      });
-
-    if (!res.ok) {
-      const corpo = await res.text().catch(() => "");
-      console.error(`AI gateway [${res.status}]: ${corpo}`);
-      const msg =
-        res.status === 429
-          ? "Limite de uso da IA atingido, tente em instantes"
-          : res.status === 402
-            ? "Créditos da IA esgotados"
-            : res.status === 400
-              ? `Falha ao gerar a prescrição (erro 400) - Verifique se as instruções ou o histórico não excedem o limite de caracteres.`
-              : `Falha ao gerar a prescrição (erro ${res.status})`;
-      throw new Error(msg);
-    }
-
-    const respostaGateway: any = await res.json();
-    const conteudo = respostaGateway?.choices?.[0]?.message?.content;
-    if (typeof conteudo !== "string" || conteudo.trim().length === 0) {
-      throw new Error("A IA não retornou conteúdo. Tente novamente.");
+    let conteudo: string;
+    try {
+      const resultadoIa = await callLovableAiJson({ scope: "hibrido-gerar", prompt });
+      conteudo = resultadoIa.raw;
+    } catch (err) {
+      if (err instanceof AiGatewayError) {
+        throw new Error(`${err.code}: ${err.message}`);
+      }
+      throw err;
     }
 
     // 4. Parsing defensivo + validação de segurança (IDs alucinados são descartados).
     const prescricao = normalizarPrescricaoHibrido(conteudo, template, candidatos);
+
 
     // 5. Cria o programa e distribui as sessões em semanas de `diasPorSemana`.
     const numeroSemanas = Math.max(1, Math.ceil(data.numeroSessoes / data.diasPorSemana));
