@@ -46,7 +46,8 @@ export const translateCatalogExercises = createServerFn({ method: "POST" })
             instructions_pt_br: translation.instructions,
             instruction_steps_pt_br: translation.instruction_steps,
             translation_status: 'draft',
-            locale: 'pt-BR'
+            locale: 'pt-BR',
+            updated_at: new Date().toISOString() // Force update even if content is same
           } as any);
 
         if (insError) throw insError;

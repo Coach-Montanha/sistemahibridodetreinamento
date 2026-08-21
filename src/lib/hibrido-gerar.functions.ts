@@ -31,7 +31,7 @@ const BLOCO = z.object({
   duracaoMin: z.number().nullable(),
   seriesMin: z.number().nullable(),
   seriesMax: z.number().nullable(),
-  numeroExercicios: z.number().int().min(1).max(8),
+  numeroExercicios: z.number().int().min(1).max(30),
   repsPorExercicio: z.union([z.string(), z.number()]).nullable(),
   modoExecucao: z.enum(["circuito", "series_fixas"]),
   descansoAposSeg: z.number().min(0).default(0),
@@ -146,14 +146,14 @@ export const gerarSessoesHibrido = createServerFn({ method: "POST" })
     });
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-      }),
-    });
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash",
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+        }),
+      });
 
     if (!res.ok) {
       const corpo = await res.text().catch(() => "");

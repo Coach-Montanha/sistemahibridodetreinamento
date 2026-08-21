@@ -251,6 +251,9 @@ export function CatalogReviewList() {
                               queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
                               queryClient.invalidateQueries({ queryKey: ["exercise-catalog-stats"] });
                               toast.success("Tradução concluída com sucesso", { id: tid });
+                              // Important: invalidate everything related to the catalog
+                              queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
+                              queryClient.invalidateQueries({ queryKey: ["exercise-catalog-stats"] });
                             } else {
                               toast.error(res.errors?.[0] || "IA não retornou tradução", { id: tid });
                             }
