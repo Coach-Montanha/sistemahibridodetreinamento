@@ -154,9 +154,8 @@ export const gerarSessoesHibrido = createServerFn({ method: "POST" })
       }
     }
 
-    // 3. Monta o prompt único (cobre todas as numeroSessoes de uma vez) e chama o gateway.
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("Serviço de IA indisponível no momento");
+    // 3. Monta o prompt único (cobre todas as numeroSessoes de uma vez) e chama o adaptador único.
+    const { callLovableAiJson, AiGatewayError } = await import("@/lib/ai-gateway.server");
 
     const prompt = montarHibridoPrompt({
       payload: data as unknown as HibridoPayload,
@@ -164,38 +163,20 @@ export const gerarSessoesHibrido = createServerFn({ method: "POST" })
       instrucoes: data.instrucoes,
     });
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
-        body: JSON.stringify({
-          model: "google/gemini-2.0-flash",
-          messages: [{ role: "user", content: prompt }],
-          response_format: { type: "json_object" },
-        }),
-      });
-
-    if (!res.ok) {
-      const corpo = await res.text().catch(() => "");
-      console.error(`AI gateway [${res.status}]: ${corpo}`);
-      const msg =
-        res.status === 429
-          ? "Limite de uso da IA atingido, tente em instantes"
-          : res.status === 402
-            ? "Créditos da IA esgotados"
-            : res.status === 400
-              ? `Falha ao gerar a prescrição (erro 400) - Verifique se as instruções ou o histórico não excedem o limite de caracteres.`
-              : `Falha ao gerar a prescrição (erro ${res.status})`;
-      throw new Error(msg);
-    }
-
-    const respostaGateway: any = await res.json();
-    const conteudo = respostaGateway?.choices?.[0]?.message?.content;
-    if (typeof conteudo !== "string" || conteudo.trim().length === 0) {
-      throw new Error("A IA não retornou conteúdo. Tente novamente.");
+    let conteudo: string;
+    try {
+      const resultadoIa = await callLovableAiJson({ scope: "hibrido-gerar", prompt });
+      conteudo = resultadoIa.raw;
+    } catch (err) {
+      if (err instanceof AiGatewayError) {
+        throw new Error(`${err.code}: ${err.message}`);
+      }
+      throw err;
     }
 
     // 4. Parsing defensivo + validação de segurança (IDs alucinados são descartados).
     const prescricao = normalizarPrescricaoHibrido(conteudo, template, candidatos);
+
 
     // 5. Cria o programa e distribui as sessões em semanas de `diasPorSemana`.
     const numeroSemanas = Math.max(1, Math.ceil(data.numeroSessoes / data.diasPorSemana));
