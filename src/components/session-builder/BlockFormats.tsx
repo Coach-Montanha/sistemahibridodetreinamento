@@ -324,7 +324,7 @@ function ModoToggle({ block }: { block: BuilderBlock }) {
 /* ---------- Bloco de Mobilidade ---------- */
 export function PrepMovimentoForm({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
-  const cfg = block.config;
+  const cfg = block.config || {};
   return (
     <div className="space-y-4">
       <SlotSection
@@ -410,7 +410,7 @@ function SlotSection({
 /* ---------- E2MOM / EMOM / AMRAP ---------- */
 export function TimedForm({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
-  const cfg = block.config;
+  const cfg = block.config || {};
   const isAmrap = block.formato === "amrap";
   return (
     <div className="space-y-4">
@@ -478,10 +478,11 @@ export function TimedForm({ block }: { block: BuilderBlock }) {
 /* ---------- Força/Técnica %1RM ---------- */
 export function ForcaPctForm({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
-  const passos: any[] = block.config.passos ?? [];
+  const cfg = block.config || {};
+  const passos: any[] = cfg.passos ?? [];
 
   function setPassos(next: any[]) {
-    update(block.tempId, { config: { ...block.config, passos: next } });
+    update(block.tempId, { config: { ...cfg, passos: next } });
   }
 
   return (
@@ -559,7 +560,7 @@ const SETS_HINT: Partial<Record<BuilderBlock["formato"], string>> = {
 
 export function SetsRepsForm({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
-  const cfg = block.config;
+  const cfg = block.config || {};
   const setCfg = (patch: Record<string, unknown>) =>
     update(block.tempId, { config: { ...cfg, ...patch } });
 
@@ -645,7 +646,7 @@ export function LivreForm({ block }: { block: BuilderBlock }) {
 /* ---------- Kettlebell Sport AQ/TR ---------- */
 export function KbTimedForm({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
-  const cfg = block.config;
+  const cfg = block.config || {};
 
   function updateSet(kind: "aquecimento" | "tiro", idx: number, patch: any) {
     const arr = [...(cfg[kind] ?? [])];
