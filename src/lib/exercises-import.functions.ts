@@ -143,37 +143,13 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
 
     for (const item of toTranslate) {
       try {
-        const translated = await translateExercise(item);
-        
-        const { data: translation, error: transError } = await supabaseAdmin
-          .from("exercise_catalog_translations")
-          .upsert({
-            catalog_exercise_id: item.id,
-            locale: "pt-BR",
-            name_pt_br: translated.name,
-            category_pt_br: translated.category,
-            body_part_pt_br: translated.body_part,
-            equipment_pt_br: translated.equipment,
-            target_pt_br: translated.target,
-            muscle_group_pt_br: translated.muscle_group,
-            secondary_muscles_pt_br: translated.secondary_muscles,
-            instructions_pt_br: translated.instructions,
-            instruction_steps_pt_br: translated.instruction_steps,
-            translation_status: "draft",
-            translation_source: "llm",
-            translation_model: "gemini-2.0-flash-exp"
-          })
-          .select("id")
-          .single();
-
-        if (transError) throw transError;
-
-        await supabaseAdmin
-          .from("exercise_catalog")
-          .update({ active_translation_id: translation.id })
-          .eq("id", item.id);
-
-        results.success++;
+        const { success, error } = await translateCatalogExerciseInternal(item.id, "pt-BR");
+        if (success) {
+          results.success++;
+        } else {
+          console.error(`Erro ao traduzir exercício ${item.id}:`, error);
+          results.errors++;
+        }
       } catch (err) {
         console.error(`Erro ao traduzir exercício ${item.id}:`, err);
         results.errors++;
@@ -183,27 +159,34 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
     return results;
   });
 
-export const translateSingleExercise = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
-  .handler(async ({ data: { id } }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    
+async function translateCatalogExerciseInternal(catalogId: string, locale: string = "pt-BR") {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { translateExercise } = await import("./exercises-translate.server");
+
+  try {
     const { data: item, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
       .select("*")
-      .eq("id", id)
+      .eq("id", catalogId)
       .single();
-      
-    if (fetchError || !item) throw new Error("Exercício não encontrado");
 
-    const translated = await translateExercise(item);
-    
+    if (fetchError || !item) return { success: false, error: "Exercício não encontrado" };
+
+    // Normalização básica antes do prompt
+    const normalizedItem = {
+      ...item,
+      secondary_muscles: Array.isArray(item.secondary_muscles) ? item.secondary_muscles : [],
+      instructions: typeof item.instructions === 'object' && item.instructions !== null ? item.instructions : { en: String(item.instructions || "") },
+      instruction_steps: Array.isArray(item.instruction_steps) ? item.instruction_steps : []
+    };
+
+    const translated = await translateExercise(normalizedItem);
+
     const { data: translation, error: transError } = await supabaseAdmin
       .from("exercise_catalog_translations")
       .upsert({
         catalog_exercise_id: item.id,
-        locale: "pt-BR",
+        locale: locale,
         name_pt_br: translated.name,
         category_pt_br: translated.category,
         body_part_pt_br: translated.body_part,
@@ -215,7 +198,7 @@ export const translateSingleExercise = createServerFn({ method: "POST" })
         instruction_steps_pt_br: translated.instruction_steps,
         translation_status: "draft",
         translation_source: "llm",
-        translation_model: "gemini-2.0-flash-exp"
+        translation_model: "gemini-2.5-flash"
       })
       .select("id")
       .single();
@@ -227,7 +210,19 @@ export const translateSingleExercise = createServerFn({ method: "POST" })
       .update({ active_translation_id: translation.id })
       .eq("id", item.id);
 
-    return { success: true, translation };
+    return { success: true, catalogId, translated: true, translation };
+  } catch (err: any) {
+    return { success: false, error: err.message, status: 400 };
+  }
+}
+
+export const translateSingleExercise = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
+  .handler(async ({ data: { id } }) => {
+    const result = await translateCatalogExerciseInternal(id, "pt-BR");
+    if (!result.success) throw new Error(result.error);
+    return result;
   });
 
 export const projectApprovedExercises = createServerFn({ method: "POST" })
