@@ -123,6 +123,7 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
 
     if (idsToExclude.length > 0) {
       query = query.filter("id", "not.in", `(${idsToExclude.join(",")})`);
+
     }
 
     const { data: candidates, error: candError } = await query
