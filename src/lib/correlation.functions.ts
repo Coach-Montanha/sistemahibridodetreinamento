@@ -155,7 +155,8 @@ export const getLatestCorrelationJob = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const coachId = context.userId;
+    const { data: coachData } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
+    const coachId = coachData || context.userId;
 
     const { data: job } = await supabaseAdmin
       .from("media_correlation_jobs")
