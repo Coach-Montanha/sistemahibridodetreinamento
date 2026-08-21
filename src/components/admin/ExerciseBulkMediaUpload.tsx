@@ -115,7 +115,7 @@ export function ExerciseBulkMediaUpload() {
               ...f, 
               status: result.success ? 'success' : 'error',
               error: result.error,
-              match: result.linked ? { id: result.targetExerciseId, name: 'Vinculado' } : undefined
+              match: result.linked && result.targetExerciseId ? { id: result.targetExerciseId, name: 'Vinculado' } : undefined
             };
           }
           return f;
