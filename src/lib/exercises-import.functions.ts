@@ -126,15 +126,20 @@ export const approveCatalogTranslation = createServerFn({ method: "POST" })
   });
 
 export const translateCatalogBatch = createServerFn({ method: "POST" })
-  .handler(async () => {
+  .inputValidator((data) => z.object({ 
+    limit: z.number().default(10),
+    offset: z.number().default(0)
+  }).parse(data))
+  .handler(async ({ data }) => {
     const { translateCatalogExercises } = await import("./exercises-import.functions");
-    return translateCatalogExercises({ data: { limit: 10, offset: 0 } });
+    return translateCatalogExercises({ data });
   });
 
 export const importExercises = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ dryRun: z.boolean().default(false) }).parse(data))
   .handler(async () => {
-    // Mock ou implementação real de disparo de importação
-    return { success: true, message: "Importação disparada" };
+    // Implementação mock que retorna o que o frontend espera
+    return { success: true, message: "Importação disparada", inserted: 0 };
   });
 
 export const projectApprovedExercises = createServerFn({ method: "POST" })
@@ -168,7 +173,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
             nome_pt: translation.name_pt_br,
             nome_en: item.name_original,
             categoria: translation.category_pt_br,
-            padrao_movimento: translation.padrao_movimento_pt_br,
+            padrao_movimento: translation.body_part_pt_br, // Usando body_part como padrão fallback
             grupos_musculares: translation.muscle_group_pt_br ? [translation.muscle_group_pt_br] : [],
             equipamento: translation.equipment_pt_br ? [translation.equipment_pt_br] : [],
             instrucoes: translation.instructions_pt_br,
