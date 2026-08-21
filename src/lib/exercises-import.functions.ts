@@ -180,7 +180,7 @@ async function translateCatalogExerciseInternal(catalogId: string, locale: strin
         instruction_steps_pt_br: translated.instruction_steps,
         translation_status: "draft",
         translation_source: "llm",
-        translation_model: "gemini-2.5-flash"
+        translation_model: "gemini-2.0-flash"
       })
       .select("id")
       .single();
