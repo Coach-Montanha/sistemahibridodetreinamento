@@ -460,13 +460,32 @@ export function PrescreverIaDialog({
     },
     onError: (e: any) => {
       setProgresso([]);
-      const errorMsg = e?.message || "";
-      if (errorMsg.includes("400") || errorMsg.includes("token")) {
-        toast.error("O histórico ou as instruções são muito longos para a IA. Tente reduzir o número de semanas ou o histórico analisado.");
-      } else if (errorMsg.includes("429")) {
-        toast.error("Limite de uso da IA atingido. Tente novamente em alguns segundos.");
+      const msg = e?.message || "";
+      
+      if (msg.includes("POOL_VAZIO")) {
+        toast.error("Pool de Exercícios Insuficiente", {
+          description: "Os filtros do molde (equipamento/metodologia) são restritivos demais para a biblioteca atual."
+        });
+      } else if (msg.includes("AI_GATEWAY_ERROR")) {
+        toast.error("Erro no Gateway de IA", {
+          description: "O serviço de IA está temporariamente indisponível. Tente novamente em alguns segundos."
+        });
+      } else if (msg.includes("AI_EMPTY_CONTENT")) {
+        toast.error("Resposta Vazia da IA", {
+          description: "A IA não conseguiu gerar o conteúdo estruturado. Tente simplificar as instruções."
+        });
+      } else if (msg.includes("AI_SCHEMA_MISMATCH")) {
+        toast.error("Erro de Estrutura", {
+          description: "A IA gerou um treino, mas ele não encaixa no molde solicitado. Tente gerar novamente."
+        });
+      } else if (msg.includes("400") || msg.includes("token")) {
+        toast.error("Histórico muito longo", {
+          description: "Tente reduzir o número de semanas ou o histórico analisado."
+        });
       } else {
-        toast.error(`Falha na prescrição: ${errorMsg || "Erro de conexão com o servidor"}`);
+        toast.error("Falha na Prescrição", {
+          description: msg || "Ocorreu um erro inesperado ao processar a IA."
+        });
       }
     }
   });
