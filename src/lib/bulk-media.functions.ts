@@ -120,6 +120,14 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
       };
     }
   });
+7: 
+8: export const getMyCoachId = createServerFn({ method: "GET" })
+9:   .middleware([requireSupabaseAuth])
+10:   .handler(async ({ context }) => {
+11:     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+12:     const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
+13:     return coachId as string | null;
+14:   });
 
 // Mantido por compatibilidade temporária se necessário, mas marcado como legado
 export const uploadMediaBatch = createServerFn({ method: "POST" })
