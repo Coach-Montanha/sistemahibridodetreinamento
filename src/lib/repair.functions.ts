@@ -62,7 +62,7 @@ export const repairPendingExerciseLinks = createServerFn({ method: "POST" })
             .update({ 
               exercise_id: matchedId,
               nome_livre: null 
-            })
+            } as any)
             .eq("id", item.id);
         }
         repairedCount++;
