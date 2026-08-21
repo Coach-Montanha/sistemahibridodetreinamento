@@ -13,18 +13,19 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
     const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
     if (!coachId) throw new Error("Coach ID não resolvido.");
 
+    // Busca exercícios que ainda NÃO possuem tradução (nem draft, nem aprovada)
     const { data: pendingExercises, error: fetchError } = await supabaseAdmin
-      .from("exercise_catalog")
-      .select("id, name_original")
-      .limit(2000);
+      .rpc("get_exercises_pending_translation" as any, { _limit: 2000 });
 
     if (fetchError) {
       console.error("[translation-job:start] Fetch Error:", fetchError);
       throw fetchError;
     }
 
-    if (!pendingExercises || pendingExercises.length === 0) {
-      return { success: false, message: "Nenhum exercício pendente no catálogo." } as any;
+    const exercises = Array.isArray(pendingExercises) ? pendingExercises : [];
+
+    if (exercises.length === 0) {
+      return { success: false, message: "Todos os exercícios do catálogo já possuem tradução ou estão em fila." } as any;
     }
 
     const { data: job, error: jobError } = await supabaseAdmin
@@ -32,7 +33,7 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
       .insert({
         coach_id: coachId,
         status: "pending",
-        total_items: pendingExercises.length,
+        total_items: exercises.length,
         processed_items: 0,
         success_count: 0,
         error_count: 0
@@ -42,7 +43,7 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
 
     if (jobError) throw jobError;
 
-    const items = pendingExercises.map(ex => ({
+    const items = exercises.map(ex => ({
       job_id: job.id,
       catalog_exercise_id: ex.id,
       status: "pending"
@@ -50,7 +51,7 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
 
     await supabaseAdmin.from("exercise_translation_items").insert(items as any);
 
-    return { jobId: job.id, total: pendingExercises.length } as any;
+    return { jobId: job.id, total: exercises.length } as any;
   });
 
 /**

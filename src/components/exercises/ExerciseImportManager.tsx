@@ -156,14 +156,6 @@ export function ExerciseImportManager() {
                 GitHub
               </Button>
               <Button 
-                variant="outline" 
-                onClick={handleTranslation} 
-                disabled={isTranslating || (stats?.needTranslation ?? 0) === 0}
-              >
-                {isTranslating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Languages className="mr-2 h-4 w-4" />}
-                Traduzir via IA
-              </Button>
-              <Button 
                 onClick={handleProjection} 
                 disabled={isProjecting || (stats?.approved ?? 0) === 0}
               >

@@ -1597,6 +1597,13 @@ export type Database = {
       auth_coach_id: { Args: never; Returns: string }
       auth_coach_id_for_user: { Args: { _user_id: string }; Returns: string }
       auth_student_id: { Args: never; Returns: string }
+      get_exercises_pending_translation: {
+        Args: { _limit?: number }
+        Returns: {
+          id: string
+          name_original: string
+        }[]
+      }
       merge_exercises: {
         Args: { _duplicate_ids: string[]; _keeper_id: string }
         Returns: undefined
