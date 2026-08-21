@@ -4,83 +4,28 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const translateCatalogExercises = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ 
-    exerciseIds: z.array(z.string().uuid()).optional(),
-    limit: z.number().default(10),
-    offset: z.number().default(0)
-  }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        exerciseIds: z.array(z.string().uuid()).min(1),
+      })
+      .parse(data),
+  )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { translateCatalogWithAI } = await import("@/lib/exercises-translate.server");
-    const { upsertCatalogTranslation } = await import("@/lib/catalog-translation.server");
-    const { resolveAiModel } = await import("@/lib/ai-gateway.server");
-
-    let query = supabaseAdmin
-      .from("exercise_catalog")
-      .select("id, name_original, category, equipment_original, muscle_group, target, body_part, instructions, instruction_steps, secondary_muscles");
-
-    if (data.exerciseIds && data.exerciseIds.length > 0) {
-      query = query.in("id", data.exerciseIds);
-    } else {
-      query = query.range(data.offset, data.offset + data.limit - 1);
-    }
-
-    const { data: exercises, error: fetchError } = await query;
-    if (fetchError) throw new Error(fetchError.message);
-    if (!exercises || exercises.length === 0) {
-      return { success: 0, total: 0, errors: ["Exercício não encontrado no catálogo."] } as any;
-    }
-
-    let success = 0;
-    const errors: string[] = [];
-    const model = resolveAiModel();
-
-    for (const ex of exercises) {
-      try {
-        const translation = await translateCatalogWithAI(ex);
-
-        const { translationId } = await upsertCatalogTranslation(supabaseAdmin, {
-          catalogId: ex.id,
-          status: "draft",
-          source: "ai",
-          model,
-          fields: {
-            name_pt_br: translation.name,
-            category_pt_br: translation.category,
-            equipment_pt_br: translation.equipment,
-            muscle_group_pt_br: translation.muscle_group,
-            target_pt_br: translation.target,
-            body_part_pt_br: translation.body_part,
-            instructions_pt_br: translation.instructions,
-            instruction_steps_pt_br: translation.instruction_steps,
-          },
-        });
-
-        // SELECT de confirmação: só conta sucesso se a linha existir de fato.
-        const { data: confirm } = await supabaseAdmin
-          .from("exercise_catalog_translations")
-          .select("id, name_pt_br")
-          .eq("id", translationId)
-          .maybeSingle();
-
-        if (!confirm?.name_pt_br) throw new Error("Tradução não confirmada no banco.");
-        success++;
-      } catch (err: any) {
-        console.error("[translateCatalogExercises] erro", { id: ex.id, code: err?.code, message: err?.message });
-        errors.push(`${ex.name_original}: ${err?.message ?? "erro desconhecido"}`);
-      }
-    }
-
-    return { success, total: exercises.length, errors } as any;
+    const { translateCatalogCore } = await import("@/lib/catalog-translate-core.server");
+    return (await translateCatalogCore(supabaseAdmin, data.exerciseIds)) as any;
   });
 
 export const translateSingleExercise = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
-    const { translateCatalogExercises } = await import("./exercises-import.functions");
-    return translateCatalogExercises({ data: { exerciseIds: [data.id] } });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { translateCatalogCore } = await import("@/lib/catalog-translate-core.server");
+    return (await translateCatalogCore(supabaseAdmin, [data.id])) as any;
   });
+
 
 export const saveCatalogTranslationDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
