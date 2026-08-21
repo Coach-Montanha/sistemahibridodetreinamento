@@ -30,19 +30,19 @@ export function ExerciseImportManager() {
       
       const [res, catalogRes, transRes] = await Promise.all([
         fetch(DATASET_URL).then(r => r.json()),
-        supabase.from("exercise_catalog").select("id, review_status, approved_for_projection, projected_exercise_id", { count: 'exact' }),
-        supabase.from("exercise_catalog_translations").select("catalog_exercise_id", { count: 'exact' })
+        supabase.from("exercise_catalog").select("id, review_status, approved_for_projection, projected_exercise_id"),
+        supabase.from("exercise_catalog_translations").select("catalog_exercise_id")
       ]);
 
       const expectedTotal = Array.isArray(res) ? res.length : 0;
       const catalog = catalogRes.data || [];
-      const translatedCount = transRes.count || 0;
+      const translatedCount = transRes.data?.length || 0;
 
       return {
         expected: expectedTotal,
-        total: catalogRes.count || 0,
+        total: catalog.length,
         pending: catalog.filter(d => d.review_status === 'pending').length,
-        needTranslation: (catalogRes.count || 0) - translatedCount,
+        needTranslation: catalog.length - translatedCount,
         approved: catalog.filter(d => d.approved_for_projection && !d.projected_exercise_id).length,
         projected: catalog.filter(d => !!d.projected_exercise_id).length,
       };
