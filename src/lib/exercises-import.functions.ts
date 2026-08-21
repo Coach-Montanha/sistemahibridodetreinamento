@@ -3,10 +3,6 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { normalizarEquipamento } from "./hibrido-ia.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { translateExercise } from "./exercises-translate.server";
-
-
-
 
 type MethodologyKey = Database["public"]["Enums"]["methodology_key"];
 
@@ -41,16 +37,6 @@ export const importExercises = createServerFn({ method: "POST" })
       };
 
       if (dryRun) return report;
-
-      const mapEquipment = (equip: string): string => {
-        const e = equip?.toLowerCase() || "";
-        if (e === "kettlebell") return "Kettlebell";
-        if (e === "barbell") return "Barbell";
-        if (e === "dumbbell") return "Dumbbell";
-        if (e === "body weight") return "Ginásticos";
-        if (["cable", "machine", "plate"].includes(e)) return "Alternativos Musculação";
-        return "Pendente";
-      };
 
       const batchSize = 100;
       for (let i = 0; i < exercisesToProcess.length; i += batchSize) {
@@ -97,7 +83,6 @@ export const importExercises = createServerFn({ method: "POST" })
     }
   });
 
-
 export const translateCatalogBatch = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ 
     limit: z.number().optional().default(10),
@@ -105,7 +90,6 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data: { limit, offset } }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { translateExercise } = await import("./exercises-translate.server");
 
     // Buscamos candidatos que NÃO têm tradução
     const { data: translatedIds } = await supabaseAdmin
@@ -123,17 +107,14 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
 
     if (idsToExclude.length > 0) {
       query = query.filter("id", "not.in", `(${idsToExclude.join(",")})`);
-
     }
 
     const { data: candidates, error: candError } = await query
       .range(offset, offset + limit - 1);
 
-
     if (candError) throw candError;
 
     const toTranslate = candidates || [];
-
 
     const results = {
       total: toTranslate.length,
@@ -172,7 +153,6 @@ async function translateCatalogExerciseInternal(catalogId: string, locale: strin
 
     if (fetchError || !item) return { success: false, error: "Exercício não encontrado" };
 
-    // Normalização básica antes do prompt
     const normalizedItem = {
       ...item,
       secondary_muscles: Array.isArray(item.secondary_muscles) ? item.secondary_muscles : [],
@@ -229,7 +209,6 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Fix: Using explicit join to avoid relationship ambiguity error
     const { data: approved, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
       .select(`
@@ -240,15 +219,12 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
       .is("projected_exercise_id", null)
       .range(0, 99); 
 
-
-
     if (fetchError) throw fetchError;
     if (!approved || approved.length === 0) return { projected: 0 };
 
     let projectedCount = 0;
 
     for (const item of approved) {
-      // Pega a tradução ativa aprovada
       const translation = Array.isArray(item.exercise_catalog_translations) 
         ? item.exercise_catalog_translations.find((t: any) => t.translation_status === 'approved')
         : (item.exercise_catalog_translations as any)?.translation_status === 'approved' 
@@ -259,7 +235,6 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
       const equipRaw = (translation.equipment_pt_br || item.equipment_original) || "";
       const equipment = [normalizarEquipamento(equipRaw) || "Objetos Alternativos"];
-
 
       const methodologies: MethodologyKey[] = [];
       if (equipment.includes("Kettlebell") || equipment.includes("Ginásticos")) {
@@ -317,5 +292,3 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
     return { projected: projectedCount };
   });
-
-
