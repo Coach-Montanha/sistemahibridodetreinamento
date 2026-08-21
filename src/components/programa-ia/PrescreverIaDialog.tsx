@@ -469,14 +469,6 @@ export function PrescreverIaDialog({
         toast.error(`Falha na prescrição: ${errorMsg || "Erro de conexão com o servidor"}`);
       }
     }
-  });
-          "Histórico muito longo para a IA. Reduza o campo \"Histórico considerado\" (ex.: 3 ou 0) e gere novamente.",
-        );
-      } else {
-        toast.error(errorMsg || "Falha ao gerar a prescrição");
-      }
-    },
-  });
 
   const salvarMut = useMutation({
     mutationFn: async () => {
