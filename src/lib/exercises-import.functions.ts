@@ -215,18 +215,20 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: approved, error: fetchError } = await supabaseAdmin
-      .from("exercise_catalog")
-      .select(`
-        *, 
-        exercise_catalog_translations!exercise_catalog_translations_catalog_exercise_id_fkey(*)
-      `)
-      .eq("approved_for_projection", true)
-      .is("projected_exercise_id", null)
-      .range(0, 99); 
+    // Projeta todos os aprovados usando paginação recursiva
+    const fetchAndProject = async (offset = 0): Promise<number> => {
+      const { data: approved, error: fetchError } = await supabaseAdmin
+        .from("exercise_catalog")
+        .select(`
+          *, 
+          exercise_catalog_translations!exercise_catalog_translations_catalog_exercise_id_fkey(*)
+        `)
+        .eq("approved_for_projection", true)
+        .is("projected_exercise_id", null)
+        .range(offset, offset + 99); 
 
-    if (fetchError) throw fetchError;
-    if (!approved || approved.length === 0) return { projected: 0 };
+      if (fetchError) throw fetchError;
+      if (!approved || approved.length === 0) return 0;
 
     let projectedCount = 0;
 
@@ -296,8 +298,13 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
       projectedCount++;
     }
 
-    return { projected: projectedCount };
-  });
+    const nextCount = await fetchAndProject(offset + approved.length);
+    return projectedCount + nextCount;
+  };
+
+  const totalProjected = await fetchAndProject(0);
+  return { projected: totalProjected };
+});
 
 export const saveCatalogTranslationDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
