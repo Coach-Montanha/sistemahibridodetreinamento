@@ -60,9 +60,9 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
 export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ jobId: z.string().uuid(), batchSize: z.number().default(10) }).parse(data))
-  .handler(async ({ data: { jobId, batchSize }, context }) => {
+  .handler(async ({ data: { jobId, batchSize } }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { translateCatalogExercises } = await import("@/lib/exercises-import.functions");
+    const { translateCatalogCore } = await import("@/lib/catalog-translate-core.server");
 
     const { data: items } = await supabaseAdmin
       .from("exercise_translation_items")
@@ -84,28 +84,25 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
 
     for (const item of items) {
       try {
-        const result: any = await translateCatalogExercises({ 
-          data: { 
-            exerciseIds: [item.catalog_exercise_id] 
-          }
-        });
+        const result = await translateCatalogCore(supabaseAdmin, [item.catalog_exercise_id]);
 
-        if (result && result.success > 0) {
+        if (result.success > 0) {
            await supabaseAdmin.from("exercise_translation_items")
             .update({ status: "completed" } as any)
             .eq("id", item.id);
            successCount++;
         } else {
-          throw new Error(result?.errors?.[0] || "IA não retornou tradução");
+          throw new Error(result.errors?.[0] || "IA não retornou tradução");
         }
       } catch (err: any) {
-        console.error(`[translation-job:process] Item ${item.id} failed:`, err);
+        console.error(`[translation-job:process] Item ${item.id} failed:`, err?.message);
         await supabaseAdmin.from("exercise_translation_items")
-          .update({ status: "failed", error_message: err.message } as any)
+          .update({ status: "failed", error_message: String(err?.message ?? "erro").slice(0, 500) } as any)
           .eq("id", item.id);
         errorCount++;
       }
     }
+
 
     const { data: job } = await supabaseAdmin.from("exercise_translation_jobs").select("*").eq("id", jobId).single();
     if (job) {
