@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { normalizarEquipamento } from "./hibrido-ia.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { translateExercise } from "./exercises-translate.server";
 
 type MethodologyKey = Database["public"]["Enums"]["methodology_key"];
 
