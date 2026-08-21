@@ -441,8 +441,9 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
                 : [];
             
             if (!template || template.length === 0) {
-              throw new Error("A IA não retornou nenhuma sessão estruturada. Verifique se o molde possui blocos configurados para IA e tente novamente.");
+              throw new Error("Não foi possível identificar o molde da sessão anterior para continuar a progressão. Verifique se a rotina já possui treinos cadastrados ou configure o molde manualmente.");
             }
+
 
             return montarHibridoPrompt({
               payload: { ...data.hibrido, sessaoTemplate: template },
