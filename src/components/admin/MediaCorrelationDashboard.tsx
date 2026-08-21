@@ -119,7 +119,7 @@ export function MediaCorrelationDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {job.media_correlation_items.map((item: any) => (
+                  {items.map((item: any) => (
                     <tr key={item.id} className="group hover:bg-muted/50">
                       <td className="p-3">
                         <div className="flex items-center gap-2">
