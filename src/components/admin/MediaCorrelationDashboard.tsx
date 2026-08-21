@@ -134,11 +134,15 @@ export function MediaCorrelationDashboard() {
                       </td>
                       <td className="p-3">
                         {item.matched_exercise_id ? (
-                          <div className="flex items-center gap-1 text-primary">
-                            <span className="truncate max-w-[150px]">Vinculado</span>
+                          <div className="flex items-center gap-1.5 text-primary font-medium">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span className="truncate max-w-[150px]">Exercício Resolvido</span>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <AlertTriangle className="h-3.5 w-3.5" />
+                            <span>Vínculo Pendente</span>
+                          </div>
                         )}
                       </td>
                       <td className="p-3 text-right">
