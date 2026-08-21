@@ -454,10 +454,27 @@ export function PrescreverIaDialog({
         throw e;
       }
     },
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
+      // Normalização do contrato de dados Híbrido (sessoes -> days)
+      if (res && res.sessoes && !res.days) {
+        res.days = res.sessoes.map((s: any, idx: number) => ({
+          name: `Sessão ${idx + 1}`,
+          exercises: s.blocos.flatMap((b: any) => {
+            // Reconstruir o objeto de exercício esperado pela UI do Musculação
+            // Se for Híbrido real, a UI lida com blocos estruturados em outro fluxo,
+            // mas aqui unificamos para que a prévia funcione.
+            return b.exerciciosIds.map((id: string) => ({
+              id,
+              name: "Exercício Selecionado", // Será resolvido pelo ID na renderização se possível
+              group_type: "individual"
+            }));
+          })
+        }));
+      }
       setPrevia(res);
       setTimeout(() => setProgresso([]), 1000);
     },
+
     onError: (e: any) => {
       setProgresso([]);
       
