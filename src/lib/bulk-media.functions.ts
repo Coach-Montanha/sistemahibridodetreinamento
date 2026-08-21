@@ -15,12 +15,12 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     try {
-      // 1. Obter o coach_id real vinculado ao usuário autenticado
-      const { data: coachId, error: coachError } = await supabaseAdmin.rpc("auth_coach_id");
+      // 1. Obter o coach_id real vinculado ao usuário autenticado via RPC administrativa
+      const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
       console.log(`[bulk-media:register] Context userId: ${context.userId}, Resolved coachId: ${coachId}`);
 
-      if (coachError || !coachId) {
-        throw new Error(`Não foi possível resolver o coach_id: ${coachError?.message || 'Coach não encontrado'}. Verifique se você está vinculado a um coach.`);
+      if (!coachId) {
+        throw new Error(`Não foi possível resolver o coach_id para o usuário ${context.userId}. Verifique se você possui um perfil de treinador.`);
       }
 
       // 2. Verificar persistência no Storage antes de prosseguir
