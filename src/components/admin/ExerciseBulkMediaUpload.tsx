@@ -35,10 +35,19 @@ interface FileEntry {
 
 
 export function ExerciseBulkMediaUpload() {
-  const [files, setFiles] = useState<FileEntry[]>([]);
+  const [files, setFiles] = useState<FileEntry[]>(() => {
+    const saved = sessionStorage.getItem('bulk_upload_queue');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const serializable = files.map(({ file, ...rest }) => rest);
+    sessionStorage.setItem('bulk_upload_queue', JSON.stringify(serializable));
+  }, [files]);
+
 
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
