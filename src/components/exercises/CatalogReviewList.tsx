@@ -32,7 +32,6 @@ import {
   saveCatalogTranslationDraft, 
   approveCatalogTranslation 
 } from "@/lib/exercises-import.functions";
-import { toast } from "sonner";
 
 export function CatalogReviewList() {
   const queryClient = useQueryClient();
