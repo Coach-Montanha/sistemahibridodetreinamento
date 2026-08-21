@@ -18,7 +18,7 @@ import {
   Info
 } from "lucide-react";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { registerUploadedMedia, getMyCoachId } from "@/lib/bulk-media.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 
 interface FileEntry {
-  file: File;
+  file?: File;
   id: string;
   name: string;
   type: string;
@@ -46,21 +46,54 @@ interface FileEntry {
   };
 }
 
-
 export function ExerciseBulkMediaUpload() {
-  const [files, setFiles] = useState<FileEntry[]>(() => {
-    const saved = sessionStorage.getItem('bulk_upload_queue');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [files, setFiles] = useState<FileEntry[]>([]);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  React.useEffect(() => {
-    const serializable = files.map(({ file, ...rest }) => rest);
-    sessionStorage.setItem('bulk_upload_queue', JSON.stringify(serializable));
-  }, [files]);
+  // 1. Hidratação inicial a partir do banco de dados
+  const { data: latestJob } = useQuery({
+    queryKey: ['latest-import-job'],
+    queryFn: async () => {
+      const coachId = await getMyCoachId();
+      if (!coachId) return null;
 
+      const { data: job } = await supabase
+        .from('media_import_jobs')
+        .select('*, media_import_items(*)')
+        .eq('coach_id', coachId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      return job;
+    }
+  });
+
+  React.useEffect(() => {
+    if (latestJob && latestJob.media_import_items) {
+      const dbFiles: FileEntry[] = latestJob.media_import_items.map((item: any) => ({
+        id: item.id,
+        name: item.filename,
+        type: item.content_type || 'image/jpeg',
+        size: item.size || 0,
+        status: item.status === 'success' ? 'registered' : item.status,
+        storagePath: item.storage_path,
+        error: item.error_message,
+        errorCode: item.error_code,
+        exercise_id: item.exercise_id
+      }));
+      
+      setFiles(prev => {
+        // Preservar arquivos locais (file objects) que ainda não foram persistidos
+        const localOnly = prev.filter(f => f.file && !dbFiles.some(db => db.name === f.name));
+        return [...dbFiles, ...localOnly];
+      });
+      setActiveJobId(latestJob.id);
+    }
+  }, [latestJob]);
 
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -125,18 +158,62 @@ export function ExerciseBulkMediaUpload() {
       return;
     }
     
-    // Resolve Coach ID para multitenancy correto no Storage
     const coachId = await getMyCoachId();
-    const effectiveFolder = coachId || user.id;
+    if (!coachId) {
+      toast.error("Coach ID não encontrado");
+      setIsProcessing(false);
+      return;
+    }
+
+    // 1. Criar Job no Banco
+    const { data: job, error: jobError } = await supabase
+      .from('media_import_jobs')
+      .insert({
+        coach_id: coachId,
+        total_files: pending.length,
+        status: 'running'
+      })
+      .select()
+      .single();
+
+    if (jobError) {
+      toast.error("Erro ao iniciar job de importação");
+      setIsProcessing(false);
+      return;
+    }
+
+    setActiveJobId(job.id);
+
+    let successCount = 0;
+    let failCount = 0;
 
     for (const entry of pending) {
+      if (!entry.file) continue;
+
       setFiles(prev => prev.map(f => f.id === entry.id ? { ...f, status: 'uploading' } : f));
 
       try {
         const fileExt = entry.name.split('.').pop();
-        const storagePath = `${effectiveFolder}/bulk/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const storagePath = `${coachId}/bulk/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        // 1. Upload direto ao Storage via Client
+        // 2. Criar Item no Banco (Status: uploading)
+        const { data: item, error: itemError } = await supabase
+          .from('media_import_items')
+          .insert({
+            job_id: job.id,
+            coach_id: coachId,
+            filename: entry.name,
+            size: entry.size,
+            content_type: entry.type,
+            status: 'uploading',
+            storage_path: storagePath
+          })
+          .select()
+          .single();
+
+        if (itemError) throw itemError;
+
+        // 3. Upload real
         const { error: uploadError } = await supabase.storage
           .from("exercise-media")
           .upload(storagePath, entry.file, {
@@ -144,11 +221,9 @@ export function ExerciseBulkMediaUpload() {
             upsert: false
           });
 
-        if (uploadError) {
-          throw uploadError;
-        }
+        if (uploadError) throw uploadError;
 
-        // 2. Registro no Banco via Server Function
+        // 4. Registro/Correlação
         const exerciseName = entry.name.split('.')[0].replace(/[-_]/g, ' ');
         const registrationResult = await registerMutation.mutateAsync({
           storagePath,
@@ -156,6 +231,19 @@ export function ExerciseBulkMediaUpload() {
           type: entry.type || 'image/gif',
           exerciseName
         });
+
+        // 5. Atualizar Item no Banco
+        await supabase
+          .from('media_import_items')
+          .update({
+            status: registrationResult.success ? 'success' : 'error',
+            error_message: registrationResult.error,
+            exercise_id: registrationResult.targetExerciseId
+          })
+          .eq('id', item.id);
+
+        if (registrationResult.success) successCount++;
+        else failCount++;
 
         setFiles(prev => prev.map(f => {
           if (f.id === entry.id) {
@@ -175,37 +263,37 @@ export function ExerciseBulkMediaUpload() {
         }));
 
       } catch (err: any) {
+        failCount++;
         console.error(`Erro no upload de ${entry.name}:`, err);
         setFiles(prev => prev.map(f => 
           f.id === entry.id ? { 
             ...f, 
             status: 'error', 
-            error: err.message || "Falha no upload direto",
-            errorCode: err.code || 'STORAGE_ERROR',
-            httpStatus: err.status || (err.message?.includes('500') ? 500 : undefined)
+            error: err.message || "Falha no upload",
+            errorCode: err.code || 'STORAGE_ERROR'
           } : f
         ));
       }
     }
 
+    // Finalizar Job no Banco
+    await supabase
+      .from('media_import_jobs')
+      .update({
+        status: failCount === 0 ? 'completed' : 'failed',
+        processed_files: successCount,
+        failed_files: failCount
+      })
+      .eq('id', job.id);
+
     setIsProcessing(false);
     queryClient.invalidateQueries({ queryKey: ["exercises"] });
+    queryClient.invalidateQueries({ queryKey: ["latest-import-job"] });
     
-    // Toast inteligente baseado no resultado real
-    const finalStats = {
-      success: files.filter(f => f.status === 'registered' || f.status === 'success').length,
-      error: files.filter(f => f.status === 'error').length,
-      total: pending.length
-    };
-
-    if (finalStats.success === finalStats.total && finalStats.error === 0 && finalStats.total > 0) {
+    if (successCount === pending.length) {
       toast.success("Upload concluído com sucesso");
-    } else if (finalStats.success > 0 && finalStats.error > 0) {
-      toast.warning(`Upload parcialmente concluído: ${finalStats.success} enviados, ${finalStats.error} falharam`);
-    } else if (finalStats.success === 0 && finalStats.error > 0) {
-      toast.error(`Upload falhou: todos os ${finalStats.error} arquivos falharam`);
-    } else if (finalStats.total > 0) {
-      toast.success("Processamento de upload finalizado");
+    } else {
+      toast.warning(`Processamento finalizado: ${successCount} OK, ${failCount} Falhas`);
     }
   };
 
@@ -215,7 +303,7 @@ export function ExerciseBulkMediaUpload() {
       pending: files.filter(f => f.status === 'pending').length,
       success: files.filter(f => f.status === 'registered' || f.status === 'success').length,
       error: files.filter(f => f.status === 'error').length,
-      linked: files.filter(f => f.match).length
+      linked: files.filter(f => f.match || f.status === 'registered').length
     };
   }, [files]);
 
@@ -225,7 +313,7 @@ export function ExerciseBulkMediaUpload() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">Arquivos totais</p>
+            <p className="text-xs text-muted-foreground">Arquivos na fila</p>
           </CardContent>
         </Card>
         <Card>
@@ -243,7 +331,7 @@ export function ExerciseBulkMediaUpload() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-primary">{stats.linked}</div>
-            <p className="text-xs text-muted-foreground">Vinculados automaticamente</p>
+            <p className="text-xs text-muted-foreground">Total Vinculado</p>
           </CardContent>
         </Card>
       </div>
@@ -287,7 +375,10 @@ export function ExerciseBulkMediaUpload() {
       {files.length > 0 && (
         <Card>
           <CardHeader className="py-4">
-            <CardTitle className="text-sm">Fila de Upload</CardTitle>
+            <CardTitle className="text-sm">Histórico e Fila de Importação</CardTitle>
+            <CardDescription>
+              {activeJobId ? `Job Ativo: ${activeJobId.substring(0, 8)}...` : 'Nenhum job ativo persistido'}
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="max-h-[400px] overflow-y-auto">
@@ -307,10 +398,10 @@ export function ExerciseBulkMediaUpload() {
                         <div className="flex items-center gap-2">
                           {entry.type.startsWith('video/') ? <PlayCircle className="h-4 w-4 text-primary" /> : <ImageIcon className="h-4 w-4 text-muted-foreground" />}
                           <span className="truncate max-w-[200px]" title={entry.name}>{entry.name}</span>
-                          {entry.match && (
+                          {(entry.match || entry.status === 'registered') && (
                             <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0">
                               <Link2 className="h-3 w-3" />
-                              {entry.match.name}
+                              {entry.match?.name || 'Vinculado'}
                             </Badge>
                           )}
                         </div>
