@@ -336,6 +336,10 @@ export function normalizarPrescricaoHibrido(
   template: SessaoTemplate,
   candidatos: CandidatosPorBloco,
 ): PrescricaoHibrido {
+  if (!bruto || bruto.trim().length === 0) {
+    throw new Error("AI_EMPTY_CONTENT: A IA devolveu uma resposta vazia.");
+  }
+
   let json: any;
   try {
     const limpo = bruto
@@ -344,22 +348,21 @@ export function normalizarPrescricaoHibrido(
       .replace(/```$/, "")
       .trim();
     json = JSON.parse(limpo);
-  } catch {
-    throw new Error("A IA respondeu em um formato inesperado. Tente novamente.");
+  } catch (err) {
+    console.error("HibridoIA: Falha no parse JSON da IA", { bruto, error: err });
+    throw new Error("AI_INVALID_JSON: A IA respondeu em um formato JSON inválido.");
+  }
+
+  // Wrappers conhecidos
+  if (!json.sessoes && (json.data?.sessoes || json.result?.sessoes || json.output?.sessoes)) {
+    json = json.data || json.result || json.output;
   }
 
   const sessoesRaw = Array.isArray(json?.sessoes) ? json.sessoes : [];
   if (sessoesRaw.length === 0) {
-      console.error("HibridoIA: IA retornou JSON sem o campo 'sessoes' ou array vazio.", {
-        json
-      });
-      if (template.length === 0) {
-        throw new Error("AI_NO_TEMPLATE: Não foi possível identificar o molde da sessão anterior.");
-      }
-      throw new Error("AI_EMPTY_CONTENT: A IA não retornou nenhuma sessão estruturada no formato esperado.");
-    }
-
-  const porChave = new Map(template.map((b) => [b.chave, b]));
+    console.error("HibridoIA: JSON sem sessoes[]", { json });
+    throw new Error("AI_SCHEMA_MISMATCH: O JSON da IA não contém o campo 'sessoes' obrigatório.");
+  }
 
   const sessoes: PrescricaoHibridoSessao[] = sessoesRaw.map((s: any) => {
     const blocosRaw = Array.isArray(s?.blocos) ? s.blocos : [];
@@ -375,31 +378,35 @@ export function normalizarPrescricaoHibrido(
         ? recebido.exercicios_ids.filter((x: unknown) => typeof x === "string")
         : [];
 
-      const poolValido = new Set((candidatos[bt.chave] ?? []).map((c) => c.id));
-      let validos = idsRecebidos.filter((id) => poolValido.has(id) && !usadosNaSessao.has(id));
+      const poolCandidatos = candidatos[bt.chave] ?? [];
+      const poolValido = new Set(poolCandidatos.map((c) => c.id));
+      
+      let validos = idsRecebidos.filter((id) => {
+        const ok = poolValido.has(id);
+        if (!ok) {
+          console.warn(`[HibridoIA] IA alucinou ID "${id}" fora do pool do bloco "${bt.chave}"`);
+        }
+        return ok && !usadosNaSessao.has(id);
+      });
+
       validos = Array.from(new Set(validos)).slice(0, bt.numeroExercicios);
 
-      // Completa com candidatos não usados se a IA retornou de menos ou inválido.
+      // Deterministic Fallback se faltar exercícios
       if (validos.length < bt.numeroExercicios) {
-        const restantes = (candidatos[bt.chave] ?? [])
-          .map((c) => c.id)
-          .filter((id) => !validos.includes(id) && !usadosNaSessao.has(id));
-        for (const id of restantes) {
-          if (validos.length >= bt.numeroExercicios) break;
-          validos.push(id);
-        }
+        const faltantes = bt.numeroExercicios - validos.length;
+        const disponiveis = poolCandidatos
+          .filter(c => !usadosNaSessao.has(c.id) && !validos.includes(c.id))
+          .map(c => c.id);
+        
+        validos.push(...disponiveis.slice(0, faltantes));
       }
 
-      validos.forEach((id) => usadosNaSessao.add(id));
+      validos.forEach(id => usadosNaSessao.add(id));
       return { chave: bt.chave, exerciciosIds: validos };
     });
 
     return { blocos };
   });
-
-  // Referenciar porChave evita import não utilizado quando o TS estiver estrito
-  // com noUnusedLocals; mantém a validação legível caso precise checar formato/duracao.
-  void porChave;
 
   return { sessoes, notes: typeof json?.notes === "string" ? json.notes : "" };
 }
