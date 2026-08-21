@@ -10,36 +10,34 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    // Resolve coach_id
     const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
     if (!coachId) throw new Error("Coach ID não resolvido.");
 
-    // 1. Identificar exercícios pendentes no catálogo
-    // Como exercise_catalog é um schema importado, buscamos do banco
     const { data: pendingExercises } = await supabaseAdmin
       .from("exercise_catalog")
       .select("id")
       .is("nome_pt", null)
-      .limit(2000); // Limite razoável para um job
+      .limit(2000);
 
     if (!pendingExercises || pendingExercises.length === 0) {
       return { success: false, message: "Nenhum exercício pendente de tradução no catálogo." };
     }
 
-    // 2. Criar o job
     const { data: job, error: jobError } = await supabaseAdmin
       .from("exercise_translation_jobs")
       .insert({
         coach_id: coachId,
         status: "pending",
-        total_items: pendingExercises.length
+        total_items: pendingExercises.length,
+        processed_items: 0,
+        success_count: 0,
+        error_count: 0
       })
       .select()
       .single();
 
     if (jobError) throw jobError;
 
-    // 3. Criar os itens do job
     const items = pendingExercises.map(ex => ({
       job_id: job.id,
       catalog_exercise_id: ex.id,
@@ -59,9 +57,8 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ jobId: z.string().uuid(), batchSize: z.number().default(10) }).parse(data))
   .handler(async ({ data: { jobId, batchSize }, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { translateCatalogBatch } = await import("@/lib/exercise-catalog.functions");
+    const { translateCatalogBatch } = await import("@/lib/exercises-import.functions");
 
-    // 1. Buscar itens pendentes
     const { data: items } = await supabaseAdmin
       .from("exercise_translation_items")
       .select("id, catalog_exercise_id")
@@ -74,7 +71,6 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
       return { processed: 0, status: "completed" };
     }
 
-    // 2. Marcar como processando
     const itemIds = items.map(i => i.id);
     await supabaseAdmin.from("exercise_translation_items").update({ status: "processing" }).in("id", itemIds);
 
@@ -83,7 +79,6 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
 
     for (const item of items) {
       try {
-        // Usar a lógica de tradução existente (Gemini 2.0 Flash)
         const result = await translateCatalogBatch({ 
           data: { 
             exerciseIds: [item.catalog_exercise_id],
@@ -107,15 +102,19 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
       }
     }
 
-    // 3. Atualizar o job
     const { data: job } = await supabaseAdmin.from("exercise_translation_jobs").select("*").eq("id", jobId).single();
     if (job) {
+      const currentProcessed = (job.processed_items || 0);
+      const currentSuccess = (job.success_count || 0);
+      const currentError = (job.error_count || 0);
+      const totalItems = (job.total_items || 0);
+
       await supabaseAdmin.from("exercise_translation_jobs")
         .update({
-          processed_items: job.processed_items + items.length,
-          success_count: job.success_count + successCount,
-          error_count: job.error_count + errorCount,
-          status: (job.processed_items + items.length >= job.total_items) ? "completed" : "running"
+          processed_items: currentProcessed + items.length,
+          success_count: currentSuccess + successCount,
+          error_count: currentError + errorCount,
+          status: (currentProcessed + items.length >= totalItems) ? "completed" : "running"
         })
         .eq("id", jobId);
     }
