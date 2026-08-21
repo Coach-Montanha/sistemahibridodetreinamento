@@ -490,7 +490,27 @@ export function PrescreverIaDialog({
       } else if (errorStr.includes("AI_SCHEMA_MISMATCH")) {
         msg = "A estrutura do treino gerado pela IA é incompatível com o molde.";
       } else if (errorStr.includes("Server function info not found")) {
-        msg = "Detectamos JS antigo no seu navegador. Por favor, limpe o cache ou faça um 'Hard Reload' (Ctrl+F5).";
+        // Fluxo de recuperação automática para version skew de Server Function
+        const lastReload = window.sessionStorage.getItem("sf_recovery_reload");
+        const now = Date.now();
+        
+        // Se já recarregou nos últimos 30 segundos, não entra em loop
+        if (!lastReload || now - parseInt(lastReload) > 30000) {
+          window.sessionStorage.setItem("sf_recovery_reload", now.toString());
+          toast.info("Atualizando aplicação...", { 
+            description: "Detectamos uma nova versão. Suas alterações foram preservadas localmente e a página será recarregada." 
+          });
+          
+          // Aguarda um pouco para o toast ser lido e recarrega
+          setTimeout(() => {
+            const url = new URL(window.location.href);
+            url.searchParams.set("v", now.toString()); // cache bust
+            window.location.href = url.toString();
+          }, 1500);
+          return;
+        }
+        
+        msg = "A aplicação precisa ser atualizada. Por favor, feche esta aba e abra novamente ou limpe o cache do navegador.";
       } else if (errorStr.includes("400") || errorStr.includes("token")) {
         msg = "Histórico muito longo. Tente reduzir o número de semanas ou o histórico analisado.";
       }
