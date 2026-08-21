@@ -324,7 +324,14 @@ function TranslationStatusBadge({ translation }: { translation: any }) {
 
 function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => void }) {
   const queryClient = useQueryClient();
-  const translation = item.exercise_catalog_translations?.[0];
+  // We sort by creation date to get the latest translation if there are multiple (e.g. from manual edit and IA)
+  const translations = Array.isArray(item.exercise_catalog_translations) 
+    ? item.exercise_catalog_translations 
+    : item.exercise_catalog_translations ? [item.exercise_catalog_translations] : [];
+  
+  const translation = translations.length > 0 
+    ? [...translations].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+    : null;
   const [edited, setEdited] = useState({
     name_pt_br: translation?.name_pt_br || "",
     equipment_pt_br: translation?.equipment_pt_br || "",
