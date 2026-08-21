@@ -467,8 +467,8 @@ export function PrescreverIaDialog({
         toast.error("Limite de uso da IA atingido. Tente novamente em alguns segundos.");
       } else {
         toast.error(`Falha na prescrição: ${errorMsg || "Erro de conexão com o servidor"}`);
-      }
     }
+  });
 
   const salvarMut = useMutation({
     mutationFn: async () => {
