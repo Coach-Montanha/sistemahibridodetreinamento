@@ -163,10 +163,11 @@ export function normalizarPrescricao(bruto: string): AiPrescription {
       .replace(/^```(?:json)?/i, "")
       .replace(/```$/, "")
       .trim();
-    json = JSON.parse(limpo);
-  } catch {
-    throw new Error("A IA respondeu em um formato inesperado. Tente novamente.");
-  }
+      json = JSON.parse(limpo);
+    } catch (e: any) {
+      console.error("Erro ao fazer parse do JSON da IA:", e, "\nConteúdo bruto:", bruto);
+      throw new Error("A IA respondeu em um formato inesperado. Tente novamente.");
+    }
 
   const daysRaw = Array.isArray(json?.days) ? json.days : [];
   const days: AiDay[] = daysRaw.map((d: any, i: number) => {

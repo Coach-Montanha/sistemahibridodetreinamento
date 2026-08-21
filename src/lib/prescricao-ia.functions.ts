@@ -225,7 +225,14 @@ const INPUT = z.object({
 
 export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => INPUT.parse(input))
+  .inputValidator((input: unknown) => {
+    try {
+      return INPUT.parse(input);
+    } catch (e: any) {
+      console.error("[prescribeTrainingWithAi] Validation Error:", e);
+      throw e;
+    }
+  })
   .handler(async ({ data, context }): Promise<AiPrescription> => {
     // Motor dedicado: NÃO consulta a tabela `exercises`. Os movimentos vêm
     // exclusivamente do modelo, evitando mistura com outras modalidades.
@@ -461,7 +468,9 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     
     // LOG DE TELEMETRIA: Início da requisição
     const requestId = Math.random().toString(36).substring(7);
-    console.log(`[AI_REQUEST][${requestId}] Iniciando geração:`, {
+    const buildId = typeof window !== 'undefined' ? (window as any).__BUILD_ID__ : 'server';
+
+    console.log(`[AI_REQUEST][${requestId}] Build: ${buildId} | Iniciando geração:`, {
       programId: data.programId,
       metodologia: metodologiaEfetiva,
       semanas: data.semanasNovas,
