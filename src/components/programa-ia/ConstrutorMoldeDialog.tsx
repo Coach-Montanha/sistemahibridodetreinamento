@@ -30,7 +30,6 @@ import type {
   SelecaoExercicios,
   SessaoTemplate,
   SlotPreparacao,
-  BlockFormatHibrido,
 } from "@/lib/hibrido-ia.server";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useFormatRegistry } from "@/lib/format-registry";
