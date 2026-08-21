@@ -9,7 +9,9 @@ export const startMediaInventory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const coachId = context.userId;
+    const { data: realCoachId } = await supabaseAdmin.rpc("auth_coach_id_for_user", { _user_id: context.userId });
+    const authUserId = context.userId;
+    const coachId = realCoachId || authUserId;
 
     // 1. Criar o job
     const { data: job, error: jobError } = await supabaseAdmin
