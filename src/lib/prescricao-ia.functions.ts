@@ -459,7 +459,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash", // Reverting to stable flash until 2.5 is confirmed in env
+        model: "google/gemini-2.5-flash", 
+
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
