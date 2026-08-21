@@ -17,8 +17,10 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
     try {
       // 1. Obter o coach_id real vinculado ao usuário autenticado
       const { data: coachId, error: coachError } = await supabaseAdmin.rpc("auth_coach_id");
+      console.log(`[bulk-media:register] Context userId: ${context.userId}, Resolved coachId: ${coachId}`);
+
       if (coachError || !coachId) {
-        throw new Error(`Não foi possível resolver o coach_id: ${coachError?.message || 'Coach não encontrado'}`);
+        throw new Error(`Não foi possível resolver o coach_id: ${coachError?.message || 'Coach não encontrado'}. Verifique se você está vinculado a um coach.`);
       }
 
       // 2. Verificar persistência no Storage antes de prosseguir
@@ -87,6 +89,7 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
       const mediaType = data.type.startsWith('video/') ? 'video' : 
                         (data.name.toLowerCase().endsWith('.gif') ? 'gif' : 'imagem');
 
+      console.log(`[bulk-media:register] Attempting insert into exercise_media for exercise ${targetExerciseId}`);
       const { error: dbError } = await supabaseAdmin
         .from("exercise_media")
         .insert({
@@ -97,7 +100,10 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
           ordem: 0
         });
         
-      if (dbError) throw new Error(`Erro ao registrar no banco: ${dbError.message}`);
+      if (dbError) {
+        console.error(`[bulk-media:register] DB Error:`, dbError);
+        throw new Error(`Erro ao registrar no banco: ${dbError.message} (Code: ${dbError.code})`);
+      }
 
       return { 
         success: true, 
