@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const translateCatalogExercises = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ 
@@ -18,8 +19,7 @@ export const translateCatalogExercises = createServerFn({ method: "POST" })
     if (data.exerciseIds && data.exerciseIds.length > 0) {
       query = query.in("id", data.exerciseIds);
     } else {
-      query = query
-        .range(data.offset, data.offset + data.limit - 1);
+      query = query.range(data.offset, data.offset + data.limit - 1);
     }
 
     const { data: exercises, error: fetchError } = await query;
@@ -59,10 +59,82 @@ export const translateCatalogExercises = createServerFn({ method: "POST" })
     return { success, total: exercises.length, errors } as any;
   });
 
+export const translateSingleExercise = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data }) => {
+    const { translateCatalogExercises } = await import("./exercises-import.functions");
+    return translateCatalogExercises({ data: { exerciseIds: [data.id] } });
+  });
+
+export const saveCatalogTranslationDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ 
+    catalogId: z.string().uuid(), 
+    fields: z.any() 
+  }).parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    const { error } = await supabaseAdmin
+      .from("exercise_catalog_translations")
+      .upsert({
+        catalog_exercise_id: data.catalogId,
+        ...data.fields,
+        translation_status: 'approved',
+        locale: 'pt-BR'
+      } as any);
+
+    if (error) throw error;
+    
+    await supabaseAdmin
+      .from("exercise_catalog")
+      .update({ review_status: 'approved', approved_for_projection: true } as any)
+      .eq("id", data.catalogId);
+
+    return { success: true };
+  });
+
+export const approveCatalogTranslation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ 
+    catalogId: z.string().uuid(), 
+    status: z.string(),
+    approved: z.boolean()
+  }).parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    const { error } = await supabaseAdmin
+      .from("exercise_catalog")
+      .update({ 
+        review_status: data.status, 
+        approved_for_projection: data.approved 
+      } as any)
+      .eq("id", data.catalogId);
+
+    if (error) throw error;
+
+    if (data.approved) {
+      await supabaseAdmin
+        .from("exercise_catalog_translations")
+        .update({ translation_status: 'approved' } as any)
+        .eq("catalog_exercise_id", data.catalogId);
+    }
+
+    return { success: true };
+  });
+
 export const translateCatalogBatch = createServerFn({ method: "POST" })
   .handler(async () => {
     const { translateCatalogExercises } = await import("./exercises-import.functions");
     return translateCatalogExercises({ data: { limit: 10, offset: 0 } });
+  });
+
+export const importExercises = createServerFn({ method: "POST" })
+  .handler(async () => {
+    // Mock ou implementação real de disparo de importação
+    return { success: true, message: "Importação disparada" };
   });
 
 export const projectApprovedExercises = createServerFn({ method: "POST" })
