@@ -446,8 +446,11 @@ export function PrescreverIaDialog({
         });
         setProgresso(prev => [...prev, "Gerando relatório de evolução...", "Finalizando prescrição em bloco!"]);
         return res;
-      } catch (e) {
+      } catch (e: any) {
         setProgresso([]);
+        console.error("Erro na geração de IA:", e);
+        // Não re-lançamos o erro para não derrubar a rota (ErrorBoundary)
+        // O onError da mutation tratará a exibição do toast amigável
         throw e;
       }
     },
@@ -459,13 +462,13 @@ export function PrescreverIaDialog({
       setProgresso([]);
       const errorMsg = e?.message || "";
       if (errorMsg.includes("400") || errorMsg.includes("token")) {
-        toast.error(
-          "Histórico muito longo para a IA. Reduza o campo \"Histórico considerado\" (ex.: 3 ou 0) e gere novamente.",
-        );
+        toast.error("O histórico ou as instruções são muito longos para a IA. Tente reduzir o número de semanas ou o histórico analisado.");
+      } else if (errorMsg.includes("429")) {
+        toast.error("Limite de uso da IA atingido. Tente novamente em alguns segundos.");
       } else {
-        toast.error(errorMsg || "Falha ao gerar a prescrição");
+        toast.error(`Falha na prescrição: ${errorMsg || "Erro de conexão com o servidor"}`);
       }
-    },
+    }
   });
 
   const salvarMut = useMutation({

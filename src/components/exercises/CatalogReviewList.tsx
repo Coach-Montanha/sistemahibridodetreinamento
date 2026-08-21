@@ -27,7 +27,11 @@ import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { translateSingleExercise } from "@/lib/exercises-import.functions";
+import { 
+  translateSingleExercise, 
+  saveCatalogTranslationDraft, 
+  approveCatalogTranslation 
+} from "@/lib/exercises-import.functions";
 
 export function CatalogReviewList() {
   const queryClient = useQueryClient();
@@ -78,17 +82,8 @@ export function CatalogReviewList() {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status, approved }: { id: string, status: string, approved: boolean }) => {
-      const { error } = await supabase
-        .from("exercise_catalog")
-        .update({ 
-          review_status: status, 
-          approved_for_projection: approved,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", id);
-      
-      if (error) throw error;
+    mutationFn: async ({ id, status, approved }: { id: string, status: 'approved' | 'rejected' | 'pending', approved: boolean }) => {
+      await approveCatalogTranslation({ data: { catalogId: id, status, approved } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
@@ -96,7 +91,8 @@ export function CatalogReviewList() {
       toast.success("Status atualizado");
     },
     onError: (error: any) => {
-      toast.error(`Falha ao atualizar: ${error.message}`);
+      console.error("Erro ao atualizar status:", error);
+      toast.error(`Falha ao atualizar: ${error.message || "Erro desconhecido"}`);
     }
   });
 
@@ -409,29 +405,20 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("exercise_catalog_translations")
-        .upsert({
-          catalog_exercise_id: item.id,
-          locale: "pt-BR",
-          ...edited,
-          translation_status: "approved",
-          translation_source: "human"
-        });
-      if (error) throw error;
-
-      // Também aprovar o exercício para projeção ao salvar manualmente
-      await supabase
-        .from("exercise_catalog")
-        .update({ 
-          review_status: 'approved',
-          approved_for_projection: true
-        })
-        .eq("id", item.id);
+      await saveCatalogTranslationDraft({ 
+        data: { 
+          catalogId: item.id, 
+          fields: edited 
+        } 
+      });
     },
     onSuccess: () => {
       toast.success("Tradução salva e aprovada");
       onUpdated();
+    },
+    onError: (err: any) => {
+      console.error("Erro ao salvar tradução:", err);
+      toast.error(`Erro ao salvar: ${err.message || "Erro desconhecido"}`);
     }
   });
 

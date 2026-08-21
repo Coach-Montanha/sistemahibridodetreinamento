@@ -1,5 +1,4 @@
-import { EQUIPAMENTOS_CANONICOS, normalizarEquipamento } from "./hibrido-ia.server";
-
+import { normalizarEquipamento } from "./hibrido-ia.server";
 export const SYSTEM_PROMPT_TRANSLATION = `
 Você é um tradutor técnico especialista em fisiculturismo, treinamento funcional e anatomia.
 Sua tarefa é traduzir exercícios do inglês para o português brasileiro (pt-BR).
@@ -37,12 +36,11 @@ FORMATO DE RETORNO (JSON):
   "instruction_steps": ["Passo 1", "Passo 2", "..."]
 }
 `;
-
-export async function translateExercise(exercise: any) {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("Serviço de IA indisponível no momento");
-
-  const prompt = `
+export async function translateExercise(exercise) {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey)
+        throw new Error("Serviço de IA indisponível no momento");
+    const prompt = `
 Traduza o seguinte exercício:
 Nome Original: ${exercise.name_original}
 Categoria: ${exercise.category}
@@ -54,43 +52,37 @@ Músculos Secundários: ${JSON.stringify(exercise.secondary_muscles)}
 Instruções (EN): ${JSON.stringify(exercise.instructions)}
 Passos (EN): ${JSON.stringify(exercise.instruction_steps)}
   `;
-
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT_TRANSLATION },
-        { role: "user", content: prompt },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-    }),
-  });
-
-  if (!res.ok) {
-    const corpo = await res.text().catch(() => "");
-    console.error(`AI gateway [${res.status}]: ${corpo}`);
-    throw new Error(`Falha na tradução via IA (erro ${res.status})`);
-  }
-
-  const payload: any = await res.json();
-  const conteudo = payload?.choices?.[0]?.message?.content;
-
-  if (typeof conteudo !== "string" || conteudo.trim().length === 0) {
-    throw new Error("A IA não retornou conteúdo. Tente novamente.");
-  }
-
-  try {
-    const result = JSON.parse(conteudo);
-    
-    // Validação extra de equipamento
-    result.equipment = normalizarEquipamento(result.equipment) || "Objetos Alternativos";
-    
-    return result;
-  } catch (err) {
-    console.error("Erro ao processar JSON da IA:", conteudo);
-    throw new Error("Resposta da IA inválida");
-  }
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
+        body: JSON.stringify({
+            model: "google/gemini-2.0-flash",
+            messages: [
+                { role: "system", content: SYSTEM_PROMPT_TRANSLATION },
+                { role: "user", content: prompt },
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.1,
+        }),
+    });
+    if (!res.ok) {
+        const corpo = await res.text().catch(() => "");
+        console.error(`AI gateway [${res.status}]: ${corpo}`);
+        throw new Error(`Falha na tradução via IA (erro ${res.status})`);
+    }
+    const payload = await res.json();
+    const conteudo = payload?.choices?.[0]?.message?.content;
+    if (typeof conteudo !== "string" || conteudo.trim().length === 0) {
+        throw new Error("A IA não retornou conteúdo. Tente novamente.");
+    }
+    try {
+        const result = JSON.parse(conteudo);
+        // Validação extra de equipamento
+        result.equipment = normalizarEquipamento(result.equipment) || "Objetos Alternativos";
+        return result;
+    }
+    catch (err) {
+        console.error("Erro ao processar JSON da IA:", conteudo);
+        throw new Error("Resposta da IA inválida");
+    }
 }
