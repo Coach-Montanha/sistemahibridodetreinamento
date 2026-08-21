@@ -58,6 +58,7 @@ import { ApiPanel } from "@/components/settings/api-panel";
 import { MarcaPanel } from "@/components/settings/marca-panel";
 import { ArquivosPanel } from "@/components/settings/arquivos-panel";
 import { ExerciseImportManager } from "@/components/exercises/ExerciseImportManager";
+import { ExerciseBulkMediaUpload } from "@/components/admin/ExerciseBulkMediaUpload";
 import { SettingsHeader, Fold } from "@/components/settings/settings-shell";
 import { KpiRow, type Kpi } from "@/components/settings/kpi-row";
 import { useCoachFiles, formatBytes } from "@/components/settings/use-coach-files";
@@ -135,6 +136,12 @@ const SECTIONS = [
     label: "Catálogo IA",
     hint: "Importação e curadoria de exercícios",
     icon: Database,
+  },
+  {
+    key: "bulk-media",
+    label: "Importar Mídias",
+    hint: "Vínculo em massa de GIFs/Vídeos",
+    icon: FolderArchive,
   },
   { key: "marca", label: "Marca", hint: "Logo, cores e rodapé", icon: Palette },
   { key: "arquivos", label: "Arquivos", hint: "Planilhas, PDFs e mídias", icon: FolderArchive },
@@ -378,6 +385,14 @@ function ConfiguracoesPage() {
             description="Gerencie a importação e curadoria de exercícios do repositório oficial."
           >
             <ExerciseImportManager />
+          </Fold>
+        )}
+        {section === "bulk-media" && (
+          <Fold
+            title="Importar Mídias em Massa"
+            description="Selecione GIFs ou vídeos locais para fazer upload e vincular automaticamente aos exercícios pelo nome do arquivo."
+          >
+            <ExerciseBulkMediaUpload />
           </Fold>
         )}
         {section === "geracao" && (
