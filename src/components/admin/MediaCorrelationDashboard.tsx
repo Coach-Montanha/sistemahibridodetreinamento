@@ -66,6 +66,8 @@ export function MediaCorrelationDashboard() {
   }
 
   const stats = job?.stats as any || { total_files: 0, exact_matches: 0, ambiguous_matches: 0, no_matches: 0, applied: 0 };
+  const items = (job as any)?.media_correlation_items || [];
+
 
   return (
     <div className="space-y-6">
