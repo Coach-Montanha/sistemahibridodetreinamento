@@ -25,7 +25,7 @@ interface FileEntry {
   name: string;
   type: string;
   size: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
+  status: 'pending' | 'uploading' | 'uploaded' | 'registered' | 'success' | 'error';
   error?: string;
   match?: {
     id: string;
@@ -33,11 +33,21 @@ interface FileEntry {
   };
 }
 
+
 export function ExerciseBulkMediaUpload() {
-  const [files, setFiles] = useState<FileEntry[]>([]);
+  const [files, setFiles] = useState<FileEntry[]>(() => {
+    const saved = sessionStorage.getItem('bulk_upload_queue');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const serializable = files.map(({ file, ...rest }) => rest);
+    sessionStorage.setItem('bulk_upload_queue', JSON.stringify(serializable));
+  }, [files]);
+
 
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -113,7 +123,7 @@ export function ExerciseBulkMediaUpload() {
           if (result) {
             return { 
               ...f, 
-              status: result.success ? 'success' : 'error',
+              status: result.success ? 'registered' : 'error',
               error: result.error,
               match: result.linked && result.targetExerciseId ? { id: result.targetExerciseId, name: 'Vinculado' } : undefined
             };
@@ -252,12 +262,13 @@ export function ExerciseBulkMediaUpload() {
                             Enviando
                           </div>
                         )}
-                        {entry.status === 'success' && (
+                        {entry.status === 'registered' && (
                           <div className="flex items-center gap-1.5 text-green-500 font-medium">
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             OK
                           </div>
                         )}
+
                         {entry.status === 'error' && (
                           <div className="flex items-center gap-1.5 text-destructive font-medium" title={entry.error}>
                             <AlertTriangle className="h-3.5 w-3.5" />

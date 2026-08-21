@@ -59,7 +59,7 @@ Passos (EN): ${JSON.stringify(exercise.instruction_steps)}
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash",
+        model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: SYSTEM_PROMPT_TRANSLATION },
         { role: "user", content: prompt },

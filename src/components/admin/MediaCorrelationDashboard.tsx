@@ -66,6 +66,8 @@ export function MediaCorrelationDashboard() {
   }
 
   const stats = job?.stats as any || { total_files: 0, exact_matches: 0, ambiguous_matches: 0, no_matches: 0, applied: 0 };
+  const items = (job as any)?.media_correlation_items || [];
+
 
   return (
     <div className="space-y-6">
@@ -97,7 +99,7 @@ export function MediaCorrelationDashboard() {
         </div>
       </div>
 
-      {job && job.media_correlation_items && (
+      {job && items.length > 0 && (
         <Card>
           <CardHeader className="py-4">
             <CardTitle className="text-sm flex items-center justify-between">
@@ -117,7 +119,7 @@ export function MediaCorrelationDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {job.media_correlation_items.map((item: any) => (
+                  {items.map((item: any) => (
                     <tr key={item.id} className="group hover:bg-muted/50">
                       <td className="p-3">
                         <div className="flex items-center gap-2">
