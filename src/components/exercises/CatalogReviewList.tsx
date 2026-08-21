@@ -27,7 +27,11 @@ import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { translateSingleExercise } from "@/lib/exercises-import.functions";
+import { 
+  translateSingleExercise, 
+  saveCatalogTranslationDraft, 
+  approveCatalogTranslation 
+} from "@/lib/exercises-import.functions";
 
 export function CatalogReviewList() {
   const queryClient = useQueryClient();
