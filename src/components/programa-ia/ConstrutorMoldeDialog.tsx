@@ -118,8 +118,8 @@ const USA_DESCANSO_ENTRE_SERIES: string[] = ["circuito", "bodybuilding_sets", "m
 const USA_SLOT: string[] = ["preparacao_movimento"];
 const USA_NUMERO_EXERCICIOS = (formato: string) => formato !== "kb_timed_sets" && !formato.includes("kb_timed_sets");
 
-function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
-  const base = formato.split("_")[0];
+function gerarChave(formatoBase: string, existentes: BlocoTemplate[]) {
+  const base = formatoBase.split("_")[0];
   let n = 1;
   let chave = `${base}_${n}`;
   const usados = new Set(existentes.map((b) => b.chave));
@@ -196,10 +196,12 @@ function novoBloco(presetOrFormat: any, existentes: BlocoTemplate[], presets: an
 }
 
 function novoAquecimento(existentes: BlocoTemplate[], modalidade: ModalidadeHibrida): BlocoTemplate {
-  const chave = gerarChave("circuito", existentes);
+  const formato = "circuito";
+  const chave = gerarChave(formato, existentes);
   return {
     chave,
-    formato: "circuito",
+    formato,
+    presetId: `builtin:${formato}`,
     titulo: "Aquecimento",
     duracaoMin: 5,
     seriesMin: 4,
