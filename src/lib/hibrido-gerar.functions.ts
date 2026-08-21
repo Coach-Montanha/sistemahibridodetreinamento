@@ -9,6 +9,7 @@ import {
   type HibridoPayload,
   type SessaoTemplate,
 } from "@/lib/hibrido-ia.server";
+import { validarLimitesDoMolde } from "@/lib/format-limits";
 
 // ---------------------------------------------------------------------------
 // Validação de entrada — espelha 1:1 os campos de BlocoTemplate/HibridoPayload
@@ -31,7 +32,7 @@ const BLOCO = z.object({
   duracaoMin: z.number().nullable(),
   seriesMin: z.number().nullable(),
   seriesMax: z.number().nullable(),
-  numeroExercicios: z.number().int().min(1).max(30),
+  numeroExercicios: z.number().int().min(1),
   repsPorExercicio: z.union([z.string(), z.number()]).nullable(),
   modoExecucao: z.enum(["circuito", "series_fixas"]),
   descansoAposSeg: z.number().min(0).default(0),
@@ -44,16 +45,34 @@ const BLOCO = z.object({
   fonteExercicios: FONTE_EXERCICIOS,
 });
 
-const INPUT = z.object({
-  modalidade: z.enum(["hibrido", "kettlebell_fitness"]),
-  tituloPrograma: z.string().min(1).max(120),
-  numeroSessoes: z.number().int().min(1).max(52),
-  /** Quantas sessões cabem por semana antes de abrir uma nova program_week. Padrão 6 (D1-D6, como nas planilhas). */
-  diasPorSemana: z.number().int().min(1).max(7).default(6),
-  dataInicio: z.string().nullable().optional(),
-  sessaoTemplate: z.array(BLOCO).min(1),
-  instrucoes: z.string().max(4000).default(""),
-});
+const INPUT = z
+  .object({
+    modalidade: z.enum(["hibrido", "kettlebell_fitness"]),
+    tituloPrograma: z.string().min(1).max(120),
+    numeroSessoes: z.number().int().min(1).max(52),
+    /** Quantas sessões cabem por semana antes de abrir uma nova program_week. Padrão 6 (D1-D6, como nas planilhas). */
+    diasPorSemana: z.number().int().min(1).max(7).default(6),
+    dataInicio: z.string().nullable().optional(),
+    sessaoTemplate: z.array(BLOCO).min(1),
+    instrucoes: z.string().max(4000).default(""),
+  })
+  // Limites por formato vêm do contrato compartilhado com o construtor.
+  .superRefine((val, ctx) => {
+    const violacoes = validarLimitesDoMolde(
+      val.sessaoTemplate.map((b) => ({
+        formato: b.formato,
+        numeroExercicios: b.numeroExercicios,
+        seriesMax: b.seriesMax,
+      })),
+    );
+    for (const v of violacoes) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["sessaoTemplate"],
+        message: `FORMAT_LIMIT_EXCEEDED: o formato "${v.formato}" aceita no máximo ${v.maximo} em ${v.campo} (recebido ${v.valor}).`,
+      });
+    }
+  });
 
 // ---------------------------------------------------------------------------
 // Config por formato — espelha exatamente o que BlockFormats.tsx grava em
