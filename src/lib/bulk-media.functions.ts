@@ -67,22 +67,16 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
         if (ex) targetExerciseId = ex.id;
       }
 
-      // 5. Se não encontrar exercício, criar um placeholder vinculado ao coach para satisfazer RLS da exercise_media
+      // 5. Se não encontrar exercício, NÃO criar placeholder artificial.
+      // O item permanecerá em media_import_items/media_correlation_items com status unlinked.
       if (!targetExerciseId) {
-        const { data: newEx, error: newExError } = await supabaseAdmin
-          .from("exercises")
-          .insert({
-            nome_pt: `[Pendente] ${data.name}`,
-            coach_id: coachId,
-            metodologias: ['musculacao'],
-            unilateral: false,
-            criado_por_ia: false
-          })
-          .select("id")
-          .single();
-        
-        if (newExError) throw new Error(`Erro ao criar exercício placeholder: ${newExError.message}`);
-        targetExerciseId = newEx.id;
+        return { 
+          success: true, 
+          storagePath: data.storagePath, 
+          linked: false, 
+          status: "needs_review",
+          errorCode: "EXERCISE_NOT_MATCHED"
+        };
       }
 
       // 6. Registrar na exercise_media
