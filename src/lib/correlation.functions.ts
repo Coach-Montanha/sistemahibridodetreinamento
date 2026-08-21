@@ -9,7 +9,10 @@ export const startMediaInventory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: realCoachId } = await supabaseAdmin.rpc("auth_coach_id_for_user", { _user_id: context.userId });
+    
+    // Resolve real coach_id from userId
+    const { data: coachData } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
+    const realCoachId = coachData as string;
     const authUserId = context.userId;
     const coachId = realCoachId || authUserId;
 
@@ -56,7 +59,14 @@ export const startMediaInventory = createServerFn({ method: "POST" })
         return allFiles;
       };
 
-      const allFoundFiles = await listRecursive(coachId);
+      // Check both folders to be thorough (backward compatibility)
+      const foldersToScan = Array.from(new Set([authUserId, realCoachId])).filter(Boolean) as string[];
+      let allFoundFiles: any[] = [];
+      
+      for (const folder of foldersToScan) {
+        const folderFiles = await listRecursive(folder);
+        allFoundFiles = [...allFoundFiles, ...folderFiles];
+      }
 
 
       // 3. Pegar exercícios do banco para comparar
