@@ -99,7 +99,7 @@ export const translateCatalogExercises = createServerFn({ method: "POST" })
 
     let query = supabaseAdmin
       .from("exercise_catalog")
-      .select("id, nome_en, categoria, equipamento, grupo_muscular, padrao_movimento");
+      .select("id, name_original, category, equipment_original, muscle_group, target");
     
     if (data.exerciseIds && data.exerciseIds.length > 0) {
       query = query.in("id", data.exerciseIds);
@@ -129,12 +129,16 @@ export const translateCatalogExercises = createServerFn({ method: "POST" })
           .from("exercise_catalog_translations")
           .upsert({
             catalog_exercise_id: ex.id,
-            nome_pt: translation.nome_pt,
-            categoria_pt: translation.categoria_pt,
-            equipamento_pt: translation.equipamento_pt,
-            grupo_muscular_pt: translation.grupo_muscular_pt,
-            padrao_movimento_pt: translation.padrao_movimento_pt,
-            status: 'draft'
+            name_pt_br: translation.name,
+            category_pt_br: translation.category,
+            equipment_pt_br: translation.equipment,
+            muscle_group_pt_br: translation.muscle_group,
+            target_pt_br: translation.target,
+            body_part_pt_br: translation.body_part,
+            instructions_pt_br: translation.instructions,
+            instruction_steps_pt_br: translation.instruction_steps,
+            translation_status: 'draft',
+            locale: 'pt-BR'
           });
 
         if (insError) throw insError;

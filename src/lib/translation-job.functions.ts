@@ -17,7 +17,7 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
     // A query correta é buscar exercícios no catálogo onde não existe registro na exercise_catalog_translations
     const { data: pendingExercises, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
-      .select("id, nome_en")
+      .select("id, name_original")
       .not("id", "in", (
         supabaseAdmin
           .from("exercise_catalog_translations")
@@ -52,7 +52,6 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
     const items = pendingExercises.map(ex => ({
       job_id: job.id,
       catalog_exercise_id: ex.id,
-      original_name: ex.nome_en,
       status: "pending"
     }));
 
