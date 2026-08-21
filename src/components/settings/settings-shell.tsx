@@ -1,5 +1,9 @@
+import React from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DiagnosticPanel } from "./DiagnosticPanel";
+
+export { DiagnosticPanel };
 
 export function SettingsHeader({
   icon: Icon,
