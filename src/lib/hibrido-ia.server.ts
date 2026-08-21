@@ -341,6 +341,7 @@ export function normalizarPrescricaoHibrido(
   }
 
   let json: any;
+  let parseError = false;
   try {
     const limpo = bruto
       .trim()
@@ -350,22 +351,33 @@ export function normalizarPrescricaoHibrido(
     json = JSON.parse(limpo);
   } catch (err) {
     console.error("HibridoIA: Falha no parse JSON da IA", { bruto, error: err });
-    throw new Error("AI_INVALID_JSON: A IA respondeu em um formato JSON inválido.");
+    parseError = true;
   }
 
-  // Wrappers conhecidos
-  if (!json.sessoes && (json.data?.sessoes || json.result?.sessoes || json.output?.sessoes)) {
-    json = json.data || json.result || json.output;
+  // Se falhou o parse ou o schema não bate, tentamos extrair sessoes de wrappers
+  if (!parseError) {
+    if (!json.sessoes && (json.data?.sessoes || json.result?.sessoes || json.output?.sessoes)) {
+      json = json.data || json.result || json.output;
+    } else if (Array.isArray(json) && json.length > 0 && json[0].blocos) {
+      // Caso a IA devolva um array direto no topo
+      json = { sessoes: json };
+    }
   }
 
-  const sessoesRaw = Array.isArray(json?.sessoes) ? json.sessoes : [];
-  if (sessoesRaw.length === 0) {
-    console.error("HibridoIA: JSON sem sessoes[]", { json });
-    throw new Error("AI_SCHEMA_MISMATCH: O JSON da IA não contém o campo 'sessoes' obrigatório.");
+  const sessoesRaw = (!parseError && Array.isArray(json?.sessoes)) ? json.sessoes : [];
+  const usedFallback = sessoesRaw.length === 0;
+
+  if (usedFallback) {
+    console.warn("HibridoIA: Iniciando fallback determinístico por falha no schema/parse da IA.");
   }
 
-  const sessoes: PrescricaoHibridoSessao[] = sessoesRaw.map((s: any) => {
-    const blocosRaw = Array.isArray(s?.blocos) ? s.blocos : [];
+  // O número de sessões é inferido pela resposta da IA ou, no fallback, assume 1
+  const numSessoes = usedFallback ? 1 : sessoesRaw.length;
+  const finalSessoes: PrescricaoHibridoSessao[] = [];
+
+  for (let i = 0; i < numSessoes; i++) {
+    const sRaw = sessoesRaw[i] || {};
+    const blocosRaw = Array.isArray(sRaw?.blocos) ? sRaw.blocos : [];
     const usadosNaSessao = new Set<string>();
 
     const blocos: PrescricaoHibridoBloco[] = template.map((bt) => {
@@ -380,8 +392,9 @@ export function normalizarPrescricaoHibrido(
 
       const poolCandidatos = candidatos[bt.chave] ?? [];
       const poolValido = new Set(poolCandidatos.map((c) => c.id));
-      
-      let validos = idsRecebidos.filter((id) => {
+
+      // 1. Filtrar só IDs que REALMENTE existem no pool permitido para este bloco
+      let finalIds = idsRecebidos.filter((id) => {
         const ok = poolValido.has(id);
         if (!ok) {
           console.warn(`[HibridoIA] IA alucinou ID "${id}" fora do pool do bloco "${bt.chave}"`);
@@ -389,24 +402,30 @@ export function normalizarPrescricaoHibrido(
         return ok && !usadosNaSessao.has(id);
       });
 
-      validos = Array.from(new Set(validos)).slice(0, bt.numeroExercicios);
+      finalIds = Array.from(new Set(finalIds)).slice(0, bt.numeroExercicios);
 
-      // Deterministic Fallback se faltar exercícios
-      if (validos.length < bt.numeroExercicios) {
-        const faltantes = bt.numeroExercicios - validos.length;
+      // 2. Fallback determinístico por bloco: se faltar exercícios, pegar os primeiros do pool
+      if (finalIds.length < bt.numeroExercicios) {
+        const faltantes = bt.numeroExercicios - finalIds.length;
         const disponiveis = poolCandidatos
-          .filter(c => !usadosNaSessao.has(c.id) && !validos.includes(c.id))
+          .filter(c => !usadosNaSessao.has(c.id) && !finalIds.includes(c.id))
           .map(c => c.id);
         
-        validos.push(...disponiveis.slice(0, faltantes));
+        finalIds.push(...disponiveis.slice(0, faltantes));
       }
 
-      validos.forEach(id => usadosNaSessao.add(id));
-      return { chave: bt.chave, exerciciosIds: validos };
+      finalIds.forEach(id => usadosNaSessao.add(id));
+      return { chave: bt.chave, exerciciosIds: finalIds };
     });
 
-    return { blocos };
-  });
+    finalSessoes.push({ blocos });
+  }
 
-  return { sessoes, notes: typeof json?.notes === "string" ? json.notes : "Sessões geradas com base no molde." };
+  return { 
+    sessoes: finalSessoes, 
+    notes: typeof json?.notes === "string" ? json.notes : (usedFallback ? "A IA não retornou o schema esperado; a sessão foi montada com fallback seguro." : "Sessões geradas com base no molde."),
+    usedFallback,
+    avisos: usedFallback ? ["A IA não retornou o schema esperado; a sessão foi montada com fallback seguro."] : []
+  } as any;
 }
+
