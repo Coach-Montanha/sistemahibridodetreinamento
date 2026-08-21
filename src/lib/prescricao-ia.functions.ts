@@ -490,6 +490,24 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     const payload: any = await res.json();
     const conteudo = payload?.choices?.[0]?.message?.content;
+
+    // LOG DE TELEMETRIA: Resposta bruta da IA (para depuração em caso de falha de schema)
+    console.log(`[AI_RESPONSE][${requestId}] Recebido:`, {
+      length: conteudo?.length ?? 0,
+      preview: conteudo?.substring(0, 200)
+    });
+
+    if (isHibrido) {
+      return normalizarPrescricaoHibrido(
+        conteudo,
+        data.hibrido.sessaoTemplate?.length > 0 ? data.hibrido.sessaoTemplate : continuation.lastSessionStructure,
+        await buscarCandidatosDoMolde(supabase, data.hibrido.sessaoTemplate?.length > 0 ? data.hibrido.sessaoTemplate : continuation.lastSessionStructure),
+      ) as AiPrescription;
+    }
+
+    return normalizarPrescricao(conteudo);
+  });
+
     
     // LOG DE TELEMETRIA: Resposta bruta (sanitizada)
     console.log(`[AI_RESPONSE][${requestId}] Recebido:`, {
