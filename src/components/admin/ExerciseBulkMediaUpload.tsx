@@ -19,7 +19,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { uploadMediaBatch } from "@/lib/bulk-media.functions";
+import { registerUploadedMedia } from "@/lib/bulk-media.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Tooltip,
   TooltipContent,
@@ -65,16 +66,36 @@ export function ExerciseBulkMediaUpload() {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length === 0) return;
 
-    const newEntries: FileEntry[] = selectedFiles.map(f => ({
-      file: f,
-      id: Math.random().toString(36).substring(7),
-      name: f.name,
-      type: f.type,
-      size: f.size,
-      status: 'pending'
-    }));
+    const duplicates: string[] = [];
+    const newEntries: FileEntry[] = [];
 
-    setFiles(prev => [...prev, ...newEntries]);
+    selectedFiles.forEach(f => {
+      const isDuplicate = files.some(existing => 
+        existing.name === f.name && existing.size === f.size
+      );
+
+      if (isDuplicate) {
+        duplicates.push(f.name);
+      } else {
+        newEntries.push({
+          file: f,
+          id: Math.random().toString(36).substring(7),
+          name: f.name,
+          type: f.type,
+          size: f.size,
+          status: 'pending'
+        });
+      }
+    });
+
+    if (duplicates.length > 0) {
+      toast.warning(`${duplicates.length} arquivos já estão na fila e foram ignorados.`);
+    }
+
+    if (newEntries.length > 0) {
+      setFiles(prev => [...prev, ...newEntries]);
+    }
+
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -82,9 +103,9 @@ export function ExerciseBulkMediaUpload() {
     setFiles(prev => prev.filter(f => f.id !== id));
   };
 
-  const uploadMutation = useMutation({
-    mutationFn: async (batch: { name: string; type: string; base64: string; exerciseName: string }[]) => {
-      return await uploadMediaBatch({ data: { files: batch } });
+  const registerMutation = useMutation({
+    mutationFn: async (data: { storagePath: string; name: string; type: string; exerciseName: string }) => {
+      return await registerUploadedMedia({ data });
     }
   });
 
@@ -96,62 +117,69 @@ export function ExerciseBulkMediaUpload() {
     }
 
     setIsProcessing(true);
-    const batchSize = 5;
-    const total = pending.length;
-    let processed = 0;
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast.error("Usuário não autenticado");
+      setIsProcessing(false);
+      return;
+    }
 
-    for (let i = 0; i < total; i += batchSize) {
-      const currentBatch = pending.slice(i, i + batchSize);
-      
-      // Update status to uploading
-      setFiles(prev => prev.map(f => 
-        currentBatch.find(b => b.id === f.id) ? { ...f, status: 'uploading' } : f
-      ));
+    for (const entry of pending) {
+      setFiles(prev => prev.map(f => f.id === entry.id ? { ...f, status: 'uploading' } : f));
 
       try {
-        const payload = await Promise.all(currentBatch.map(async entry => {
-          const base64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve((reader.result as string).split(',')[1]);
-            reader.readAsDataURL(entry.file);
+        const fileExt = entry.name.split('.').pop();
+        const storagePath = `${user.id}/bulk/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        // 1. Upload direto ao Storage via Client
+        const { error: uploadError } = await supabase.storage
+          .from("exercise-media")
+          .upload(storagePath, entry.file, {
+            contentType: entry.type || 'application/octet-stream',
+            upsert: false
           });
 
-          // Extrair possível nome do exercício do nome do arquivo
-          // Ex: "supino-reto.gif" -> "Supino Reto"
-          const exerciseName = entry.name.split('.')[0].replace(/[-_]/g, ' ');
+        if (uploadError) {
+          throw uploadError;
+        }
 
-          return {
-            name: entry.name,
-            type: entry.type || 'image/gif',
-            base64,
-            exerciseName
-          };
-        }));
-
-        const results = await uploadMutation.mutateAsync(payload);
+        // 2. Registro no Banco via Server Function
+        const exerciseName = entry.name.split('.')[0].replace(/[-_]/g, ' ');
+        const registrationResult = await registerMutation.mutateAsync({
+          storagePath,
+          name: entry.name,
+          type: entry.type || 'image/gif',
+          exerciseName
+        });
 
         setFiles(prev => prev.map(f => {
-          const result = results.find(r => r.name === f.name);
-          if (result) {
-            return { 
-              ...f, 
-              status: result.success ? 'registered' : 'error',
-              error: result.error,
-              errorCode: result.errorCode,
-              httpStatus: result.httpStatus,
+          if (f.id === entry.id) {
+            return {
+              ...f,
+              status: registrationResult.success ? 'registered' : 'error',
+              error: registrationResult.error,
+              errorCode: registrationResult.errorCode,
               storageBucket: 'exercise-media',
-              storagePath: result.storagePath,
-              match: result.linked && result.targetExerciseId ? { id: result.targetExerciseId, name: 'Vinculado' } : undefined
+              storagePath,
+              match: registrationResult.linked && registrationResult.targetExerciseId 
+                ? { id: registrationResult.targetExerciseId, name: 'Vinculado' } 
+                : undefined
             };
           }
           return f;
         }));
 
-        processed += currentBatch.length;
       } catch (err: any) {
-        console.error("Erro no lote:", err);
+        console.error(`Erro no upload de ${entry.name}:`, err);
         setFiles(prev => prev.map(f => 
-          currentBatch.find(b => b.id === f.id) ? { ...f, status: 'error', error: err.message } : f
+          f.id === entry.id ? { 
+            ...f, 
+            status: 'error', 
+            error: err.message || "Falha no upload direto",
+            errorCode: err.code || 'STORAGE_ERROR',
+            httpStatus: err.status || (err.message?.includes('500') ? 500 : undefined)
+          } : f
         ));
       }
     }
