@@ -408,5 +408,5 @@ export function normalizarPrescricaoHibrido(
     return { blocos };
   });
 
-  return { sessoes, notes: typeof json?.notes === "string" ? json.notes : "" };
+  return { sessoes, notes: typeof json?.notes === "string" ? json.notes : "Sessões geradas com base no molde." };
 }
