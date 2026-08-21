@@ -155,14 +155,14 @@ export async function buscarCandidatosDoMolde(
     const metodologias = [...(bloco.fonteExercicios.metodologias ?? [])];
     const equipamentos = [...(bloco.fonteExercicios.equipamento ?? [])];
 
-    const formatBase = resolveBaseFormat(bloco.formato);
+    const formatBase = resolveBaseFormat(bloco.formato || "");
     if (formatBase === "preparacao_movimento" || formatBase === "mobilidade") {
 
       if (bloco.slot === "mobilidade") {
         // Bloco de mobilidade só consegue solicitar e selecionar movimentos do equipamento mobilidade.
         equipamentos.push("Mobilidade");
       }
-    } else if (bloco.titulo?.toLowerCase() === "aquecimento" || bloco.chave.includes("aquecimento")) {
+    } else if (bloco.titulo?.toLowerCase() === "aquecimento" || (bloco.chave && bloco.chave.includes("aquecimento"))) {
       // Bloco de aquecimento só consegue solicitar e selecionar movimentos do bloco kettlebell e ginástico.
       equipamentos.push("Kettlebell", "Ginásticos");
     }
