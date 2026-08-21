@@ -507,6 +507,92 @@ export type Database = {
           },
         ]
       }
+      exercise_translation_items: {
+        Row: {
+          attempts: number | null
+          catalog_exercise_id: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          job_id: string
+          status: string
+          translated_content: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          catalog_exercise_id: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          job_id: string
+          status?: string
+          translated_content?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          catalog_exercise_id?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          job_id?: string
+          status?: string
+          translated_content?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_translation_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_translation_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_translation_jobs: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          error_count: number | null
+          id: string
+          last_cursor: string | null
+          processed_items: number | null
+          settings: Json | null
+          status: string
+          success_count: number | null
+          total_items: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          error_count?: number | null
+          id?: string
+          last_cursor?: string | null
+          processed_items?: number | null
+          settings?: Json | null
+          status?: string
+          success_count?: number | null
+          total_items?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          error_count?: number | null
+          id?: string
+          last_cursor?: string | null
+          processed_items?: number | null
+          settings?: Json | null
+          status?: string
+          success_count?: number | null
+          total_items?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           atualizado_em: string
@@ -778,6 +864,83 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      media_audit_items: {
+        Row: {
+          canonical_path: string | null
+          content_type: string | null
+          fingerprint: string | null
+          id: string
+          is_duplicate: boolean | null
+          is_orphaned: boolean | null
+          linked_exercise_id: string | null
+          metadata: Json | null
+          report_id: string
+          size: number | null
+          storage_path: string
+        }
+        Insert: {
+          canonical_path?: string | null
+          content_type?: string | null
+          fingerprint?: string | null
+          id?: string
+          is_duplicate?: boolean | null
+          is_orphaned?: boolean | null
+          linked_exercise_id?: string | null
+          metadata?: Json | null
+          report_id: string
+          size?: number | null
+          storage_path: string
+        }
+        Update: {
+          canonical_path?: string | null
+          content_type?: string | null
+          fingerprint?: string | null
+          id?: string
+          is_duplicate?: boolean | null
+          is_orphaned?: boolean | null
+          linked_exercise_id?: string | null
+          metadata?: Json | null
+          report_id?: string
+          size?: number | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_audit_items_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "media_audit_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_audit_reports: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          id: string
+          status: string
+          summary: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          id?: string
+          status?: string
+          summary?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          id?: string
+          status?: string
+          summary?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       media_correlation_items: {
         Row: {
