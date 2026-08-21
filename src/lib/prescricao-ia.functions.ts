@@ -491,24 +491,6 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     const payload: any = await res.json();
     const conteudo = payload?.choices?.[0]?.message?.content;
 
-    // LOG DE TELEMETRIA: Resposta bruta da IA (para depuração em caso de falha de schema)
-    console.log(`[AI_RESPONSE][${requestId}] Recebido:`, {
-      length: conteudo?.length ?? 0,
-      preview: conteudo?.substring(0, 200)
-    });
-
-    if (isHibrido) {
-      return normalizarPrescricaoHibrido(
-        conteudo,
-        data.hibrido.sessaoTemplate?.length > 0 ? data.hibrido.sessaoTemplate : continuation.lastSessionStructure,
-        await buscarCandidatosDoMolde(supabase, data.hibrido.sessaoTemplate?.length > 0 ? data.hibrido.sessaoTemplate : continuation.lastSessionStructure),
-      ) as AiPrescription;
-    }
-
-    return normalizarPrescricao(conteudo);
-  });
-
-    
     // LOG DE TELEMETRIA: Resposta bruta (sanitizada)
     console.log(`[AI_RESPONSE][${requestId}] Recebido:`, {
       status: res.status,
@@ -552,8 +534,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       return { ...result, generation_source: "ai" } as any;
     } catch (parseErr: any) {
       console.error(`[AI_PARSE_ERROR][${requestId}] Falha ao processar resposta:`, parseErr);
-      // Se for um erro amigável já mapeado, repassa. Caso contrário, lança genérico de schema.
       if (parseErr.message.includes("AI_") || parseErr.message.includes("POOL_VAZIO")) throw parseErr;
       throw new Error(`AI_SCHEMA_MISMATCH: A resposta da IA não pôde ser validada contra o molde. Erro: ${parseErr.message}`);
     }
   });
+
