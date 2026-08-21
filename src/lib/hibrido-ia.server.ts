@@ -307,7 +307,7 @@ export function montarHibridoPrompt(args: {
     "INSTRUÇÕES DO TREINADOR:",
     instrucoes.trim().length > 0 ? instrucoes.trim() : "Evolua o treino de forma equilibrada.",
     "",
-    `Responda APENAS em JSON válido no campo "notes" escreva um "RELATÓRIO DE EVOLUÇÃO" detalhando o que foi mudado em relação ao histórico:`,
+    `Responda APENAS em JSON válido no campo "notes" escreva um "RELATÓRIO DE EVOLUÇÃO" detalhando o que foi mudado em relação ao histórico. IMPORTANTE: Identifique o número da semana para cada sessão gerada no campo "week_numbers" (array de números inteiros paralela ao array de sessões):`,
     JSON.stringify(
       {
         sessoes: [
@@ -315,6 +315,7 @@ export function montarHibridoPrompt(args: {
             blocos: [{ chave: "<chave_do_bloco>", exercicios_ids: ["<id1>", "<id2>"] }],
           },
         ],
+        week_numbers: [1],
         notes: "RELATÓRIO DE EVOLUÇÃO: Descreva as progressões de carga e trocas de exercícios realizadas.",
       },
       null,
