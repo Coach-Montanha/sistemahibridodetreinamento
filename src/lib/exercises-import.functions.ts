@@ -3,10 +3,6 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { normalizarEquipamento } from "./hibrido-ia.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { translateExercise } from "./exercises-translate.server";
-
-
-
 
 type MethodologyKey = Database["public"]["Enums"]["methodology_key"];
 
@@ -41,16 +37,6 @@ export const importExercises = createServerFn({ method: "POST" })
       };
 
       if (dryRun) return report;
-
-      const mapEquipment = (equip: string): string => {
-        const e = equip?.toLowerCase() || "";
-        if (e === "kettlebell") return "Kettlebell";
-        if (e === "barbell") return "Barbell";
-        if (e === "dumbbell") return "Dumbbell";
-        if (e === "body weight") return "Ginásticos";
-        if (["cable", "machine", "plate"].includes(e)) return "Alternativos Musculação";
-        return "Pendente";
-      };
 
       const batchSize = 100;
       for (let i = 0; i < exercisesToProcess.length; i += batchSize) {
@@ -97,7 +83,6 @@ export const importExercises = createServerFn({ method: "POST" })
     }
   });
 
-
 export const translateCatalogBatch = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ 
     limit: z.number().optional().default(10),
@@ -105,7 +90,6 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data: { limit, offset } }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { translateExercise } = await import("./exercises-translate.server");
 
     // Buscamos candidatos que NÃO têm tradução
     const { data: translatedIds } = await supabaseAdmin
@@ -123,17 +107,14 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
 
     if (idsToExclude.length > 0) {
       query = query.filter("id", "not.in", `(${idsToExclude.join(",")})`);
-
     }
 
     const { data: candidates, error: candError } = await query
       .range(offset, offset + limit - 1);
 
-
     if (candError) throw candError;
 
     const toTranslate = candidates || [];
-
 
     const results = {
       total: toTranslate.length,
@@ -143,37 +124,13 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
 
     for (const item of toTranslate) {
       try {
-        const translated = await translateExercise(item);
-        
-        const { data: translation, error: transError } = await supabaseAdmin
-          .from("exercise_catalog_translations")
-          .upsert({
-            catalog_exercise_id: item.id,
-            locale: "pt-BR",
-            name_pt_br: translated.name,
-            category_pt_br: translated.category,
-            body_part_pt_br: translated.body_part,
-            equipment_pt_br: translated.equipment,
-            target_pt_br: translated.target,
-            muscle_group_pt_br: translated.muscle_group,
-            secondary_muscles_pt_br: translated.secondary_muscles,
-            instructions_pt_br: translated.instructions,
-            instruction_steps_pt_br: translated.instruction_steps,
-            translation_status: "draft",
-            translation_source: "llm",
-            translation_model: "gemini-2.0-flash-exp"
-          })
-          .select("id")
-          .single();
-
-        if (transError) throw transError;
-
-        await supabaseAdmin
-          .from("exercise_catalog")
-          .update({ active_translation_id: translation.id })
-          .eq("id", item.id);
-
-        results.success++;
+        const { success, error } = await translateCatalogExerciseInternal(item.id, "pt-BR");
+        if (success) {
+          results.success++;
+        } else {
+          console.error(`Erro ao traduzir exercício ${item.id}:`, error);
+          results.errors++;
+        }
       } catch (err) {
         console.error(`Erro ao traduzir exercício ${item.id}:`, err);
         results.errors++;
@@ -183,27 +140,33 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
     return results;
   });
 
-export const translateSingleExercise = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
-  .handler(async ({ data: { id } }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    
+async function translateCatalogExerciseInternal(catalogId: string, locale: string = "pt-BR") {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { translateExercise } = await import("./exercises-translate.server");
+
+  try {
     const { data: item, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
       .select("*")
-      .eq("id", id)
+      .eq("id", catalogId)
       .single();
-      
-    if (fetchError || !item) throw new Error("Exercício não encontrado");
 
-    const translated = await translateExercise(item);
-    
+    if (fetchError || !item) return { success: false, error: "Exercício não encontrado" };
+
+    const normalizedItem = {
+      ...item,
+      secondary_muscles: Array.isArray(item.secondary_muscles) ? item.secondary_muscles : [],
+      instructions: typeof item.instructions === 'object' && item.instructions !== null ? item.instructions : { en: String(item.instructions || "") },
+      instruction_steps: Array.isArray(item.instruction_steps) ? item.instruction_steps : []
+    };
+
+    const translated = await translateExercise(normalizedItem);
+
     const { data: translation, error: transError } = await supabaseAdmin
       .from("exercise_catalog_translations")
       .upsert({
         catalog_exercise_id: item.id,
-        locale: "pt-BR",
+        locale: locale,
         name_pt_br: translated.name,
         category_pt_br: translated.category,
         body_part_pt_br: translated.body_part,
@@ -215,7 +178,7 @@ export const translateSingleExercise = createServerFn({ method: "POST" })
         instruction_steps_pt_br: translated.instruction_steps,
         translation_status: "draft",
         translation_source: "llm",
-        translation_model: "gemini-2.0-flash-exp"
+        translation_model: "gemini-2.5-flash"
       })
       .select("id")
       .single();
@@ -227,14 +190,25 @@ export const translateSingleExercise = createServerFn({ method: "POST" })
       .update({ active_translation_id: translation.id })
       .eq("id", item.id);
 
-    return { success: true, translation };
+    return { success: true, catalogId, translated: true, translation };
+  } catch (err: any) {
+    return { success: false, error: err.message, status: 400 };
+  }
+}
+
+export const translateSingleExercise = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
+  .handler(async ({ data: { id } }) => {
+    const result = await translateCatalogExerciseInternal(id, "pt-BR");
+    if (!result.success) throw new Error(result.error);
+    return result;
   });
 
 export const projectApprovedExercises = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Fix: Using explicit join to avoid relationship ambiguity error
     const { data: approved, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
       .select(`
@@ -245,15 +219,12 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
       .is("projected_exercise_id", null)
       .range(0, 99); 
 
-
-
     if (fetchError) throw fetchError;
     if (!approved || approved.length === 0) return { projected: 0 };
 
     let projectedCount = 0;
 
     for (const item of approved) {
-      // Pega a tradução ativa aprovada
       const translation = Array.isArray(item.exercise_catalog_translations) 
         ? item.exercise_catalog_translations.find((t: any) => t.translation_status === 'approved')
         : (item.exercise_catalog_translations as any)?.translation_status === 'approved' 
@@ -264,7 +235,6 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
       const equipRaw = (translation.equipment_pt_br || item.equipment_original) || "";
       const equipment = [normalizarEquipamento(equipRaw) || "Objetos Alternativos"];
-
 
       const methodologies: MethodologyKey[] = [];
       if (equipment.includes("Kettlebell") || equipment.includes("Ginásticos")) {
@@ -322,5 +292,3 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
     return { projected: projectedCount };
   });
-
-
