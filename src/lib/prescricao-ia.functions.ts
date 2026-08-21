@@ -464,53 +464,37 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
           })()
         : montarUserPrompt({ ...ctx, set_types: data.setTypes || BUILTIN_SET_TYPES }, data.prompt);
 
-    const modelToUse = await getBestAvailableModel();
-    
-    // LOG DE TELEMETRIA: Início da requisição
-    const requestId = Math.random().toString(36).substring(7);
-    const buildId = typeof window !== 'undefined' ? (window as any).__BUILD_ID__ : 'server';
+    // Adaptador único do gateway (nada de chamar server functions de dentro de
+    // um handler — isso deixava a função fora do manifesto e causava o erro
+    // "Server function info not found" no ambiente publicado).
+    const { callLovableAiJson, AiGatewayError, resolveAiModel } = await import("@/lib/ai-gateway.server");
+    const modelToUse = resolveAiModel();
 
-    console.log(`[AI_REQUEST][${requestId}] Build: ${buildId} | Iniciando geração:`, {
+    const requestId = Math.random().toString(36).substring(7);
+    console.log(`[AI_REQUEST][${requestId}] Iniciando geração:`, {
       programId: data.programId,
       metodologia: metodologiaEfetiva,
       semanas: data.semanasNovas,
-      model: modelToUse
+      model: modelToUse,
+      promptChars: systemPrompt.length + userPrompt.length,
     });
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
-      body: JSON.stringify({
-        model: modelToUse, 
-
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    if (!res.ok) {
-      const corpo = await res.text().catch(() => "");
-      console.error(`[AI_ERROR][${requestId}] Gateway [${res.status}]:`, corpo);
-      throw new Error(`AI_GATEWAY_ERROR: ${mensagemDeErroGateway(res.status)}`);
+    let conteudo: string;
+    try {
+      const resultadoIa = await callLovableAiJson({
+        scope: "prescricao-ia",
+        system: systemPrompt,
+        prompt: userPrompt,
+      });
+      conteudo = resultadoIa.raw;
+    } catch (err) {
+      if (err instanceof AiGatewayError) {
+        console.error(`[AI_ERROR][${requestId}] ${err.code} (${err.status})`);
+        throw new Error(`${err.code}: ${err.message}`);
+      }
+      throw err;
     }
 
-    const payload: any = await res.json();
-    const conteudo = payload?.choices?.[0]?.message?.content;
-
-    // LOG DE TELEMETRIA: Resposta bruta (sanitizada)
-    console.log(`[AI_RESPONSE][${requestId}] Recebido:`, {
-      status: res.status,
-      contentLength: conteudo?.length ?? 0,
-      finishReason: payload?.choices?.[0]?.finish_reason,
-      contentPreview: typeof conteudo === 'string' ? conteudo.substring(0, 300).replace(/\n/g, ' ') + "..." : "EMPTY"
-    });
-
-    if (typeof conteudo !== "string" || conteudo.trim().length === 0) {
-      throw new Error("AI_EMPTY_CONTENT: A IA não retornou conteúdo. Tente novamente.");
-    }
 
     try {
       if (isHibrido) {
