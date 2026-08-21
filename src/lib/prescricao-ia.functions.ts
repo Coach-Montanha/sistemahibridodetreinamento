@@ -43,7 +43,6 @@ import {
   type SessaoTemplate,
 } from "@/lib/hibrido-ia.server";
 import { BUILTIN_SET_TYPES, type SetTypePreset } from "@/lib/set-type-registry";
-import { getBestAvailableModel } from "@/lib/ai-discovery.functions";
 
 const CARGA = z
   .object({
