@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { registerUploadedMedia } from "@/lib/bulk-media.functions";
+import { registerUploadedMedia, getMyCoachId } from "@/lib/bulk-media.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Tooltip,
@@ -124,13 +124,17 @@ export function ExerciseBulkMediaUpload() {
       setIsProcessing(false);
       return;
     }
+    
+    // Resolve Coach ID para multitenancy correto no Storage
+    const coachId = await getMyCoachId();
+    const effectiveFolder = coachId || user.id;
 
     for (const entry of pending) {
       setFiles(prev => prev.map(f => f.id === entry.id ? { ...f, status: 'uploading' } : f));
 
       try {
         const fileExt = entry.name.split('.').pop();
-        const storagePath = `${user.id}/bulk/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const storagePath = `${effectiveFolder}/bulk/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         // 1. Upload direto ao Storage via Client
         const { error: uploadError } = await supabase.storage

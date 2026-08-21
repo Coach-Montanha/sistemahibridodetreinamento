@@ -15,10 +15,12 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     try {
-      // 1. Obter o coach_id real vinculado ao usuário autenticado
-      const { data: coachId, error: coachError } = await supabaseAdmin.rpc("auth_coach_id");
-      if (coachError || !coachId) {
-        throw new Error(`Não foi possível resolver o coach_id: ${coachError?.message || 'Coach não encontrado'}`);
+      // 1. Obter o coach_id real vinculado ao usuário autenticado via RPC administrativa
+      const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
+      console.log(`[bulk-media:register] Context userId: ${context.userId}, Resolved coachId: ${coachId}`);
+
+      if (!coachId) {
+        throw new Error(`Não foi possível resolver o coach_id para o usuário ${context.userId}. Verifique se você possui um perfil de treinador.`);
       }
 
       // 2. Verificar persistência no Storage antes de prosseguir
@@ -87,6 +89,7 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
       const mediaType = data.type.startsWith('video/') ? 'video' : 
                         (data.name.toLowerCase().endsWith('.gif') ? 'gif' : 'imagem');
 
+      console.log(`[bulk-media:register] Attempting insert into exercise_media for exercise ${targetExerciseId}`);
       const { error: dbError } = await supabaseAdmin
         .from("exercise_media")
         .insert({
@@ -97,7 +100,10 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
           ordem: 0
         });
         
-      if (dbError) throw new Error(`Erro ao registrar no banco: ${dbError.message}`);
+      if (dbError) {
+        console.error(`[bulk-media:register] DB Error:`, dbError);
+        throw new Error(`Erro ao registrar no banco: ${dbError.message} (Code: ${dbError.code})`);
+      }
 
       return { 
         success: true, 
@@ -113,6 +119,14 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
         errorCode: err.code || 'REGISTRATION_ERROR'
       };
     }
+  });
+
+export const getMyCoachId = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
+    return coachId as string | null;
   });
 
 // Mantido por compatibilidade temporária se necessário, mas marcado como legado
