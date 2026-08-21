@@ -13,11 +13,19 @@ import {
   Image as ImageIcon,
   PlayCircle,
   Link2,
-  Trash2
+  Trash2,
+  Copy,
+  Info
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { uploadMediaBatch } from "@/lib/bulk-media.functions";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface FileEntry {
   file: File;
@@ -27,6 +35,10 @@ interface FileEntry {
   size: number;
   status: 'pending' | 'uploading' | 'uploaded' | 'registered' | 'success' | 'error';
   error?: string;
+  errorCode?: string;
+  httpStatus?: number;
+  storageBucket?: string;
+  storagePath?: string;
   match?: {
     id: string;
     name: string;
@@ -125,6 +137,10 @@ export function ExerciseBulkMediaUpload() {
               ...f, 
               status: result.success ? 'registered' : 'error',
               error: result.error,
+              errorCode: result.errorCode,
+              httpStatus: result.httpStatus,
+              storageBucket: 'exercise-media',
+              storagePath: result.storagePath,
               match: result.linked && result.targetExerciseId ? { id: result.targetExerciseId, name: 'Vinculado' } : undefined
             };
           }
@@ -142,14 +158,30 @@ export function ExerciseBulkMediaUpload() {
 
     setIsProcessing(false);
     queryClient.invalidateQueries({ queryKey: ["exercises"] });
-    toast.success("Upload em massa concluído");
+    
+    // Toast inteligente baseado no resultado real
+    const finalStats = {
+      success: files.filter(f => f.status === 'registered' || f.status === 'success').length,
+      error: files.filter(f => f.status === 'error').length,
+      total: pending.length
+    };
+
+    if (finalStats.success === finalStats.total && finalStats.error === 0) {
+      toast.success("Upload concluído com sucesso");
+    } else if (finalStats.success > 0 && finalStats.error > 0) {
+      toast.warning(`Upload parcialmente concluído: ${finalStats.success} enviados, ${finalStats.error} falharam`);
+    } else if (finalStats.success === 0 && finalStats.error === finalStats.total) {
+      toast.error(`Upload não realizado: todos os ${finalStats.total} arquivos falharam`);
+    } else {
+      toast.success("Processamento de upload finalizado");
+    }
   };
 
   const stats = useMemo(() => {
     return {
       total: files.length,
       pending: files.filter(f => f.status === 'pending').length,
-      success: files.filter(f => f.status === 'success').length,
+      success: files.filter(f => f.status === 'registered' || f.status === 'success').length,
       error: files.filter(f => f.status === 'error').length,
       linked: files.filter(f => f.match).length
     };
@@ -270,22 +302,58 @@ export function ExerciseBulkMediaUpload() {
                         )}
 
                         {entry.status === 'error' && (
-                          <div className="flex items-center gap-1.5 text-destructive font-medium" title={entry.error}>
-                            <AlertTriangle className="h-3.5 w-3.5" />
-                            Erro
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5 text-destructive font-medium">
+                              <AlertTriangle className="h-3.5 w-3.5" />
+                              Erro {entry.httpStatus && `(${entry.httpStatus})`}
+                            </div>
+                            <div className="text-[10px] text-destructive max-w-[150px] truncate" title={entry.error}>
+                              {entry.errorCode || 'UPLOAD_FAILED'}: {entry.error}
+                            </div>
                           </div>
                         )}
                       </td>
                       <td className="p-3 text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => removeFile(entry.id)}
-                          disabled={entry.status === 'uploading'}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          {entry.status === 'error' && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-muted-foreground"
+                                    onClick={() => {
+                                      const details = {
+                                        name: entry.name,
+                                        status: entry.status,
+                                        error_code: entry.errorCode,
+                                        error_message: entry.error,
+                                        http_status: entry.httpStatus,
+                                        storage_bucket: entry.storageBucket,
+                                        storage_path: entry.storagePath
+                                      };
+                                      navigator.clipboard.writeText(JSON.stringify(details, null, 2));
+                                      toast.success("Detalhes copiados");
+                                    }}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Copiar detalhes do erro</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => removeFile(entry.id)}
+                            disabled={entry.status === 'uploading'}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
