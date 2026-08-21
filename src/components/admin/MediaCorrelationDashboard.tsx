@@ -138,7 +138,7 @@ export function MediaCorrelationDashboard() {
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
-                      </td>
+                      <td className="p-3 text-right">
                         {item.status === 'applied' ? (
                           <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-transparent">Aplicado</Badge>
                         ) : item.status === 'pending' ? (
