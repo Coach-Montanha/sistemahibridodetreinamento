@@ -16,10 +16,8 @@ export const uploadMediaBatch = createServerFn({ method: "POST" })
   .handler(async ({ data: { files }, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const coachId = context.userId;
-
+    
     const results = [];
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const coachId = context.userId;
     
     for (const file of files) {
       try {
