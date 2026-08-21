@@ -99,7 +99,7 @@ export function MediaCorrelationDashboard() {
         </div>
       </div>
 
-      {job && job.media_correlation_items && (
+      {job && items.length > 0 && (
         <Card>
           <CardHeader className="py-4">
             <CardTitle className="text-sm flex items-center justify-between">
