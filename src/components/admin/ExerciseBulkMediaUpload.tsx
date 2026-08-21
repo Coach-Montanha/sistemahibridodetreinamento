@@ -171,10 +171,12 @@ export function ExerciseBulkMediaUpload() {
       .insert({
         coach_id: coachId,
         total_files: pending.length,
-        status: 'running'
+        status: 'running',
+        metadata: { client_timestamp: new Date().toISOString() }
       })
       .select()
       .single();
+
 
     if (jobError) {
       toast.error("Erro ao iniciar job de importação");
