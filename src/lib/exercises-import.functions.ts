@@ -106,7 +106,9 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
       `);
 
     if (idsToExclude.length > 0) {
-      query = query.filter("id", "not.in", `(${idsToExclude.join(",")})`);
+      // Fix: Wrapping UUIDs in quotes for the not.in filter
+      const formattedIds = idsToExclude.map(id => `"${id}"`).join(",");
+      query = query.filter("id", "not.in", `(${formattedIds})`);
     }
 
     const { data: candidates, error: candError } = await query

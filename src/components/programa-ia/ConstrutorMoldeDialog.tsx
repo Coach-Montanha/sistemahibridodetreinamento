@@ -116,7 +116,7 @@ const USA_DURACAO_TOTAL: string[] = ["amrap", "preparacao_movimento", "mobilidad
 const USA_PERCENTUAL: string[] = ["forca_tecnica_pct"];
 const USA_DESCANSO_ENTRE_SERIES: string[] = ["circuito", "bodybuilding_sets", "metcon", "finalizador"];
 const USA_SLOT: string[] = ["preparacao_movimento"];
-const USA_NUMERO_EXERCICIOS = (formato: string) => formato !== "kb_timed_sets";
+const USA_NUMERO_EXERCICIOS = (formato: string) => formato !== "kb_timed_sets" && !formato.includes("kb_timed_sets");
 
 function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
   const base = formato.split("_")[0];
@@ -687,7 +687,8 @@ export function ConstrutorMoldeDialog({
   }
 
 
-  const formatosDisponiveis = presets.map((p: any) => p.id);
+  // We no longer map to .id and filter, we use the presets directly to allow all formats
+  const formatosDisponiveis = presets;
 
   const getFormatLabel = (f: string) => {
     const p = presets.find((p: any) => p.id === f);
@@ -793,9 +794,9 @@ export function ConstrutorMoldeDialog({
                 <div className="grid gap-0.5">
                   {formatosDisponiveis.map((f: any) => (
                     <button
-                      key={f}
+                      key={f.id}
                       type="button"
-                      onClick={() => adicionarBloco(f)}
+                      onClick={() => adicionarBloco(f.id)}
                       className="rounded-md px-2.5 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
                     >
                       {getFormatLabel(f)}
