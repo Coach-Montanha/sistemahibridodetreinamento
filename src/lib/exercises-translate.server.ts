@@ -72,7 +72,13 @@ Passos (EN): ${JSON.stringify(exercise.instruction_steps)}
 
   if (!res.ok) {
     const corpo = await res.text().catch(() => "");
-    console.error(`AI gateway [${res.status}]: ${corpo}`);
+    console.error(`AI gateway translation error [${res.status}]:`, corpo);
+    
+    // Tratamento de erro 400 específico para ajudar no diagnóstico
+    if (res.status === 400) {
+      throw new Error(`Falha na tradução via IA (erro 400): O Gateway rejeitou o request. Verifique o conteúdo do exercício ou o modelo.`);
+    }
+    
     throw new Error(`Falha na tradução via IA (erro ${res.status})`);
   }
 
