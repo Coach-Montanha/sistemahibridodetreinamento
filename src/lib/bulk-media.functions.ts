@@ -106,7 +106,15 @@ export const uploadMediaBatch = createServerFn({ method: "POST" })
         });
       } catch (err: any) {
         console.error(`Falha no upload de ${file.name}:`, err);
-        results.push({ name: file.name, success: false, error: err.message });
+        // Retornar erro detalhado para a UI
+        results.push({ 
+          name: file.name, 
+          success: false, 
+          error: err.message,
+          errorCode: err.code || err.status || 'UPLOAD_ERROR',
+          httpStatus: err.status || 500,
+          details: err
+        });
       }
     }
     
