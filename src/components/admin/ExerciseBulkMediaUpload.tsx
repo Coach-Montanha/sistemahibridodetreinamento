@@ -172,9 +172,11 @@ export function ExerciseBulkMediaUpload() {
         coach_id: coachId,
         total_files: pending.length,
         status: 'running'
-      })
+      } as any)
       .select()
       .single();
+
+
 
     if (jobError) {
       toast.error("Erro ao iniciar job de importação");
