@@ -362,3 +362,4 @@ export const approveCatalogTranslation = createServerFn({ method: "POST" })
     
     return { success: true };
   });
+  });
