@@ -81,11 +81,21 @@ export function ExerciseImportManager() {
 
   const handleTranslation = async () => {
     setIsTranslating(true);
+    let totalSuccess = 0;
     try {
-      const result = await runTranslation({ data: { limit: 10 } });
-      toast.success(`Tradução concluída: ${result.success} exercícios traduzidos.`);
-      queryClient.invalidateQueries({ queryKey: ["exercise-catalog-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
+      // Processar em lotes pequenos para evitar timeout e permitir feedback progressivo
+      const batchSize = 10;
+      const totalToTranslate = stats?.needTranslation ?? 0;
+      const iterations = Math.ceil(Math.min(totalToTranslate, 50) / batchSize); // Limitar a 50 por clique para segurança
+
+      for (let i = 0; i < iterations; i++) {
+        const result = await runTranslation({ data: { limit: batchSize } });
+        totalSuccess += result.success;
+        queryClient.invalidateQueries({ queryKey: ["exercise-catalog-stats"] });
+        queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
+      }
+      
+      toast.success(`Tradução concluída: ${totalSuccess} exercícios traduzidos.`);
     } catch (error: any) {
       toast.error(`Falha na tradução: ${error.message}`);
     } finally {

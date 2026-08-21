@@ -58,8 +58,8 @@ Passos (EN): ${JSON.stringify(exercise.instruction_steps)}
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
-    body: JSON.stringify({
-      model: "google/gemini-2.0-flash-exp",
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: SYSTEM_PROMPT_TRANSLATION },
         { role: "user", content: prompt },
