@@ -194,13 +194,13 @@ export function ExerciseBulkMediaUpload() {
       total: pending.length
     };
 
-    if (finalStats.success === finalStats.total && finalStats.error === 0) {
+    if (finalStats.success === finalStats.total && finalStats.error === 0 && finalStats.total > 0) {
       toast.success("Upload concluído com sucesso");
     } else if (finalStats.success > 0 && finalStats.error > 0) {
       toast.warning(`Upload parcialmente concluído: ${finalStats.success} enviados, ${finalStats.error} falharam`);
-    } else if (finalStats.success === 0 && finalStats.error === finalStats.total) {
-      toast.error(`Upload não realizado: todos os ${finalStats.total} arquivos falharam`);
-    } else {
+    } else if (finalStats.success === 0 && finalStats.error > 0) {
+      toast.error(`Upload falhou: todos os ${finalStats.error} arquivos falharam`);
+    } else if (finalStats.total > 0) {
       toast.success("Processamento de upload finalizado");
     }
   };
