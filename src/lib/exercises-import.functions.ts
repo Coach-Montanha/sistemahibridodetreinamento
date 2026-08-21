@@ -108,17 +108,18 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { translateCatalogExercises } = await import("./exercises-import.functions");
+    const { translateCatalogCore } = await import("@/lib/catalog-translate-core.server");
 
     const { data: pending } = await supabaseAdmin.rpc("get_exercises_pending_translation" as any, { _limit: data.limit });
-    
+
     if (!pending || pending.length === 0) {
-      return { success: 0, total: 0, message: "Todos traduzidos" };
+      return { success: 0, total: 0, errors: [], message: "Todos traduzidos" } as any;
     }
 
     const ids = pending.map((p: any) => p.id);
-    return translateCatalogExercises({ data: { exerciseIds: ids } });
+    return (await translateCatalogCore(supabaseAdmin, ids)) as any;
   });
+
 
 export const importExercises = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
