@@ -43,6 +43,7 @@ import {
   type SessaoTemplate,
 } from "@/lib/hibrido-ia.server";
 import { BUILTIN_SET_TYPES, type SetTypePreset } from "@/lib/set-type-registry";
+import { getBestAvailableModel } from "@/lib/ai-discovery.functions";
 
 const CARGA = z
   .object({
@@ -455,11 +456,22 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
           })()
         : montarUserPrompt({ ...ctx, set_types: data.setTypes || BUILTIN_SET_TYPES }, data.prompt);
 
+    const modelToUse = await getBestAvailableModel();
+    
+    // LOG DE TELEMETRIA: Início da requisição
+    const requestId = Math.random().toString(36).substring(7);
+    console.log(`[AI_REQUEST][${requestId}] Iniciando geração:`, {
+      programId: data.programId,
+      metodologia: metodologiaEfetiva,
+      semanas: data.semanasNovas,
+      model: modelToUse
+    });
+
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash", 
+        model: modelToUse, 
 
         messages: [
           { role: "system", content: systemPrompt },
@@ -471,36 +483,56 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
     if (!res.ok) {
       const corpo = await res.text().catch(() => "");
-      console.error(`AI gateway [${res.status}]: ${corpo}`);
-      throw new Error(mensagemDeErroGateway(res.status));
+      console.error(`[AI_ERROR][${requestId}] Gateway [${res.status}]:`, corpo);
+      throw new Error(`AI_GATEWAY_ERROR: ${mensagemDeErroGateway(res.status)}`);
     }
 
     const payload: any = await res.json();
     const conteudo = payload?.choices?.[0]?.message?.content;
+    
+    // LOG DE TELEMETRIA: Resposta bruta (sanitizada)
+    console.log(`[AI_RESPONSE][${requestId}] Recebido:`, {
+      status: res.status,
+      contentLength: conteudo?.length ?? 0,
+      finishReason: payload?.choices?.[0]?.finish_reason,
+      contentPreview: typeof conteudo === 'string' ? conteudo.substring(0, 300).replace(/\n/g, ' ') + "..." : "EMPTY"
+    });
+
     if (typeof conteudo !== "string" || conteudo.trim().length === 0) {
-      throw new Error("A IA não retornou conteúdo. Tente novamente.");
+      throw new Error("AI_EMPTY_CONTENT: A IA não retornou conteúdo. Tente novamente.");
     }
 
-    if (isHibrido) {
-      const templateFinal = data.hibrido.sessaoTemplate?.length > 0 
-        ? data.hibrido.sessaoTemplate 
-        : continuation.lastSessionStructure
-          ? continuation.lastSessionStructure.map((b: any) => ({
-              chave: b.chave,
-              formato: b.formato,
-              titulo: b.titulo,
-              selecaoExercicios: "ia",
-              numeroExercicios: b.numeroExercicios,
-              fonteExercicios: b.fonteExercicios
-            }))
-          : [];
+    try {
+      if (isHibrido) {
+        const templateFinal = data.hibrido.sessaoTemplate?.length > 0 
+          ? data.hibrido.sessaoTemplate 
+          : continuation.lastSessionStructure
+            ? continuation.lastSessionStructure.map((b: any) => ({
+                chave: b.chave,
+                formato: b.formato,
+                titulo: b.titulo,
+                selecaoExercicios: "ia",
+                numeroExercicios: b.numeroExercicios,
+                fonteExercicios: b.fonteExercicios
+              }))
+            : [];
 
-      return normalizarPrescricaoHibrido(
-        conteudo,
-        templateFinal,
-        await buscarCandidatosDoMolde(supabase, templateFinal)
-      ) as any;
+        if (!templateFinal || templateFinal.length === 0) {
+           throw new Error("AI_NO_TEMPLATE: O molde da sessão está vazio ou inválido.");
+        }
+
+        return normalizarPrescricaoHibrido(
+          conteudo,
+          templateFinal,
+          await buscarCandidatosDoMolde(supabase, templateFinal)
+        ) as any;
+      }
+
+      return normalizarPrescricao(conteudo);
+    } catch (parseErr: any) {
+      console.error(`[AI_PARSE_ERROR][${requestId}] Falha ao processar resposta:`, parseErr);
+      // Se for um erro amigável já mapeado, repassa. Caso contrário, lança genérico de schema.
+      if (parseErr.message.includes("AI_") || parseErr.message.includes("POOL_VAZIO")) throw parseErr;
+      throw new Error(`AI_SCHEMA_MISMATCH: A resposta da IA não pôde ser validada contra o molde. Erro: ${parseErr.message}`);
     }
-
-    return normalizarPrescricao(conteudo);
   });

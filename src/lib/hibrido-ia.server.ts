@@ -191,7 +191,15 @@ export async function buscarCandidatosDoMolde(
           ? `equipamento [${equipamentosNormalizados.join(", ")}]`
           : "nenhum equipamento";
       const metDesc = metodologias.length > 0 ? `metodologia [${metodologias.join(", ")}]` : "nenhuma metodologia";
-      throw new Error(`A IA não retornou nenhuma sessão estruturada. Verifique se o pool de exercícios da biblioteca atende aos filtros de ${equipDesc} e ${metDesc} do molde "${bloco.titulo ?? bloco.chave}".`);
+      
+      // LOG DE DIAGNÓSTICO: Registrar pool vazio para rastreamento
+      console.warn(`[buscarCandidatosDoMolde] Pool vazio para bloco "${bloco.titulo ?? bloco.chave}":`, {
+        equipamentosNormalizados,
+        metodologias,
+        chave: bloco.chave
+      });
+      
+      throw new Error(`POOL_VAZIO: O pool de exercícios da biblioteca não atende aos filtros de ${equipDesc} e ${metDesc} do molde "${bloco.titulo ?? bloco.chave}".`);
     }
 
     out[bloco.chave] = dataArr.map((e: any) => ({ id: e.id as string, nome: e.nome_pt as string }));
@@ -343,13 +351,12 @@ export function normalizarPrescricaoHibrido(
   const sessoesRaw = Array.isArray(json?.sessoes) ? json.sessoes : [];
   if (sessoesRaw.length === 0) {
       console.error("HibridoIA: IA retornou JSON sem o campo 'sessoes' ou array vazio.", {
-        bruto,
         json
       });
       if (template.length === 0) {
-        throw new Error("Não foi possível identificar o molde da sessão anterior. Tente configurar o molde manualmente ou verifique se a rotina possui treinos.");
+        throw new Error("AI_NO_TEMPLATE: Não foi possível identificar o molde da sessão anterior.");
       }
-      throw new Error("A IA não retornou nenhuma sessão estruturada. Verifique se o pool de exercícios da biblioteca atende aos filtros de equipamento/metodologia do molde.");
+      throw new Error("AI_EMPTY_CONTENT: A IA não retornou nenhuma sessão estruturada no formato esperado.");
     }
 
   const porChave = new Map(template.map((b) => [b.chave, b]));
