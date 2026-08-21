@@ -126,13 +126,23 @@ export const approveCatalogTranslation = createServerFn({ method: "POST" })
   });
 
 export const translateCatalogBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ 
-    limit: z.number().default(10),
-    offset: z.number().default(0)
+    limit: z.number().default(10)
   }).parse(data))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { translateCatalogExercises } = await import("./exercises-import.functions");
-    return translateCatalogExercises({ data });
+
+    // Busca os IDs que ainda não têm tradução usando a nova função RPC
+    const { data: pending } = await supabaseAdmin.rpc("get_exercises_pending_translation" as any, { _limit: data.limit });
+    
+    if (!pending || pending.length === 0) {
+      return { success: 0, total: 0, message: "Todos traduzidos" };
+    }
+
+    const ids = pending.map((p: any) => p.id);
+    return translateCatalogExercises({ data: { exerciseIds: ids } });
   });
 
 export const importExercises = createServerFn({ method: "POST" })
@@ -202,3 +212,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
     const total = await fetchAndProject();
     return { success: true, projected: total };
   });
+
+/**
+ * Funções auxiliares movidas para o handler para respeitar TanStack Start boundaries
+ */
