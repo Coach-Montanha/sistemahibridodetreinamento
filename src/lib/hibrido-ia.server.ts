@@ -37,8 +37,9 @@ export type ModalidadeHibrida = "hibrido" | "kettlebell_fitness";
 export type BlockFormatHibrido = string;
 
 export function resolveBaseFormat(formatId: string): string {
+  if (!formatId) return "circuito";
   if (formatId.startsWith("builtin:")) return formatId.replace("builtin:", "");
-  if (formatId.startsWith("custom:")) return formatId; // Will need lookup if custom formats have different base
+  if (formatId.startsWith("custom:")) return formatId; 
   return formatId;
 }
 
