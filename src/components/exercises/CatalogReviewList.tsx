@@ -413,23 +413,27 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
   });
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
-      await saveCatalogTranslationDraft({ 
+    mutationFn: async (approve: boolean) => {
+      return await saveCatalogTranslationDraft({ 
         data: { 
           catalogId: item.id, 
-          fields: edited 
+          fields: edited,
+          approve
         } 
       });
     },
-    onSuccess: () => {
-      toast.success("Tradução salva e aprovada");
+    onSuccess: (res: any) => {
+      toast.success(res?.status === "approved" ? "Tradução aprovada" : "Rascunho salvo");
       onUpdated();
+      queryClient.invalidateQueries({ queryKey: ["exercise-catalog-list"] });
+      queryClient.invalidateQueries({ queryKey: ["exercise-catalog-stats"] });
     },
     onError: (err: any) => {
       console.error("Erro ao salvar tradução:", err);
       toast.error(`Erro ao salvar: ${err.message || "Erro desconhecido"}`);
     }
   });
+
 
   return (
     <div className="space-y-6 py-4">
