@@ -396,13 +396,21 @@ function ConfiguracoesPage() {
           </Fold>
         )}
         {section === "catalogo" && (
-          <Fold
-            title="Catálogo Externo"
-            description="Gerencie a importação e curadoria de exercícios do repositório oficial."
-          >
-            <CatalogTranslationManager />
-            <ExerciseImportManager />
-          </Fold>
+          <div className="space-y-8">
+            <Fold
+              title="Tradução em Massa"
+              description="Traduz automaticamente o catálogo de exercícios do inglês para o português usando IA."
+            >
+              <CatalogTranslationManager />
+            </Fold>
+            
+            <Fold
+              title="Catálogo Externo & Sincronização"
+              description="Gerencie a importação, curadoria e projeção de exercícios do repositório oficial."
+            >
+              <ExerciseImportManager />
+            </Fold>
+          </div>
         )}
         {section === "audit" && (
           <Fold
