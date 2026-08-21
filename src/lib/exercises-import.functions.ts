@@ -319,7 +319,10 @@ export const saveCatalogTranslationDraft = createServerFn({ method: "POST" })
         locale: "pt-BR",
         ...fields,
         translation_status: "approved",
-        translation_source: "human"
+        translation_source: "human",
+        updated_at: new Date().toISOString()
+      }, { 
+        onConflict: "catalog_exercise_id,locale" 
       });
 
     if (transError) throw new Error(`Falha ao salvar tradução: ${transError.message}`);
