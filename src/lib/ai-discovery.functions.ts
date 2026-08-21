@@ -13,6 +13,8 @@ export const getBestAvailableModel = createServerFn({ method: "GET" })
     // Como os logs indicam google/gemini-2.5-flash como o sucessor do 2.0,
     // usaremos uma estratégia de fallback baseada em versões conhecidas.
     
-    // Por enquanto, usaremos a versão mais estável e permitida reportada no log
-    return "google/gemini-2.5-flash"; 
+    // Estratégia de detecção de modelo:
+    // Preferência por gemini-2.0-flash (estável) ou gemini-2.5-flash se disponível.
+    // Usaremos 'google/gemini-2.0-flash' como base estável no gateway Lovable.
+    return "google/gemini-2.0-flash"; 
   });

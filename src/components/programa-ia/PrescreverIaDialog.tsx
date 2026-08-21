@@ -460,6 +460,26 @@ export function PrescreverIaDialog({
     },
     onError: (e: any) => {
       setProgresso([]);
+      
+      let msg = "Não foi possível gerar a prescrição.";
+      const errorStr = String(e.message || e);
+
+      if (errorStr.includes("POOL_VAZIO")) {
+        msg = "O pool de exercícios da biblioteca não atende aos filtros de equipamento/metodologia do molde.";
+      } else if (errorStr.includes("AI_GATEWAY_ERROR")) {
+        msg = "O serviço de IA está temporariamente indisponível. Tente novamente em alguns instantes.";
+      } else if (errorStr.includes("AI_EMPTY_CONTENT") || errorStr.includes("AI_INVALID_JSON")) {
+        msg = "A IA retornou uma resposta inválida. Tente gerar novamente.";
+      } else if (errorStr.includes("AI_SCHEMA_MISMATCH")) {
+        msg = "A estrutura do treino gerado pela IA é incompatível com o molde.";
+      } else if (errorStr.includes("Server function info not found")) {
+        msg = "Detectamos JS antigo no seu navegador. Por favor, limpe o cache ou faça um 'Hard Reload' (Ctrl+F5).";
+      }
+
+      toast.error("Falha na Prescrição", {
+        description: msg,
+      });
+    },
       const msg = e?.message || "";
       
       if (msg.includes("POOL_VAZIO")) {
