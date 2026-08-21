@@ -32,9 +32,10 @@ export function CatalogTranslationManager() {
       queryClient.invalidateQueries({ queryKey: ["latest-translation-job"] });
       if (res.jobId) {
         toast.success(`Job iniciado para ${res.total} exercícios!`);
+        setIsProcessing(true); // Garante o estado visual de processamento
         handleStartProcessing(res.jobId);
       } else {
-        toast.info(res.message);
+        toast.info(res.message || "Nenhum exercício novo para traduzir.");
       }
     }
   });

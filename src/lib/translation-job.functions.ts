@@ -13,10 +13,9 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
     const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
     if (!coachId) throw new Error("Coach ID não resolvido.");
 
+    // Busca exercícios que ainda NÃO possuem tradução (nem draft, nem aprovada)
     const { data: pendingExercises, error: fetchError } = await supabaseAdmin
-      .from("exercise_catalog")
-      .select("id, name_original")
-      .limit(2000);
+      .rpc("get_exercises_pending_translation", { _limit: 2000 });
 
     if (fetchError) {
       console.error("[translation-job:start] Fetch Error:", fetchError);
@@ -24,7 +23,7 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
     }
 
     if (!pendingExercises || pendingExercises.length === 0) {
-      return { success: false, message: "Nenhum exercício pendente no catálogo." } as any;
+      return { success: false, message: "Todos os exercícios do catálogo já possuem tradução ou estão em fila." } as any;
     }
 
     const { data: job, error: jobError } = await supabaseAdmin
