@@ -191,6 +191,22 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       // Híbrido/KB Fitness molde: fluxo direto, NÃO cria o programa aqui —
       // gerarSessoesHibrido já cria o programa por conta própria.
       if (usaMolde && cfg.hibrido) {
+        // Pré-validação com o MESMO contrato de limites usado no servidor.
+        const { validarLimitesDoMolde } = await import("@/lib/format-limits");
+        const violacoes = validarLimitesDoMolde(
+          cfg.hibrido.sessaoTemplate.map((b: any) => ({
+            formato: b.formato,
+            numeroExercicios: b.numeroExercicios,
+            seriesMax: b.seriesMax,
+          })),
+        );
+        if (violacoes.length > 0) {
+          const v = violacoes[0];
+          throw new Error(
+            `FORMAT_LIMIT_EXCEEDED — o formato "${v.formato}" aceita no máximo ${v.maximo} em ${v.campo} (você configurou ${v.valor}).`,
+          );
+        }
+
         const { gerarSessoesHibrido } = await import("@/lib/hibrido-gerar.functions");
         const res = await gerarSessoesHibrido({
           data: {
