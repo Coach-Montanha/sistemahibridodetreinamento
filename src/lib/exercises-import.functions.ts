@@ -294,3 +294,70 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
     return { projected: projectedCount };
   });
+
+export const saveCatalogTranslationDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({
+    catalogId: z.string().uuid(),
+    fields: z.object({
+      name_pt_br: z.string(),
+      equipment_pt_br: z.string(),
+      category_pt_br: z.string().optional(),
+      body_part_pt_br: z.string().optional(),
+      muscle_group_pt_br: z.string().optional(),
+      instructions_pt_br: z.string().optional()
+    })
+  }).parse(data))
+  .handler(async ({ data: { catalogId, fields } }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error: transError } = await supabaseAdmin
+      .from("exercise_catalog_translations")
+      .upsert({
+        catalog_exercise_id: catalogId,
+        locale: "pt-BR",
+        ...fields,
+        translation_status: "approved",
+        translation_source: "human"
+      });
+
+    if (transError) throw new Error(`Falha ao salvar tradução: ${transError.message}`);
+
+    // Também aprovar o exercício para projeção ao salvar manualmente
+    const { error: catalogError } = await supabaseAdmin
+      .from("exercise_catalog")
+      .update({ 
+        review_status: 'approved',
+        approved_for_projection: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", catalogId);
+
+    if (catalogError) throw new Error(`Falha ao atualizar status do catálogo: ${catalogError.message}`);
+
+    return { success: true };
+  });
+
+export const approveCatalogTranslation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({
+    catalogId: z.string().uuid(),
+    status: z.enum(['approved', 'rejected', 'pending']),
+    approved: z.boolean()
+  }).parse(data))
+  .handler(async ({ data: { catalogId, status, approved } }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error } = await supabaseAdmin
+      .from("exercise_catalog")
+      .update({ 
+        review_status: status, 
+        approved_for_projection: approved,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", catalogId);
+    
+    if (error) throw new Error(`Erro ao aprovar exercício: ${error.message}`);
+    
+    return { success: true };
+  });
