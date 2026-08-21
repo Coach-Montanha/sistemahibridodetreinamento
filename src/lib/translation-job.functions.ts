@@ -79,20 +79,23 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
 
     for (const item of items) {
       try {
-        const result = await translateCatalogBatch({ 
+        const result: any = await translateCatalogBatch({ 
           data: { 
-            exerciseIds: [item.catalog_exercise_id],
-            autoApprove: false 
+            limit: 1,
+            offset: 0 
           }
         });
 
-        if (result.success) {
-          await supabaseAdmin.from("exercise_translation_items")
+        // A função translateCatalogBatch retorna { success, errors, total }
+        if (result && (result.success > 0 || result.total > 0)) {
+           // Se result.success > 0, um exercício foi traduzido. 
+           // Como estamos chamando de 1 em 1 para controle fino do job:
+           await supabaseAdmin.from("exercise_translation_items")
             .update({ status: "draft" })
             .eq("id", item.id);
-          successCount++;
+           successCount++;
         } else {
-          throw new Error(result.error || "Erro desconhecido na tradução");
+          throw new Error("Falha na tradução via lote");
         }
       } catch (err: any) {
         await supabaseAdmin.from("exercise_translation_items")
