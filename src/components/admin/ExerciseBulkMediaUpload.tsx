@@ -25,13 +25,14 @@ interface FileEntry {
   name: string;
   type: string;
   size: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
+  status: 'pending' | 'uploading' | 'uploaded' | 'registered' | 'success' | 'error';
   error?: string;
   match?: {
     id: string;
     name: string;
   };
 }
+
 
 export function ExerciseBulkMediaUpload() {
   const [files, setFiles] = useState<FileEntry[]>([]);
