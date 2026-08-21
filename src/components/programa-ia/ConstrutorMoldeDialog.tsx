@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -119,13 +119,17 @@ const USA_SLOT: string[] = ["preparacao_movimento"];
 const USA_NUMERO_EXERCICIOS = (formato: string) => formato !== "kb_timed_sets" && !formato.includes("kb_timed_sets");
 
 function gerarChave(formatoBase: string, existentes: BlocoTemplate[]) {
-  const base = formatoBase.split("_")[0];
+  const base = (formatoBase || "bloco").split("_")[0];
   let n = 1;
   let chave = `${base}_${n}`;
   const usados = new Set(existentes.map((b) => b.chave));
-  while (usados.has(chave)) {
+  
+  // Limite de segurança para evitar loop infinito
+  let safety = 0;
+  while (usados.has(chave) && safety < 1000) {
     n += 1;
     chave = `${base}_${n}`;
+    safety += 1;
   }
   return chave;
 }
@@ -642,6 +646,12 @@ export function ConstrutorMoldeDialog({
   isGenerating = false,
   onGerar,
 }: ConstrutorMoldeDialogProps) {
+  useEffect(() => {
+    if (open) {
+      console.log("[ConstrutorMoldeDialog] Opened", { modalidade, tituloPrograma });
+    }
+  }, [open, modalidade, tituloPrograma]);
+
   const { presets } = useFormatRegistry();
   const [numeroSessoes, setNumeroSessoes] = useState(1);
   const [instrucoes, setInstrucoes] = useState("");
@@ -649,20 +659,33 @@ export function ConstrutorMoldeDialog({
   const [abertoChave, setAbertoChave] = useState<string | null>(null);
 
   function adicionarBloco(presetId: string) {
-    const preset = presets.find(p => p.id === presetId);
-    if (!preset) return;
+    try {
+      console.log("[block:add:click]", { presetId });
+      const preset = presets.find(p => p.id === presetId);
+      if (!preset) {
+        console.error("[block:add:error] Preset not found", { presetId });
+        return;
+      }
 
-    if (preset.base === "preparacao_movimento") {
-      const mob = novoBloco(preset, blocos, presets);
-      const aq = novoAquecimento([...blocos, mob], modalidade);
-      mob.titulo = "Mobilidade";
-      aq.titulo = "Aquecimento";
-      setBlocos((prev) => [...prev, mob, aq]);
-      setAbertoChave(mob.chave);
-    } else {
-      const b = novoBloco(preset, blocos, presets);
-      setBlocos((prev) => [...prev, b]);
-      setAbertoChave(b.chave);
+      console.log("[block:add:resolve]", { label: preset.label, base: preset.base });
+
+      if (preset.base === "preparacao_movimento") {
+        const mob = novoBloco(preset, blocos, presets);
+        const aq = novoAquecimento([...blocos, mob], modalidade);
+        mob.titulo = "Mobilidade";
+        aq.titulo = "Aquecimento";
+        console.log("[block:add:create:prep]", { mobKey: mob.chave, aqKey: aq.chave });
+        setBlocos((prev) => [...prev, mob, aq]);
+        setAbertoChave(mob.chave);
+      } else {
+        const b = novoBloco(preset, blocos, presets);
+        console.log("[block:add:create]", { key: b.chave, format: b.formato });
+        setBlocos((prev) => [...prev, b]);
+        setAbertoChave(b.chave);
+      }
+    } catch (err: any) {
+      console.error("[block:add:fatal]", err);
+      // Opcional: Toast ou alerta aqui se disponível
     }
   }
 
@@ -813,14 +836,20 @@ export function ConstrutorMoldeDialog({
               </PopoverTrigger>
               <PopoverContent align="start" className="w-64 p-1">
                 <div className="grid gap-0.5">
+                  {formatosDisponiveis.length === 0 && (
+                    <div className="p-2 text-xs text-muted-foreground">Nenhum formato disponível</div>
+                  )}
                   {formatosDisponiveis.map((f: any) => (
                     <button
                       key={f.id}
                       type="button"
-                      onClick={() => adicionarBloco(f.id)}
+                      onClick={() => {
+                        console.log("[block:button:click]", f.id);
+                        adicionarBloco(f.id);
+                      }}
                       className="rounded-md px-2.5 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
                     >
-                      {getFormatLabel(f)}
+                      {getFormatLabel(f.id)}
                     </button>
                   ))}
                 </div>
