@@ -84,7 +84,7 @@ export const startMediaAudit = createServerFn({ method: "POST" })
       });
 
       if (auditItems.length > 0) {
-        await supabaseAdmin.from("media_audit_items").insert(auditItems);
+        await supabaseAdmin.from("media_audit_items").insert(auditItems as any);
       }
 
       // 5. Finalizar relatório
@@ -97,14 +97,14 @@ export const startMediaAudit = createServerFn({ method: "POST" })
 
       await supabaseAdmin
         .from("media_audit_reports")
-        .update({ status: "completed", summary })
+        .update({ status: "completed", summary } as any)
         .eq("id", report.id);
 
       return { reportId: report.id, summary };
     } catch (err: any) {
       await supabaseAdmin
         .from("media_audit_reports")
-        .update({ status: "failed" })
+        .update({ status: "failed" } as any)
         .eq("id", report.id);
       throw err;
     }
