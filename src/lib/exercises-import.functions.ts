@@ -122,7 +122,7 @@ export const translateCatalogBatch = createServerFn({ method: "POST" })
       `);
 
     if (idsToExclude.length > 0) {
-      query = query.not("id", "in", `(${idsToExclude.join(",")})`);
+      query = query.filter("id", "not.in", `(${idsToExclude.join(",")})`);
     }
 
     const { data: candidates, error: candError } = await query
@@ -233,12 +233,17 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Fix: Using explicit join to avoid relationship ambiguity error
     const { data: approved, error: fetchError } = await supabaseAdmin
       .from("exercise_catalog")
-      .select("*, exercise_catalog_translations(*)")
+      .select(`
+        *, 
+        exercise_catalog_translations!exercise_catalog_translations_catalog_exercise_id_fkey(*)
+      `)
       .eq("approved_for_projection", true)
       .is("projected_exercise_id", null)
-      .range(0, 99); // Processa em lotes de 100 por vez para evitar timeout do gateway
+      .range(0, 99); 
+
 
 
     if (fetchError) throw fetchError;

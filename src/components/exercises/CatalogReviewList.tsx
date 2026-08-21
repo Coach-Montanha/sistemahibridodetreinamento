@@ -39,12 +39,14 @@ export function CatalogReviewList() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["exercise-catalog-list", page, search, statusFilter],
     queryFn: async () => {
+      // Fix: Using explicit join to avoid relationship ambiguity error
       let query = supabase
         .from("exercise_catalog")
         .select(`
           *,
-          exercise_catalog_translations (*)
+          exercise_catalog_translations!exercise_catalog_translations_catalog_exercise_id_fkey (*)
         `, { count: 'exact' });
+
 
       if (search) {
         query = query.ilike("name_original", `%${search}%`);
