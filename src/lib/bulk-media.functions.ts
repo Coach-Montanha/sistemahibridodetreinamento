@@ -13,10 +13,15 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const coachId = context.userId;
-    
+
     try {
-      // 1. Verificar persistência no Storage antes de prosseguir
+      // 1. Obter o coach_id real vinculado ao usuário autenticado
+      const { data: coachId, error: coachError } = await supabaseAdmin.rpc("auth_coach_id");
+      if (coachError || !coachId) {
+        throw new Error(`Não foi possível resolver o coach_id: ${coachError?.message || 'Coach não encontrado'}`);
+      }
+
+      // 2. Verificar persistência no Storage antes de prosseguir
       const { data: listData, error: listError } = await supabaseAdmin.storage
         .from("exercise-media")
         .list(data.storagePath.split('/').slice(0, -2).join('/') + '/' + data.storagePath.split('/').slice(-2, -1)[0], {
@@ -30,14 +35,14 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
         throw new Error("Arquivo não encontrado no Storage após upload.");
       }
 
-      // 2. Generate long-lived URL
+      // 3. Generate long-lived URL
       const { data: urlData, error: urlError } = await supabaseAdmin.storage
         .from("exercise-media")
         .createSignedUrl(data.storagePath, 60 * 60 * 24 * 365 * 100);
         
       if (urlError) throw urlError;
 
-      // 3. Find target exercise
+      // 4. Find target exercise (deve pertencer ao coach ou ser global)
       let targetExerciseId = null;
       
       if (data.sourceId) {
@@ -45,6 +50,7 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
           .from("exercises")
           .select("id")
           .eq("source_id", data.sourceId)
+          .or(`coach_id.eq.${coachId},coach_id.is.null`)
           .maybeSingle();
         if (ex) targetExerciseId = ex.id;
       }
@@ -54,18 +60,37 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
           .from("exercises")
           .select("id")
           .ilike("nome_pt", `%${data.exerciseName}%`)
+          .or(`coach_id.eq.${coachId},coach_id.is.null`)
           .maybeSingle();
         if (ex) targetExerciseId = ex.id;
       }
 
-      // 4. Registrar na exercise_media
+      // 5. Se não encontrar exercício, criar um placeholder vinculado ao coach para satisfazer RLS da exercise_media
+      if (!targetExerciseId) {
+        const { data: newEx, error: newExError } = await supabaseAdmin
+          .from("exercises")
+          .insert({
+            nome_pt: `[Pendente] ${data.name}`,
+            coach_id: coachId,
+            metodologias: ['Musculação'],
+            unilateral: false,
+            criado_por_ia: false
+          })
+          .select("id")
+          .single();
+        
+        if (newExError) throw new Error(`Erro ao criar exercício placeholder: ${newExError.message}`);
+        targetExerciseId = newEx.id;
+      }
+
+      // 6. Registrar na exercise_media
       const mediaType = data.type.startsWith('video/') ? 'video' : 
                         (data.name.toLowerCase().endsWith('.gif') ? 'gif' : 'imagem');
 
       const { error: dbError } = await supabaseAdmin
         .from("exercise_media")
         .insert({
-          exercise_id: targetExerciseId || '00000000-0000-0000-0000-000000000000',
+          exercise_id: targetExerciseId,
           storage_path: data.storagePath,
           url_publica: urlData.signedUrl,
           tipo: mediaType as any,
@@ -77,7 +102,7 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
       return { 
         success: true, 
         storagePath: data.storagePath, 
-        linked: !!targetExerciseId,
+        linked: true, // Sempre vinculado agora (seja real ou placeholder)
         targetExerciseId 
       };
     } catch (err: any) {
