@@ -170,24 +170,60 @@ export function CatalogReviewList() {
               items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
-                    <div className="flex flex-col">
-                      <span>{item.name_original}</span>
-                      {item.exercise_catalog_translations?.[0]?.name_pt_br && (
-                        <span className="text-sm text-primary">{item.exercise_catalog_translations[0].name_pt_br}</span>
-                      )}
-                      <span className="text-xs text-muted-foreground">{item.muscle_group} / {item.body_part}</span>
-                    </div>
+                    {(() => {
+                      const translations = Array.isArray(item.exercise_catalog_translations) 
+                        ? item.exercise_catalog_translations 
+                        : item.exercise_catalog_translations ? [item.exercise_catalog_translations] : [];
+                      
+                      const translation = translations.length > 0 
+                        ? [...translations].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+                        : null;
+
+                      return (
+                        <>
+                          <div className="flex flex-col">
+                            <span>{item.name_original}</span>
+                            {translation?.name_pt_br && (
+                              <span className="text-sm text-primary">{translation.name_pt_br}</span>
+                            )}
+                            <span className="text-xs text-muted-foreground">{item.muscle_group} / {item.body_part}</span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <Badge variant="outline">{item.equipment_original}</Badge>
-                      {item.exercise_catalog_translations?.[0]?.equipment_pt_br && (
-                        <Badge variant="secondary" className="text-[10px]">{item.exercise_catalog_translations[0].equipment_pt_br}</Badge>
-                      )}
-                    </div>
+                    {(() => {
+                      const translations = Array.isArray(item.exercise_catalog_translations) 
+                        ? item.exercise_catalog_translations 
+                        : item.exercise_catalog_translations ? [item.exercise_catalog_translations] : [];
+                      
+                      const translation = translations.length > 0 
+                        ? [...translations].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+                        : null;
+
+                      return (
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="outline">{item.equipment_original}</Badge>
+                          {translation?.equipment_pt_br && (
+                            <Badge variant="secondary" className="text-[10px]">{translation.equipment_pt_br}</Badge>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
-                    <TranslationStatusBadge translation={item.exercise_catalog_translations?.[0]} />
+                    {(() => {
+                      const translations = Array.isArray(item.exercise_catalog_translations) 
+                        ? item.exercise_catalog_translations 
+                        : item.exercise_catalog_translations ? [item.exercise_catalog_translations] : [];
+                      
+                      const translation = translations.length > 0 
+                        ? [...translations].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+                        : null;
+
+                      return <TranslationStatusBadge translation={translation} />;
+                    })()}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={item.review_status} />
