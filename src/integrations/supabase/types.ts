@@ -868,6 +868,129 @@ export type Database = {
           },
         ]
       }
+      media_import_items: {
+        Row: {
+          coach_id: string
+          content_type: string | null
+          created_at: string | null
+          error_code: string | null
+          error_message: string | null
+          exercise_id: string | null
+          filename: string
+          fingerprint: string | null
+          id: string
+          job_id: string
+          relative_path: string | null
+          size: number | null
+          status: string
+          storage_bucket: string | null
+          storage_path: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          content_type?: string | null
+          created_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          exercise_id?: string | null
+          filename: string
+          fingerprint?: string | null
+          id?: string
+          job_id: string
+          relative_path?: string | null
+          size?: number | null
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          content_type?: string | null
+          created_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          exercise_id?: string | null
+          filename?: string
+          fingerprint?: string | null
+          id?: string
+          job_id?: string
+          relative_path?: string | null
+          size?: number | null
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_import_items_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_import_items_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_import_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "media_import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_import_jobs: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          error_summary: string | null
+          failed_files: number | null
+          id: string
+          processed_files: number | null
+          status: string
+          total_files: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          error_summary?: string | null
+          failed_files?: number | null
+          id?: string
+          processed_files?: number | null
+          status?: string
+          total_files?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          error_summary?: string | null
+          failed_files?: number | null
+          id?: string
+          processed_files?: number | null
+          status?: string
+          total_files?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_import_jobs_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       program_weeks: {
         Row: {
           data_inicio: string | null
