@@ -56,6 +56,8 @@ export type BlocoTemplate = {
   /** Identificador estável do bloco dentro do molde (ex.: "prep", "aquecimento", "fitness_a"). */
   chave: string;
   formato: BlockFormatHibrido;
+  /** Referência ao ID do preset usado (builtin:X ou custom:X) para fins de UI. */
+  presetId?: string | null;
   titulo?: string | null;
   /** Teto de tempo do bloco, em minutos. Para emom/e2mom, é o total (rounds × intervaloMin). */
   duracaoMin: number | null;

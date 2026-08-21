@@ -118,8 +118,8 @@ const USA_DESCANSO_ENTRE_SERIES: string[] = ["circuito", "bodybuilding_sets", "m
 const USA_SLOT: string[] = ["preparacao_movimento"];
 const USA_NUMERO_EXERCICIOS = (formato: string) => formato !== "kb_timed_sets" && !formato.includes("kb_timed_sets");
 
-function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
-  const base = formato.split("_")[0];
+function gerarChave(formatoBase: string, existentes: BlocoTemplate[]) {
+  const base = formatoBase.split("_")[0];
   let n = 1;
   let chave = `${base}_${n}`;
   const usados = new Set(existentes.map((b) => b.chave));
@@ -130,71 +130,78 @@ function gerarChave(formato: BlockFormatHibrido, existentes: BlocoTemplate[]) {
   return chave;
 }
 
-function novoBloco(formato: BlockFormatHibrido, existentes: BlocoTemplate[], presets: any[]): BlocoTemplate {
-  const chave = gerarChave(formato, existentes);
+function novoBloco(presetOrFormat: any, existentes: BlocoTemplate[], presets: any[]): BlocoTemplate {
+  // Se for um objeto, é um preset. Se for string, é o formato base.
+  const preset = typeof presetOrFormat === 'object' ? presetOrFormat : presets.find(p => p.id === presetOrFormat || p.base === presetOrFormat);
+  const formatoBase = preset?.base || presetOrFormat as string;
+  
+  const chave = gerarChave(formatoBase, existentes);
   const base: BlocoTemplate = {
     chave,
-    formato,
-    titulo: null,
-    duracaoMin: 9,
-    seriesMin: 3,
-    seriesMax: 3,
-    numeroExercicios: 2,
-    repsPorExercicio: 12,
-    modoExecucao: "circuito",
-    descansoAposSeg: 0,
-    descansoEntreSeriesSeg: null,
-    intervaloMin: null,
-    percentual1rm: null,
-    selecaoExercicios: "ia",
-    exerciciosFixos: [],
-    slot: null,
-    fonteExercicios: {},
+    formato: formatoBase,
+    presetId: preset?.id || null,
+    titulo: preset?.label || null,
+    duracaoMin: preset?.defaults?.duracaoMin ?? 9,
+    seriesMin: preset?.defaults?.seriesMin ?? 3,
+    seriesMax: preset?.defaults?.seriesMax ?? 3,
+    numeroExercicios: preset?.defaults?.numeroExercicios ?? 2,
+    repsPorExercicio: preset?.defaults?.repsPorExercicio ?? 12,
+    modoExecucao: (preset?.defaults?.modoExecucao as ModoExecucao) ?? "circuito",
+    descansoAposSeg: preset?.defaults?.descansoAposSeg ?? 0,
+    descansoEntreSeriesSeg: preset?.defaults?.descansoEntreSeriesSeg ?? null,
+    intervaloMin: preset?.defaults?.intervaloMin ?? null,
+    percentual1rm: preset?.defaults?.percentual1rm ?? null,
+    selecaoExercicios: (preset?.defaults?.selecaoExercicios as SelecaoExercicios) ?? "ia",
+    exerciciosFixos: preset?.defaults?.exerciciosFixos ?? [],
+    slot: (preset?.defaults?.slot as SlotPreparacao) ?? null,
+    fonteExercicios: preset?.defaults?.fonteExercicios ?? {},
   };
 
-  // Formatos base para presets dinâmicos
-  const formatoBase = presets.find(p => p.id === formato)?.base || formato;
-
-  switch (formatoBase) {
-    case "preparacao_movimento":
-      return { ...base, titulo: "Mobilidade", duracaoMin: 2, numeroExercicios: 1, seriesMin: 4, seriesMax: 4, slot: "mobilidade" };
-    case "forca_tecnica_pct":
-      return {
-        ...base,
-        duracaoMin: 8,
-        seriesMin: 6,
-        seriesMax: 6,
-        numeroExercicios: 1,
-        repsPorExercicio: 6,
-        percentual1rm: 70,
-      };
-    case "emom":
-      return { ...base, duracaoMin: 9, seriesMin: 9, seriesMax: 9, intervaloMin: 1, numeroExercicios: 2 };
-    case "e2mom":
-      return { ...base, duracaoMin: 16, seriesMin: 8, seriesMax: 8, intervaloMin: 2, numeroExercicios: 2 };
-    case "amrap":
-      return { ...base, duracaoMin: 12, seriesMin: null, seriesMax: null, numeroExercicios: 3 };
-    case "kb_timed_sets":
-      return {
-        ...base,
-        duracaoMin: 10,
-        seriesMin: null,
-        seriesMax: null,
-        numeroExercicios: 1,
-        selecaoExercicios: "manual",
-      };
-    case "finalizador":
-      return { ...base, duracaoMin: 2, seriesMin: 1, seriesMax: 1, numeroExercicios: 1 };
-    default:
-      return base;
+  // Ajustes específicos por formato base se não houver preset customizado definindo-os
+  if (!preset || preset.id.startsWith('builtin:')) {
+    switch (formatoBase) {
+      case "preparacao_movimento":
+        return { ...base, titulo: "Mobilidade", duracaoMin: 2, numeroExercicios: 1, seriesMin: 4, seriesMax: 4, slot: "mobilidade" };
+      case "forca_tecnica_pct":
+        return {
+          ...base,
+          duracaoMin: 8,
+          seriesMin: 6,
+          seriesMax: 6,
+          numeroExercicios: 1,
+          repsPorExercicio: 6,
+          percentual1rm: 70,
+        };
+      case "emom":
+        return { ...base, duracaoMin: 9, seriesMin: 9, seriesMax: 9, intervaloMin: 1, numeroExercicios: 2 };
+      case "e2mom":
+        return { ...base, duracaoMin: 16, seriesMin: 8, seriesMax: 8, intervaloMin: 2, numeroExercicios: 2 };
+      case "amrap":
+        return { ...base, duracaoMin: 12, seriesMin: null, seriesMax: null, numeroExercicios: 3 };
+      case "kb_timed_sets":
+        return {
+          ...base,
+          duracaoMin: 10,
+          seriesMin: null,
+          seriesMax: null,
+          numeroExercicios: 1,
+          selecaoExercicios: "manual",
+        };
+      case "finalizador":
+        return { ...base, duracaoMin: 2, seriesMin: 1, seriesMax: 1, numeroExercicios: 1 };
+    }
   }
+
+  return base;
 }
 
 function novoAquecimento(existentes: BlocoTemplate[], modalidade: ModalidadeHibrida): BlocoTemplate {
-  const chave = gerarChave("circuito", existentes);
+  const formato = "circuito";
+  const chave = gerarChave(formato, existentes);
   return {
     chave,
-    formato: "circuito",
+    formato,
+    presetId: `builtin:${formato}`,
     titulo: "Aquecimento",
     duracaoMin: 5,
     seriesMin: 4,
@@ -280,7 +287,19 @@ function BlocoConfigForm({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Formato</Label>
-          <Select value={bloco.formato} onValueChange={(v) => onChange({ formato: v as BlockFormatHibrido })}>
+          <Select 
+            value={bloco.presetId || (bloco.formato.startsWith('builtin:') ? bloco.formato : `builtin:${bloco.formato}`)} 
+            onValueChange={(v) => {
+              const p = useFormatRegistry().presets.find((pr: any) => pr.id === v);
+              if (p) {
+                onChange({ 
+                  formato: p.base,
+                  presetId: p.id,
+                  titulo: p.label
+                });
+              }
+            }}
+          >
             <SelectTrigger className="h-9">
               <SelectValue />
             </SelectTrigger>
@@ -629,17 +648,19 @@ export function ConstrutorMoldeDialog({
   const [blocos, setBlocos] = useState<SessaoTemplate>([]);
   const [abertoChave, setAbertoChave] = useState<string | null>(null);
 
-  function adicionarBloco(formato: BlockFormatHibrido) {
-    if (formato === "preparacao_movimento") {
-      const mob = novoBloco("preparacao_movimento", blocos, presets);
+  function adicionarBloco(presetId: string) {
+    const preset = presets.find(p => p.id === presetId);
+    if (!preset) return;
+
+    if (preset.base === "preparacao_movimento") {
+      const mob = novoBloco(preset, blocos, presets);
       const aq = novoAquecimento([...blocos, mob], modalidade);
-      // Garante que o bloco de mobilidade tenha o nome correto e o aquecimento também
       mob.titulo = "Mobilidade";
       aq.titulo = "Aquecimento";
       setBlocos((prev) => [...prev, mob, aq]);
       setAbertoChave(mob.chave);
     } else {
-      const b = novoBloco(formato, blocos, presets);
+      const b = novoBloco(preset, blocos, presets);
       setBlocos((prev) => [...prev, b]);
       setAbertoChave(b.chave);
     }
