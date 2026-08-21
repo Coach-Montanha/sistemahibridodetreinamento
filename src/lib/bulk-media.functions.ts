@@ -72,7 +72,7 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
           .insert({
             nome_pt: `[Pendente] ${data.name}`,
             coach_id: coachId,
-            metodologias: ['Musculação'],
+            metodologias: ['musculacao'],
             unilateral: false,
             criado_por_ia: false
           })
