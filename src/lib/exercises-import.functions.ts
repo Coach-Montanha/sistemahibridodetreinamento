@@ -181,7 +181,7 @@ async function translateCatalogExerciseInternal(catalogId: string, locale: strin
         instruction_steps_pt_br: translated.instruction_steps,
         translation_status: "draft",
         translation_source: "llm",
-        translation_model: "gemini-2.0-flash",
+        translation_model: "google/gemini-2.5-flash",
         updated_at: new Date().toISOString()
       }, { 
         onConflict: "catalog_exercise_id,locale" 
