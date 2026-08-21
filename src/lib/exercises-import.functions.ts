@@ -84,6 +84,8 @@ export const importExercises = createServerFn({ method: "POST" })
     }
   });
 
+// Função administrativa interna - não exportar como server function se possível, 
+// ou manter apenas para o job de tradução.
 export const translateCatalogBatch = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ 
     limit: z.number().optional().default(10),

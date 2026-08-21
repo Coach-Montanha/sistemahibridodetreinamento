@@ -51,6 +51,7 @@ import {
   Pencil,
   RotateCcw,
   Database,
+  ShieldAlert,
 } from "lucide-react";
 import { Copy, Wand2 } from "lucide-react";
 import { Palette, FolderArchive, KeyRound, Link } from "lucide-react";
@@ -61,6 +62,8 @@ import { ExerciseImportManager } from "@/components/exercises/ExerciseImportMana
 import { ExerciseBulkMediaUpload } from "@/components/admin/ExerciseBulkMediaUpload";
 import { MediaCorrelationDashboard } from "@/components/admin/MediaCorrelationDashboard";
 import { SettingsHeader, Fold, DiagnosticPanel } from "@/components/settings/settings-shell";
+import { CatalogTranslationManager } from "@/components/admin/CatalogTranslationManager";
+import { MediaAuditDashboard } from "@/components/admin/MediaAuditDashboard";
 import { KpiRow, type Kpi } from "@/components/settings/kpi-row";
 import { useCoachFiles, formatBytes } from "@/components/settings/use-coach-files";
 import { useCoach } from "@/hooks/use-coach";
@@ -152,6 +155,12 @@ const SECTIONS = [
     icon: Link,
   },
   { key: "arquivos", label: "Arquivos", hint: "Planilhas, PDFs e mídias", icon: FolderArchive },
+  {
+    key: "audit",
+    label: "Auditoria",
+    hint: "Limpeza e integridade de arquivos",
+    icon: ShieldAlert,
+  },
 ] as const;
 
 type SectionKey = (typeof SECTIONS)[number]["key"];
@@ -391,7 +400,16 @@ function ConfiguracoesPage() {
             title="Catálogo Externo"
             description="Gerencie a importação e curadoria de exercícios do repositório oficial."
           >
+            <CatalogTranslationManager />
             <ExerciseImportManager />
+          </Fold>
+        )}
+        {section === "audit" && (
+          <Fold
+            title="Auditoria e Integridade"
+            description="Identifique arquivos duplicados, órfãos ou com falha de vínculo para otimizar seu armazenamento."
+          >
+            <MediaAuditDashboard />
           </Fold>
         )}
         {section === "media-sync" && (

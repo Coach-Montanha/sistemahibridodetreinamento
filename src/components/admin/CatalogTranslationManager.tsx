@@ -70,7 +70,9 @@ export function CatalogTranslationManager() {
     return <div className="p-8 flex justify-center"><Loader2 className="animate-spin" /></div>;
   }
 
-  const progress = job ? Math.round(((job.processed_items || 0) / (job.total_items || 1)) * 100) : 0;
+  const processedItems = job?.processed_items ?? 0;
+  const totalItems = job?.total_items ?? 1;
+  const progress = Math.round((processedItems / totalItems) * 100);
   const isCompleted = job?.status === "completed";
 
   return (
@@ -108,7 +110,7 @@ export function CatalogTranslationManager() {
                 <div className="space-y-1">
                   <span className="text-sm font-medium">Progresso da Tradução</span>
                   <p className="text-xs text-muted-foreground">
-                    {job.processed_items} de {job.total_items} processados
+                    {processedItems} de {totalItems} processados
                   </p>
                 </div>
                 <Badge variant={isProcessing ? "default" : "secondary"}>
@@ -120,15 +122,15 @@ export function CatalogTranslationManager() {
               
               <div className="grid grid-cols-3 gap-4 py-4">
                 <div className="bg-muted/50 p-3 rounded-lg text-center">
-                  <div className="text-xl font-bold text-green-500">{job.success_count}</div>
+                  <div className="text-xl font-bold text-green-500">{job.success_count ?? 0}</div>
                   <div className="text-[10px] text-muted-foreground uppercase font-semibold">Sucessos</div>
                 </div>
                 <div className="bg-muted/50 p-3 rounded-lg text-center">
-                  <div className="text-xl font-bold text-destructive">{job.error_count}</div>
+                  <div className="text-xl font-bold text-destructive">{job.error_count ?? 0}</div>
                   <div className="text-[10px] text-muted-foreground uppercase font-semibold">Erros</div>
                 </div>
                 <div className="bg-muted/50 p-3 rounded-lg text-center">
-                  <div className="text-xl font-bold">{job.total_items - job.processed_items}</div>
+                  <div className="text-xl font-bold">{totalItems - processedItems}</div>
                   <div className="text-[10px] text-muted-foreground uppercase font-semibold">Restantes</div>
                 </div>
               </div>
