@@ -171,11 +171,11 @@ export function ExerciseBulkMediaUpload() {
       .insert({
         coach_id: coachId,
         total_files: pending.length,
-        status: 'running',
-        metadata: { client_timestamp: new Date().toISOString() }
-      })
+        status: 'running'
+      } as any)
       .select()
       .single();
+
 
 
     if (jobError) {
