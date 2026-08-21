@@ -123,7 +123,7 @@ export function ExerciseBulkMediaUpload() {
           if (result) {
             return { 
               ...f, 
-              status: result.success ? 'success' : 'error',
+              status: result.success ? 'registered' : 'error',
               error: result.error,
               match: result.linked && result.targetExerciseId ? { id: result.targetExerciseId, name: 'Vinculado' } : undefined
             };
