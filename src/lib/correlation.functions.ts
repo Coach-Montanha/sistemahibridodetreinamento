@@ -31,15 +31,24 @@ export const startMediaInventory = createServerFn({ method: "POST" })
           .from("exercise-media")
           .list(path, { limit: 1000 });
         
-        if (error) throw error;
+        if (error) {
+          console.error(`Erro ao listar ${path}:`, error);
+          return [];
+        }
         
         let allFiles: any[] = [];
         for (const file of (files || [])) {
-          if (file.id === undefined) { // É um diretório
-            const subFiles = await listRecursive(`${path}/${file.name}`);
+          // No Supabase Storage JS, um diretório costuma vir sem metadados específicos ou com nome mas sem ID/createdAt dependendo da versão.
+          // Verificamos se tem metadados de arquivo (como id ou metadata)
+          const isFile = !!file.id || !!file.metadata;
+          
+          if (!isFile) {
+            // É um diretório - note que o nome do diretório não deve ser concatenado se o path base já for o coachId
+            const subPath = path ? `${path}/${file.name}` : file.name;
+            const subFiles = await listRecursive(subPath);
             allFiles = [...allFiles, ...subFiles];
           } else {
-            allFiles.push({ ...file, fullPath: `${path}/${file.name}` });
+            allFiles.push({ ...file, fullPath: path ? `${path}/${file.name}` : file.name });
           }
         }
         return allFiles;
