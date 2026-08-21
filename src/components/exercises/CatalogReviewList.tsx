@@ -537,14 +537,26 @@ function CatalogItemReview({ item, onUpdated }: { item: any, onUpdated: () => vo
               </div>
             </div>
 
-            <Button 
-              className="w-full" 
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending}
-            >
-              {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              Salvar Tradução e Aprovar
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => saveMutation.mutate(false)}
+                disabled={saveMutation.isPending}
+              >
+                {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Salvar rascunho
+              </Button>
+              <Button 
+                className="flex-1" 
+                onClick={() => saveMutation.mutate(true)}
+                disabled={saveMutation.isPending}
+              >
+                {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                Salvar e aprovar
+              </Button>
+            </div>
+
           </div>
         </div>
       </ScrollArea>
