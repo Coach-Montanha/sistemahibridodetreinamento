@@ -86,6 +86,67 @@ export const importExercises = createServerFn({ method: "POST" })
 
 // Função administrativa interna - não exportar como server function se possível, 
 // ou manter apenas para o job de tradução.
+// Função administrativa interna para tradução em massa de exercícios do catálogo
+export const translateCatalogExercises = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ 
+    exerciseIds: z.array(z.string()).optional(),
+    limit: z.number().default(10),
+    offset: z.number().default(0)
+  }).parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { translateCatalogWithAI } = await import("@/lib/exercises-translate.server");
+
+    let query = supabaseAdmin
+      .from("exercise_catalog")
+      .select("id, nome_en, categoria, equipamento, grupo_muscular, padrao_movimento");
+    
+    if (data.exerciseIds && data.exerciseIds.length > 0) {
+      query = query.in("id", data.exerciseIds);
+    } else {
+      // Caso genérico: busca os que não têm tradução
+      query = query
+        .not("id", "in", (
+          supabaseAdmin
+            .from("exercise_catalog_translations")
+            .select("catalog_exercise_id")
+        ))
+        .range(data.offset, data.offset + data.limit - 1);
+    }
+
+    const { data: exercises, error: fetchError } = await query;
+    if (fetchError) throw fetchError;
+    if (!exercises || exercises.length === 0) return { success: 0, total: 0, errors: [] };
+
+    let success = 0;
+    const errors: string[] = [];
+
+    for (const ex of exercises) {
+      try {
+        const translation = await translateCatalogWithAI(ex);
+        
+        const { error: insError } = await supabaseAdmin
+          .from("exercise_catalog_translations")
+          .upsert({
+            catalog_exercise_id: ex.id,
+            nome_pt: translation.nome_pt,
+            categoria_pt: translation.categoria_pt,
+            equipamento_pt: translation.equipamento_pt,
+            grupo_muscular_pt: translation.grupo_muscular_pt,
+            padrao_movimento_pt: translation.padrao_movimento_pt,
+            status: 'draft'
+          });
+
+        if (insError) throw insError;
+        success++;
+      } catch (err: any) {
+        errors.push(`ID ${ex.id}: ${err.message}`);
+      }
+    }
+
+    return { success, total: exercises.length, errors };
+  });
+
 export const translateCatalogBatch = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ 
     limit: z.number().optional().default(10),

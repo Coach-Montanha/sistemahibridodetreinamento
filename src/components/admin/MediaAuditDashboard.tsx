@@ -50,6 +50,7 @@ export function MediaAuditDashboard() {
         toast.info(`Simulação: ${res.repaired} vínculos podem ser reparados.`);
       } else {
         toast.success(`${res.repaired} vínculos reparados com sucesso!`);
+        queryClient.invalidateQueries({ queryKey: ["latest-audit-report"] });
         queryClient.invalidateQueries({ queryKey: ["exercises"] });
       }
     }

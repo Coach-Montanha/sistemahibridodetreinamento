@@ -48,10 +48,11 @@ export const startMediaAudit = createServerFn({ method: "POST" })
 
       const allFoundFiles = await listRecursive(coachId);
 
-      // 3. Obter vínculos atuais
+      // 3. Obter vínculos atuais (filtrado pelo coach para segurança)
       const { data: existingMedia } = await supabaseAdmin
         .from("exercise_media")
-        .select("storage_path, exercise_id");
+        .select("storage_path, exercise_id")
+        .eq("coach_id", coachId);
 
       const linkedPaths = new Set(existingMedia?.map(m => m.storage_path) || []);
 

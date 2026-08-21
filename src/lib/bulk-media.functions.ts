@@ -86,10 +86,12 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
       console.log(`[bulk-media:register] Attempting idempotent upsert into exercise_media for exercise ${targetExerciseId}`);
       
       // Upsert idempotente baseado no exercise_id + storage_path
+      // Adicionamos coach_id para garantir que a mídia seja visível nas rotas do treinador
       const { error: dbError } = await supabaseAdmin
         .from("exercise_media")
         .upsert({
           exercise_id: targetExerciseId,
+          coach_id: coachId, // Importante para RLS
           storage_path: data.storagePath,
           url_publica: urlData.signedUrl,
           tipo: mediaType as any,
