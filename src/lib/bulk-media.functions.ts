@@ -15,7 +15,6 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     try {
-      // 1. Obter o coach_id real vinculado ao usuário autenticado via RPC administrativa
       const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
       console.log(`[bulk-media:register] Context userId: ${context.userId}, Resolved coachId: ${coachId}`);
 
@@ -23,7 +22,6 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
         throw new Error(`Não foi possível resolver o coach_id para o usuário ${context.userId}. Verifique se você possui um perfil de treinador.`);
       }
 
-      // 2. Verificar persistência no Storage antes de prosseguir
       const { data: listData, error: listError } = await supabaseAdmin.storage
         .from("exercise-media")
         .list(data.storagePath.split('/').slice(0, -2).join('/') + '/' + data.storagePath.split('/').slice(-2, -1)[0], {
@@ -37,14 +35,12 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
         throw new Error("Arquivo não encontrado no Storage após upload.");
       }
 
-      // 3. Generate long-lived URL
       const { data: urlData, error: urlError } = await supabaseAdmin.storage
         .from("exercise-media")
         .createSignedUrl(data.storagePath, 60 * 60 * 24 * 365 * 100);
         
       if (urlError) throw urlError;
 
-      // 4. Find target exercise (deve pertencer ao coach ou ser global)
       let targetExerciseId = null;
       
       if (data.sourceId) {
@@ -67,8 +63,6 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
         if (ex) targetExerciseId = ex.id;
       }
 
-      // 5. Se não encontrar exercício, NÃO criar placeholder artificial.
-      // O item permanecerá em media_import_items/media_correlation_items com status unlinked.
       if (!targetExerciseId) {
         return { 
           success: true, 
@@ -76,22 +70,24 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
           linked: false, 
           status: "needs_review",
           errorCode: "EXERCISE_NOT_MATCHED"
-        };
+        } as any;
       }
 
-      // 6. Registrar na exercise_media
       const mediaType = data.type.startsWith('video/') ? 'video' : 
                         (data.name.toLowerCase().endsWith('.gif') ? 'gif' : 'imagem');
 
-      console.log(`[bulk-media:register] Attempting insert into exercise_media for exercise ${targetExerciseId}`);
+      console.log(`[bulk-media:register] Attempting idempotent upsert into exercise_media for exercise ${targetExerciseId}`);
+      
       const { error: dbError } = await supabaseAdmin
         .from("exercise_media")
-        .insert({
+        .upsert({
           exercise_id: targetExerciseId,
           storage_path: data.storagePath,
           url_publica: urlData.signedUrl,
           tipo: mediaType as any,
           ordem: 0
+        }, { 
+          onConflict: 'exercise_id,storage_path' 
         });
         
       if (dbError) {
@@ -102,16 +98,16 @@ export const registerUploadedMedia = createServerFn({ method: "POST" })
       return { 
         success: true, 
         storagePath: data.storagePath, 
-        linked: true, // Sempre vinculado agora (seja real ou placeholder)
+        linked: true,
         targetExerciseId 
-      };
+      } as any;
     } catch (err: any) {
       console.error(`Falha no registro de ${data.name}:`, err);
       return { 
         success: false, 
         error: err.message,
         errorCode: err.code || 'REGISTRATION_ERROR'
-      };
+      } as any;
     }
   });
 
@@ -123,7 +119,6 @@ export const getMyCoachId = createServerFn({ method: "GET" })
     return coachId as string | null;
   });
 
-// Mantido por compatibilidade temporária se necessário, mas marcado como legado
 export const uploadMediaBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({

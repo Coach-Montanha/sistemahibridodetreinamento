@@ -55,11 +55,12 @@ Instruções (EN): ${JSON.stringify(exercise.instructions)}
 Passos (EN): ${JSON.stringify(exercise.instruction_steps)}
   `;
 
+  // Gemini 2.0 Flash é o modelo recomendado por estabilidade e custo/performance
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.0-flash",
       messages: [
         { role: "system", content: SYSTEM_PROMPT_TRANSLATION },
         { role: "user", content: prompt },
@@ -93,4 +94,11 @@ Passos (EN): ${JSON.stringify(exercise.instruction_steps)}
     console.error("Erro ao processar JSON da IA:", conteudo);
     throw new Error("Resposta da IA inválida");
   }
+}
+
+/**
+ * Tradutor específico para o Catálogo de Exercícios.
+ */
+export async function translateCatalogWithAI(exercise: any) {
+  return translateExercise(exercise);
 }
