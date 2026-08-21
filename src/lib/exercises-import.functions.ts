@@ -355,6 +355,26 @@ export const approveCatalogTranslation = createServerFn({ method: "POST" })
   .handler(async ({ data: { catalogId, status, approved } }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Se estiver aprovando, garantir que existe uma tradução draft para ser aprovada
+    if (status === 'approved') {
+      const { data: translation } = await supabaseAdmin
+        .from("exercise_catalog_translations")
+        .select("id")
+        .eq("catalog_exercise_id", catalogId)
+        .eq("locale", "pt-BR")
+        .maybeSingle();
+
+      if (translation) {
+        await supabaseAdmin
+          .from("exercise_catalog_translations")
+          .update({ 
+            translation_status: "approved",
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", translation.id);
+      }
+    }
+
     const { error } = await supabaseAdmin
       .from("exercise_catalog")
       .update({ 
