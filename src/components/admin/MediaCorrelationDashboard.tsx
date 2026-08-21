@@ -80,7 +80,7 @@ export function MediaCorrelationDashboard() {
         <div className="space-y-1">
           <h3 className="text-sm font-semibold">Status do Inventário</h3>
           <p className="text-xs text-muted-foreground">
-            {job ? `Última verificação em ${format(new Date(job.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}` : "Nenhum inventário realizado ainda."}
+            {job?.created_at ? `Última verificação em ${format(new Date(job.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}` : "Nenhum inventário realizado ainda."}
           </p>
         </div>
         <div className="flex gap-2">
