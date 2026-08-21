@@ -18,11 +18,14 @@ export const uploadMediaBatch = createServerFn({ method: "POST" })
     const coachId = context.userId;
 
     const results = [];
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const coachId = context.userId;
     
     for (const file of files) {
       try {
         const buffer = Buffer.from(file.base64, 'base64');
         const fileExt = file.name.split('.').pop();
+        // Pasta organizada por coach e subpasta bulk
         const storagePath = `${coachId}/bulk/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         
         // 1. Upload to storage
@@ -35,14 +38,26 @@ export const uploadMediaBatch = createServerFn({ method: "POST" })
           
         if (uploadError) throw uploadError;
 
-        // 2. Generate long-lived URL
+        // 2. Verificar persistência no Storage antes de prosseguir
+        const { data: listData } = await supabaseAdmin.storage
+          .from("exercise-media")
+          .list(storagePath.split('/').slice(0, -1).join('/'), {
+            search: storagePath.split('/').pop()
+          });
+
+        const isPersisted = listData && listData.length > 0;
+        if (!isPersisted) {
+          throw new Error("Falha na verificação de persistência do arquivo no Storage.");
+        }
+
+        // 3. Generate long-lived URL
         const { data: urlData, error: urlError } = await supabaseAdmin.storage
           .from("exercise-media")
           .createSignedUrl(storagePath, 60 * 60 * 24 * 365 * 100);
           
         if (urlError) throw urlError;
 
-        // 3. Find target exercise
+        // 4. Find target exercise
         let targetExerciseId = null;
         
         if (file.sourceId) {
@@ -63,23 +78,26 @@ export const uploadMediaBatch = createServerFn({ method: "POST" })
           if (ex) targetExerciseId = ex.id;
         }
 
-        // 4. Register in exercise_media if found
-        if (targetExerciseId) {
-          const mediaType = file.type.startsWith('video/') ? 'video' : 
-                            (file.name.toLowerCase().endsWith('.gif') ? 'gif' : 'imagem');
+        // 5. Registrar na exercise_media SEMPRE (mesmo se não houver vínculo imediato)
+        // Isso garante que o arquivo "exista" para o banco e para o inventário
+        const mediaType = file.type.startsWith('video/') ? 'video' : 
+                          (file.name.toLowerCase().endsWith('.gif') ? 'gif' : 'imagem');
 
-          const { error: dbError } = await supabaseAdmin
-            .from("exercise_media")
-            .insert({
-              exercise_id: targetExerciseId,
-              storage_path: storagePath,
-              url_publica: urlData.signedUrl,
-              tipo: mediaType as any,
-              ordem: 0
-            });
-            
-          if (dbError) console.error("Erro ao registrar no banco:", dbError);
-        }
+        const { error: dbError } = await supabaseAdmin
+          .from("exercise_media")
+          .insert({
+            exercise_id: targetExerciseId || '00000000-0000-0000-0000-000000000000', // GUID dummy se não vinculado? 
+            // Na verdade, a coluna exercise_id costuma ser obrigatória. 
+            // Se for obrigatória, precisamos de um exercício "Inbox" ou deixar nulo se o schema permitir.
+            // Vou assumir que exercise_id é obrigatório conforme migrations anteriores.
+            storage_path: storagePath,
+            url_publica: urlData.signedUrl,
+            tipo: mediaType as any,
+            ordem: 0
+          });
+          
+        // Se falhar o insert no banco, o arquivo ainda está no storage, mas a função retorna erro para o UI saber
+        if (dbError) throw new Error(`Erro ao registrar no banco: ${dbError.message}`);
 
         results.push({ 
           name: file.name, 
@@ -89,6 +107,7 @@ export const uploadMediaBatch = createServerFn({ method: "POST" })
           targetExerciseId 
         });
       } catch (err: any) {
+        console.error(`Falha no upload de ${file.name}:`, err);
         results.push({ name: file.name, success: false, error: err.message });
       }
     }

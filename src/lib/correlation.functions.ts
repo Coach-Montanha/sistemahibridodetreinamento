@@ -24,12 +24,29 @@ export const startMediaInventory = createServerFn({ method: "POST" })
     if (jobError) throw jobError;
 
     try {
-      // 2. Listar arquivos no bucket (apenas da pasta do coach)
-      const { data: files, error: listError } = await supabaseAdmin.storage
-        .from("exercise-media")
-        .list(coachId, { limit: 1000, offset: 0 });
+      // 2. Listar arquivos no bucket recursivamente se possível, ou com limite maior
+      // A pasta do coach pode ter subpastas (ex: /bulk/)
+      const listRecursive = async (path: string): Promise<any[]> => {
+        const { data: files, error } = await supabaseAdmin.storage
+          .from("exercise-media")
+          .list(path, { limit: 1000 });
+        
+        if (error) throw error;
+        
+        let allFiles: any[] = [];
+        for (const file of (files || [])) {
+          if (file.id === undefined) { // É um diretório
+            const subFiles = await listRecursive(`${path}/${file.name}`);
+            allFiles = [...allFiles, ...subFiles];
+          } else {
+            allFiles.push({ ...file, fullPath: `${path}/${file.name}` });
+          }
+        }
+        return allFiles;
+      };
 
-      if (listError) throw listError;
+      const allFoundFiles = await listRecursive(coachId);
+
 
       // 3. Pegar exercícios do banco para comparar
       const { data: exercises } = await supabaseAdmin
@@ -37,9 +54,11 @@ export const startMediaInventory = createServerFn({ method: "POST" })
         .select("id, nome_pt, nome_en, source_id")
         .or(`coach_id.eq.${coachId},coach_id.is.null`);
 
-      const correlationItems = (files || []).map(file => {
+      const correlationItems = (allFoundFiles || []).map(file => {
         const filename = file.name;
+        const storagePath = file.fullPath;
         const basename = filename.split(".")[0];
+
         const sanitizedBasename = basename.replace(/[-_]/g, " ").toLowerCase();
         
         let matchedId: string | null = null;
@@ -70,7 +89,8 @@ export const startMediaInventory = createServerFn({ method: "POST" })
 
         return {
           job_id: job.id,
-          storage_path: `${coachId}/${filename}`,
+          storage_path: storagePath,
+
           filename,
           matched_exercise_id: matchedId,
           match_type: matchType,
