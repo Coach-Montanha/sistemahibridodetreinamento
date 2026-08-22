@@ -406,6 +406,11 @@ export function normalizarPrescricaoHibrido(
   // O número de sessões é inferido pela resposta da IA ou, no fallback, assume 1
   const numSessoes = usedFallback ? 1 : sessoesRaw.length;
   const finalSessoes: PrescricaoHibridoSessao[] = [];
+  const avisosDiversidade: string[] = [];
+
+  // Uso acumulado ao longo de TODA a sequência (para rotação determinística)
+  const usoGlobal = new Map<string, number>();
+  let usadosSessaoAnterior = new Set<string>();
 
   for (let i = 0; i < numSessoes; i++) {
     const sRaw = sessoesRaw[i] || {};
@@ -436,21 +441,56 @@ export function normalizarPrescricaoHibrido(
 
       finalIds = Array.from(new Set(finalIds)).slice(0, bt.numeroExercicios);
 
-      // 2. Fallback determinístico por bloco: se faltar exercícios, pegar os primeiros do pool
+      // 2. Anti-repetição entre sessões consecutivas: se o pool comportar,
+      //    troca IDs que vieram da sessão anterior por alternativas frescas.
+      if (i > 0) {
+        const livres = poolCandidatos
+          .filter(
+            (c) =>
+              !usadosNaSessao.has(c.id) &&
+              !finalIds.includes(c.id) &&
+              !usadosSessaoAnterior.has(c.id),
+          )
+          .sort((a, b) => (usoGlobal.get(a.id) ?? 0) - (usoGlobal.get(b.id) ?? 0));
+
+        finalIds = finalIds.map((id) => {
+          if (!usadosSessaoAnterior.has(id)) return id;
+          const alt = livres.shift();
+          if (!alt) {
+            avisosDiversidade.push(
+              `Repetição inevitável no bloco "${bt.titulo ?? bt.formato}": pool insuficiente para evitar exercícios da sessão anterior.`,
+            );
+            return id;
+          }
+          return alt.id;
+        });
+      }
+
+      // 3. Fallback determinístico: completa com os candidatos menos usados,
+      //    preferindo os que não apareceram na sessão anterior.
       if (finalIds.length < bt.numeroExercicios) {
         const faltantes = bt.numeroExercicios - finalIds.length;
         const disponiveis = poolCandidatos
-          .filter(c => !usadosNaSessao.has(c.id) && !finalIds.includes(c.id))
-          .map(c => c.id);
-        
+          .filter((c) => !usadosNaSessao.has(c.id) && !finalIds.includes(c.id))
+          .sort((a, b) => {
+            const pa = (usadosSessaoAnterior.has(a.id) ? 1000 : 0) + (usoGlobal.get(a.id) ?? 0);
+            const pb = (usadosSessaoAnterior.has(b.id) ? 1000 : 0) + (usoGlobal.get(b.id) ?? 0);
+            return pa - pb;
+          })
+          .map((c) => c.id);
+
         finalIds.push(...disponiveis.slice(0, faltantes));
       }
 
-      finalIds.forEach(id => usadosNaSessao.add(id));
+      finalIds.forEach((id) => {
+        usadosNaSessao.add(id);
+        usoGlobal.set(id, (usoGlobal.get(id) ?? 0) + 1);
+      });
       return { chave: bt.chave, exerciciosIds: finalIds };
     });
 
     finalSessoes.push({ blocos });
+    usadosSessaoAnterior = usadosNaSessao;
   }
 
   return { 
@@ -458,7 +498,11 @@ export function normalizarPrescricaoHibrido(
     week_numbers: Array.isArray(json?.week_numbers) ? json.week_numbers : finalSessoes.map((_, i) => i + 1),
     notes: typeof json?.notes === "string" ? json.notes : (usedFallback ? "A IA não retornou o schema esperado; a sessão foi montada com fallback seguro." : "Sessões geradas com base no molde."),
     usedFallback,
-    avisos: usedFallback ? ["A IA não retornou o schema esperado; a sessão foi montada com fallback seguro."] : []
+    avisos: [
+      ...(usedFallback ? ["A IA não retornou o schema esperado; a sessão foi montada com fallback seguro."] : []),
+      ...Array.from(new Set(avisosDiversidade)),
+    ],
   } as any;
 }
+
 
