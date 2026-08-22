@@ -66,6 +66,55 @@ export const Route = createFileRoute("/_authenticated/app/programas")({
 
 const METHODS = Object.keys(METHODOLOGY_LABEL) as Methodology[];
 
+function montarEscopoHibridoContinuacao(p: any) {
+  const isHibrido = p?.metodologia === "hibrido" || p?.metodologia === "kettlebell_fitness";
+  const historico = (p?.program_weeks ?? [])
+    .flatMap((w: any) =>
+      (w.sessions ?? []).map((s: any) => ({
+        id: s.id,
+        titulo: s.titulo ?? "Sessão",
+        numero_dia: s.numero_dia,
+        blocks: (s.session_blocks ?? []).map((b: any) => ({
+          chave: b.chave || b.config?.chave || `b_${b.id}`,
+          formato: b.formato,
+          titulo: b.titulo,
+          duracaoMin: b.duracao_min,
+          seriesMin: b.config?.series || b.config?.rounds || 3,
+          seriesMax: b.config?.series || b.config?.rounds || 3,
+          numeroExercicios: b.session_block_exercises?.length || 1,
+          repsPorExercicio: b.session_block_exercises?.[0]?.reps || "12",
+          modoExecucao: b.config?.modo_execucao || "circuito",
+          descansoAposSeg: b.config?.descanso_apos_seg || 0,
+          selecaoExercicios: "ia" as const,
+          fonteExercicios: b.config?.fonteExercicios || { metodologias: [p.metodologia] },
+        })),
+      })),
+    )
+    .filter((s: any) => s.blocks.length > 0);
+
+  const diasPorSemana = p?.program_weeks?.[0]?.sessions?.length || 3;
+  const ultimoHistorico = historico[historico.length - 1];
+
+  return {
+    label: "Continuação de Programação",
+    semanas: p?.duracao_semanas || p?.program_weeks?.length || 1,
+    diasPorSemana,
+    hibrido: isHibrido
+      ? {
+          modalidade: p.metodologia,
+          tituloPrograma: p.titulo ?? "Continuar Progressão",
+          numeroSessoes: historico.length || diasPorSemana,
+          diasPorSemana,
+          dataInicio: new Date().toISOString(),
+          historicoSessoes: historico,
+          // O molde é obrigatório para a Server Function; não depender de
+          // mutação posterior de props nem enviar lista vazia.
+          sessaoTemplate: ultimoHistorico?.blocks ?? [],
+        }
+      : null,
+  };
+}
+
 function ProgramasPage() {
   return <ProgramasPanel />;
 }
@@ -377,44 +426,7 @@ export function ProgramasPanel({
         <Suspense fallback={null}>
           <PrescreverIaDialog
             programa={iaPrograma.p}
-            escopo={iaPrograma.isContinuation ? { 
-              label: "Continuação de Programação", 
-              semanas: iaPrograma.p.duracao_semanas || (iaPrograma.p.program_weeks?.length || 1),
-              diasPorSemana: iaPrograma.p.program_weeks?.[0]?.sessions?.length || 3,
-              hibrido: (iaPrograma.p.metodologia === "hibrido" || iaPrograma.p.metodologia === "kettlebell_fitness")
-                ? {
-                    modalidade: iaPrograma.p.metodologia as any,
-                    tituloPrograma: iaPrograma.p.titulo,
-                    // Espelha a produção anterior: soma total de sessões do histórico
-                    numeroSessoes: iaPrograma.p.program_weeks?.reduce((acc: number, w: any) => acc + (w.sessions?.length || 0), 0) || 12,
-                    diasPorSemana: iaPrograma.p.program_weeks?.[0]?.sessions?.length || 3,
-                    dataInicio: new Date().toISOString(),
-                    // Passamos as sessões anteriores com numero_dia para agrupamento por dia da semana
-                    historicoSessoes: iaPrograma.p.program_weeks?.flatMap((w: any) => 
-                      w.sessions?.map((s: any) => ({
-                        id: s.id,
-                        titulo: s.titulo,
-                        numero_dia: s.numero_dia,
-                        blocks: s.session_blocks?.map((b: any) => ({
-                          chave: b.chave || `b_${b.id}`,
-                          formato: b.formato,
-                          titulo: b.titulo,
-                          duracaoMin: b.duracao_min,
-                          seriesMin: b.config?.series || b.config?.rounds || 3,
-                          seriesMax: b.config?.series || b.config?.rounds || 3,
-                          numeroExercicios: b.session_block_exercises?.length || 1,
-                          repsPorExercicio: b.session_block_exercises?.[0]?.reps || "12",
-                          modoExecucao: b.config?.modo_execucao || "circuito",
-                          descansoAposSeg: b.descanso_apos_seg || 0,
-                          selecaoExercicios: "ia" as const,
-                          fonteExercicios: { metodologias: [iaPrograma.p.metodologia] }
-                        })) || []
-                      }))
-                    ).filter(Boolean) || [],
-                    sessaoTemplate: [] 
-                  }
-                : null
-            } : null}
+            escopo={iaPrograma.isContinuation ? montarEscopoHibridoContinuacao(iaPrograma.p) : null}
             onOpenChange={(o) => !o && setIaPrograma(null)}
           />
         </Suspense>
