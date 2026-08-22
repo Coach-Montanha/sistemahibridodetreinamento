@@ -298,6 +298,32 @@ export function montarHibridoPrompt(args: {
     `- Blocos "manual" devem ter seus "exercicios_fixos" repetidos fielmente.`,
     `- Gere ${payload.numeroSessoes} sessão(ões) que expandam logicamente o programa anterior, mas com NOVOS exercícios.`,
     "",
+    "DIRETRIZ DE DISTRIBUIÇÃO E VARIAÇÃO DA SEQUÊNCIA:",
+    "- Trate TODAS as sessões desta geração como uma única sequência progressiva e variada. NUNCA copie a mesma sessão, o mesmo bloco ou a mesma combinação de exercícios em dias diferentes.",
+    "- Direcionador de tempo TOTAL da sequência (não é regra rígida por exercício): ~36% movimentos ginásticos/peso corporal, ~28% halteres, ~36% kettlebell. Se a duração ou o número de blocos não permitir os percentuais exatos, use a distribuição inteira mais próxima e preserve a intenção geral. Informe no campo \"notes\" a distribuição aproximada realmente utilizada.",
+    "- Não invente equipamentos indisponíveis e não altere os equipamentos configurados no molde.",
+    "",
+    "REGRAS DE DIVERSIDADE ENTRE SESSÕES:",
+    "1. Mantenha registro interno dos exercise_id já usados em cada sessão e no conjunto da sequência.",
+    "2. Cada sessão deve ter composição diferente, com ao menos uma mudança relevante em: exercícios, ordem, padrão de movimento, foco, método ou combinação de blocos.",
+    "3. Não repita o mesmo exercício em sessões consecutivas; mantenha a sobreposição entre duas sessões consecutivas abaixo de 25%. Só repita antes disso se o pool for insuficiente ou o exercício for indispensável à progressão — nesse caso registre o motivo em \"notes\".",
+    "4. Não repita a mesma combinação completa de exercícios, o mesmo circuito A/B/C ou o mesmo conjunto de movimentos em outra sessão. Trocar apenas a ordem NÃO torna o treino diferente.",
+    "5. Faça rotação dos padrões de movimento conforme o molde permitir: agachar, dobrar quadril, empurrar, puxar, transportar, estabilizar o core, locomover, saltar, ginásticos. Evite a mesma sequência de padrões em todas as sessões.",
+    "6. Varie o foco das sessões de forma coerente, sem perder progressão. Rotação sugerida: técnica e controle; força e estabilidade; potência e velocidade; resistência e densidade; integração/condicionamento — adaptada aos blocos e formatos realmente configurados.",
+    "7. Preserve blocos, formatos, duração, séries, repetições, descansos e equipamentos definidos no molde. Esta diretriz orienta apenas a seleção e a variação dos exercícios.",
+    "8. Progressão gradual: aumente complexidade, densidade, amplitude, carga ou qualidade técnica só quando compatível com o nível do aluno e com o bloco. Nunca aumente todas as variáveis ao mesmo tempo.",
+    "",
+    "REGRAS POR CATEGORIA:",
+    "- Ginásticos/peso corporal: priorize controle corporal, estabilidade, apoio, suspensão, deslocamento, agachamento, empurrar, puxar e core, com progressões/regressões conforme o nível.",
+    "- Halteres: alterne bilateral e unilateral, planos de movimento e padrões de força. Evite sempre o mesmo empurrar ou o mesmo agachamento.",
+    "- Kettlebell: distribua dobradiça, agachamento, transporte, potência, estabilidade e controle; alterne balísticos e força/controle sem repetir a mesma sequência em sessões consecutivas.",
+    "",
+    "HISTÓRICO E VERIFICAÇÃO FINAL:",
+    "- Use o histórico dos treinos anteriores E o histórico das sessões geradas nesta mesma solicitação. Exclua ou penalize exercícios recém-utilizados antes de escolher novos.",
+    "- Se o pool for pequeno e a diversidade não for possível, use os melhores exercícios disponíveis e informe em \"notes\" quais repetições foram inevitáveis. Nunca apresente sessões idênticas como se fossem diferentes.",
+    "- Antes de finalizar, compare cada sessão com todas as anteriores da sequência, confirme a distribuição aproximada por tempo e substitua duplicações desnecessárias.",
+    "",
+
     setTypeRegistry ? `TIPOS DE SÉRIES DISPONÍVEIS: ${setTypeRegistry.map(t => `${t.label} (ID: ${t.id})`).join(" | ")}` : "",
     customFormats && customFormats.length > 0 ? `FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS: ${customFormats.map((f: any) => `${f.label} (ID: ${f.id})`).join(" | ")}` : "",
     historySection ? `\nCONTEXTO DO PROGRAMA (HISTÓRICO E PROGRESSÃO):\n${historySection}` : "",
@@ -380,6 +406,11 @@ export function normalizarPrescricaoHibrido(
   // O número de sessões é inferido pela resposta da IA ou, no fallback, assume 1
   const numSessoes = usedFallback ? 1 : sessoesRaw.length;
   const finalSessoes: PrescricaoHibridoSessao[] = [];
+  const avisosDiversidade: string[] = [];
+
+  // Uso acumulado ao longo de TODA a sequência (para rotação determinística)
+  const usoGlobal = new Map<string, number>();
+  let usadosSessaoAnterior = new Set<string>();
 
   for (let i = 0; i < numSessoes; i++) {
     const sRaw = sessoesRaw[i] || {};
@@ -410,21 +441,56 @@ export function normalizarPrescricaoHibrido(
 
       finalIds = Array.from(new Set(finalIds)).slice(0, bt.numeroExercicios);
 
-      // 2. Fallback determinístico por bloco: se faltar exercícios, pegar os primeiros do pool
+      // 2. Anti-repetição entre sessões consecutivas: se o pool comportar,
+      //    troca IDs que vieram da sessão anterior por alternativas frescas.
+      if (i > 0) {
+        const livres = poolCandidatos
+          .filter(
+            (c) =>
+              !usadosNaSessao.has(c.id) &&
+              !finalIds.includes(c.id) &&
+              !usadosSessaoAnterior.has(c.id),
+          )
+          .sort((a, b) => (usoGlobal.get(a.id) ?? 0) - (usoGlobal.get(b.id) ?? 0));
+
+        finalIds = finalIds.map((id) => {
+          if (!usadosSessaoAnterior.has(id)) return id;
+          const alt = livres.shift();
+          if (!alt) {
+            avisosDiversidade.push(
+              `Repetição inevitável no bloco "${bt.titulo ?? bt.formato}": pool insuficiente para evitar exercícios da sessão anterior.`,
+            );
+            return id;
+          }
+          return alt.id;
+        });
+      }
+
+      // 3. Fallback determinístico: completa com os candidatos menos usados,
+      //    preferindo os que não apareceram na sessão anterior.
       if (finalIds.length < bt.numeroExercicios) {
         const faltantes = bt.numeroExercicios - finalIds.length;
         const disponiveis = poolCandidatos
-          .filter(c => !usadosNaSessao.has(c.id) && !finalIds.includes(c.id))
-          .map(c => c.id);
-        
+          .filter((c) => !usadosNaSessao.has(c.id) && !finalIds.includes(c.id))
+          .sort((a, b) => {
+            const pa = (usadosSessaoAnterior.has(a.id) ? 1000 : 0) + (usoGlobal.get(a.id) ?? 0);
+            const pb = (usadosSessaoAnterior.has(b.id) ? 1000 : 0) + (usoGlobal.get(b.id) ?? 0);
+            return pa - pb;
+          })
+          .map((c) => c.id);
+
         finalIds.push(...disponiveis.slice(0, faltantes));
       }
 
-      finalIds.forEach(id => usadosNaSessao.add(id));
+      finalIds.forEach((id) => {
+        usadosNaSessao.add(id);
+        usoGlobal.set(id, (usoGlobal.get(id) ?? 0) + 1);
+      });
       return { chave: bt.chave, exerciciosIds: finalIds };
     });
 
     finalSessoes.push({ blocos });
+    usadosSessaoAnterior = usadosNaSessao;
   }
 
   return { 
@@ -432,7 +498,11 @@ export function normalizarPrescricaoHibrido(
     week_numbers: Array.isArray(json?.week_numbers) ? json.week_numbers : finalSessoes.map((_, i) => i + 1),
     notes: typeof json?.notes === "string" ? json.notes : (usedFallback ? "A IA não retornou o schema esperado; a sessão foi montada com fallback seguro." : "Sessões geradas com base no molde."),
     usedFallback,
-    avisos: usedFallback ? ["A IA não retornou o schema esperado; a sessão foi montada com fallback seguro."] : []
+    avisos: [
+      ...(usedFallback ? ["A IA não retornou o schema esperado; a sessão foi montada com fallback seguro."] : []),
+      ...Array.from(new Set(avisosDiversidade)),
+    ],
   } as any;
 }
+
 
