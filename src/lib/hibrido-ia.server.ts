@@ -452,6 +452,8 @@ export function normalizarPrescricaoHibrido(
 
       const poolCandidatos = candidatos[bt.chave] ?? [];
       const poolValido = new Set(poolCandidatos.map((c) => c.id));
+      const usadosNaSequencia = usadosNaSequenciaPorBloco.get(bt.chave) ?? new Set<string>();
+      usadosNaSequenciaPorBloco.set(bt.chave, usadosNaSequencia);
 
       // 1. Filtrar só IDs que REALMENTE existem no pool permitido para este bloco
       let finalIds = idsRecebidos.filter((id) => {
@@ -462,7 +464,14 @@ export function normalizarPrescricaoHibrido(
         return ok && !usadosNaSessao.has(id);
       });
 
+      // Prioriza IDs ainda não usados nesta sequência (a IA tende a repetir a mesma lista).
+      finalIds = [
+        ...finalIds.filter((id) => !usadosNaSequencia.has(id)),
+        ...finalIds.filter((id) => usadosNaSequencia.has(id)),
+      ];
+
       finalIds = Array.from(new Set(finalIds)).slice(0, bt.numeroExercicios);
+
 
       // 2. Anti-repetição entre sessões consecutivas: se o pool comportar,
       //    troca IDs que vieram da sessão anterior por alternativas frescas.
