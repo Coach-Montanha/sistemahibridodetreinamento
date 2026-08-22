@@ -121,7 +121,7 @@ export async function buildContinuationContext(
     return {
       titulo: b.titulo,
       formato: b.formato,
-      chave: b.id,
+      chave: config?.chave || b.id,
       numeroExercicios: bExs.length || 1,
       fonteExercicios: config?.fonteExercicios || { metodologias: [] }
     };

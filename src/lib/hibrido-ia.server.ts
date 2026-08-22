@@ -226,6 +226,24 @@ A estrutura de Kettlebell Fitness deve seguir rigorosamente:
 2. Aquecimento: selecionar 2-3 movimentos do equipamento ginástico e kettlebell (circuito, 5', 4 séries).
 3. Bloco Principal Kettlebell Fitness: a seleção deve ser de 90% a 100% de exercícios com equipamento kettlebell e de 0% a 10% de movimentos com equipamento ginástico.`;
 
+/** Diretriz padrão; instruções do treinador podem substituir os percentuais. */
+export const DIRETRIZ_VARIACAO_HIBRIDO = `DIRETRIZ PADRÃO DE DISTRIBUIÇÃO E VARIAÇÃO (EDITÁVEL):
+- Meta aproximada do tempo total: 36% movimentos ginásticos/peso corporal, 28% exercícios com halteres e 36% exercícios com kettlebell.
+- Em sequências curtas, aproxime os percentuais e informe a distribuição real; não trate a meta como regra rígida por exercício.
+- Não copie a mesma sessão, o mesmo circuito ou a mesma combinação de exercícios em dias diferentes.
+- Não repita o mesmo exercício em sessões consecutivas quando houver alternativas viáveis; busque sobreposição inferior a 25% entre sessões consecutivas.
+- Controle os IDs usados na sequência inteira e penalize exercícios recém-utilizados, sem repetir indiscriminadamente.
+- Varie padrões de movimento, ordem, foco e estímulo, mantendo os blocos, tempos, séries, repetições, descansos e equipamentos do molde.
+- Faça progressão coerente entre técnica/controle, força/estabilidade, potência/velocidade, resistência/densidade e integração.
+- Se o pool for insuficiente, informe a repetição inevitável e nunca apresente uma cópia idêntica como sessão nova.`;
+
+function instrucoesHibrido(instrucoes: string): string {
+  const custom = instrucoes.trim();
+  const possuiRegraDeDistribuicao = /(?:\d{1,3}\s*%.*(?:gin[aá]stic|halter|kettlebell)|(?:gin[aá]stic|halter|kettlebell).*\d{1,3}\s*%)/is.test(custom);
+  if (!custom) return DIRETRIZ_VARIACAO_HIBRIDO;
+  return possuiRegraDeDistribuicao ? custom : `${custom}\n\n${DIRETRIZ_VARIACAO_HIBRIDO}`;
+}
+
 /**
  * Monta o prompt único cobrindo toda a sequência de sessões.
  * A IA só precisa devolver, por sessão e por bloco (chave), a lista de IDs
@@ -332,7 +350,7 @@ export function montarHibridoPrompt(args: {
     JSON.stringify(blocosDescricao, null, 2),
     "",
     "INSTRUÇÕES DO TREINADOR:",
-    instrucoes.trim().length > 0 ? instrucoes.trim() : "Evolua o treino de forma equilibrada.",
+    instrucoesHibrido(instrucoes),
     "",
     `Responda APENAS em JSON válido no campo "notes" escreva um "RELATÓRIO DE EVOLUÇÃO" detalhando o que foi mudado em relação ao histórico. IMPORTANTE: Identifique o número da semana para cada sessão gerada no campo "week_numbers" (array de números inteiros paralela ao array de sessões):`,
     JSON.stringify(
@@ -395,6 +413,11 @@ export function normalizarPrescricaoHibrido(
       json = { sessoes: json };
     }
   }
+  // O modelo pode devolver a mesma lista para todas as sessões. Mantemos um
+  // conjunto por bloco para que a normalização prefira exercícios ainda não
+  // usados na sequência, sem repetir quando o pool for insuficiente.
+  const usadosNaSequenciaPorBloco = new Map<string, Set<string>>();
+
 
   const sessoesRaw = (!parseError && Array.isArray(json?.sessoes)) ? json.sessoes : [];
   const usedFallback = sessoesRaw.length === 0;

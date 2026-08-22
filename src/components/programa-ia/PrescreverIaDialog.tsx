@@ -45,10 +45,17 @@ import type { AiDay, AiPrescription } from "@/lib/prescricao-ia.server";
 import type { KbSportPayload } from "@/lib/kb-sport-ia.server";
 import type { WlPayload } from "@/lib/weightlifting-ia.server";
 import type { TfPayload } from "@/lib/funcional-ia.server";
-import type { HibridoPayload } from "@/lib/hibrido-ia.server";
+import type {
+  HibridoPayload,
+  PrescricaoHibrido,
+} from "@/lib/hibrido-ia.server";
 
 const PLACEHOLDER = `Ex.: Próxima fase focada em força máxima, mantendo a divisão A/B anterior mas reduzindo as repetições para 4-6 e aumentando o descanso.
 Priorizar exercícios básicos; manter o agachamento e o supino como primeiros movimentos da sessão.`;
+
+function isPrescricaoHibrido(value: unknown): value is PrescricaoHibrido {
+  return Boolean(value && Array.isArray((value as { sessoes?: unknown }).sessoes));
+}
 
 const EXEMPLOS = [
   {
@@ -219,6 +226,162 @@ const DiaCard = memo(function DiaCard({ dia, index }: { dia: AiDay; index: numbe
   );
 });
 
+const HibridoPreview = memo(function HibridoPreview({
+  prescricao,
+  template,
+}: {
+  prescricao: PrescricaoHibrido;
+  template: HibridoPayload["sessaoTemplate"];
+}) {
+  const labels = new Map(template.map((b) => [b.chave, b.titulo || b.formato]));
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h5 className="text-sm font-bold tracking-tight">
+          Sessões Geradas ({prescricao.sessoes.length})
+        </h5>
+        <Badge variant="outline" className="text-[10px] uppercase">
+          Modo: Híbrido por molde
+        </Badge>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {prescricao.sessoes.map((sessao, i) => (
+          <article key={i} className="rounded-xl border border-border/70 bg-card p-4">
+            <h4 className="text-sm font-semibold">Sessão {i + 1}</h4>
+            <div className="mt-3 space-y-2">
+              {sessao.blocos.map((bloco) => (
+                <div key={bloco.chave} className="rounded-lg border border-border/50 bg-muted/25 px-3 py-2">
+                  <p className="text-xs font-semibold text-primary">
+                    {labels.get(bloco.chave) ?? bloco.chave}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {bloco.exerciciosIds.length} exercício(s) vinculado(s) por ID real.
+                  </p>
+                  <p className="mt-1 break-all text-[10px] text-muted-foreground/80">
+                    {bloco.exerciciosIds.join(", ") || "Nenhum ID selecionado"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+async function salvarPrescricaoHibrida(args: {
+  programaId: string;
+  diasPorSemana: number;
+  prescricao: PrescricaoHibrido;
+  template: HibridoPayload["sessaoTemplate"];
+}): Promise<number> {
+  const { programaId, diasPorSemana, prescricao, template } = args;
+  if (template.length === 0) {
+    throw new Error("O molde da continuação está vazio. Feche e abra o programa novamente.");
+  }
+
+  const { data: semanasExistentes, error: we } = await supabase
+    .from("program_weeks")
+    .select("numero_semana")
+    .eq("program_id", programaId)
+    .order("numero_semana", { ascending: false })
+    .limit(1);
+  if (we) throw we;
+
+  const ultimaSemana = semanasExistentes?.[0]?.numero_semana ?? 0;
+  const weekMap = new Map<number, string>();
+  const dias = Math.max(1, diasPorSemana);
+
+  for (const [index, sessao] of prescricao.sessoes.entries()) {
+    const semanaNumero = ultimaSemana + Math.floor(index / dias) + 1;
+    if (!weekMap.has(semanaNumero)) {
+      const { data: semanaExistente, error: se } = await supabase
+        .from("program_weeks")
+        .select("id")
+        .eq("program_id", programaId)
+        .eq("numero_semana", semanaNumero)
+        .maybeSingle();
+      if (se) throw se;
+
+      if (semanaExistente) {
+        weekMap.set(semanaNumero, semanaExistente.id);
+      } else {
+        const { data: novaSemana, error: ne } = await supabase
+          .from("program_weeks")
+          .insert({ program_id: programaId, numero_semana: semanaNumero })
+          .select("id")
+          .single();
+        if (ne || !novaSemana) throw ne ?? new Error("Falha ao criar semana da continuação");
+        weekMap.set(semanaNumero, novaSemana.id);
+      }
+    }
+
+    const weekId = weekMap.get(semanaNumero)!;
+    const { data: ultimaSessao, error: le } = await supabase
+      .from("sessions")
+      .select("numero_dia")
+      .eq("program_week_id", weekId)
+      .order("numero_dia", { ascending: false })
+      .limit(1);
+    if (le) throw le;
+
+    const numeroDia = (ultimaSessao?.[0]?.numero_dia ?? 0) + 1;
+    const { data: sessaoRow, error: sessaoError } = await supabase
+      .from("sessions")
+      .insert({
+        program_week_id: weekId,
+        numero_dia: numeroDia,
+        titulo: `Sessão ${index + 1}`,
+        status: "rascunho",
+      })
+      .select("id")
+      .single();
+    if (sessaoError || !sessaoRow) throw sessaoError ?? new Error("Falha ao criar sessão");
+
+    for (const [ordem, blocoTemplate] of template.entries()) {
+      const blocoResultado = sessao.blocos.find((b) => b.chave === blocoTemplate.chave);
+      const ids = blocoResultado?.exerciciosIds ?? [];
+      if (ids.length === 0) continue;
+
+      const { data: blocoRow, error: blocoError } = await supabase
+        .from("session_blocks")
+        .insert({
+          session_id: sessaoRow.id,
+          ordem: ordem + 1,
+          formato: blocoTemplate.formato,
+          titulo: blocoTemplate.titulo ?? null,
+          duracao_min: blocoTemplate.duracaoMin,
+          config: {
+            chave: blocoTemplate.chave,
+            modo_execucao: blocoTemplate.modoExecucao,
+            descanso_apos_seg: blocoTemplate.descansoAposSeg,
+          },
+        })
+        .select("id")
+        .single();
+      if (blocoError || !blocoRow) throw blocoError ?? new Error("Falha ao criar bloco");
+
+      const rows = ids.map((exerciseId, exerciseIndex) => ({
+        session_block_id: blocoRow.id,
+        exercise_id: exerciseId,
+        nome_livre: null,
+        ordem: exerciseIndex + 1,
+        series: blocoTemplate.seriesMin,
+        reps: blocoTemplate.repsPorExercicio == null ? null : String(blocoTemplate.repsPorExercicio),
+        pct_1rm: blocoTemplate.percentual1rm ?? null,
+        descanso_seg: blocoTemplate.descansoEntreSeriesSeg ?? null,
+      }));
+      const { error: exerciseError } = await supabase
+        .from("session_block_exercises")
+        .insert(rows);
+      if (exerciseError) throw exerciseError;
+    }
+  }
+
+  return prescricao.sessoes.length;
+}
+
 export function PrescreverIaDialog({
   programa,
   escopo: escopoInicial,
@@ -255,11 +418,12 @@ export function PrescreverIaDialog({
   const [diasPorSemana, setDiasPorSemana] = useState(escopoInicial?.diasPorSemana || 3);
   const [historicoSessoes, setHistoricoSessoes] = useState(6);
   const [cooldownSessoes, setCooldownSessoes] = useState(3);
-  const [previa, setPrevia] = useState<AiPrescription | null>(null);
+  const [previa, setPrevia] = useState<AiPrescription | PrescricaoHibrido | null>(null);
   const [progresso, setProgresso] = useState<string[]>([]);
   const { presets: setTypes } = useSetTypeRegistry();
   const { presets: customFormats } = useFormatRegistry();
   const [moldeSelecionado, setMoldeSelecionado] = useState<string>("auto");
+  const isHibrido = metodologia === "hibrido" || metodologia === "kettlebell_fitness";
 
   // Efeito para carregar as regras persistidas do programa
   useEffect(() => {
@@ -298,23 +462,21 @@ export function PrescreverIaDialog({
     return Array.from(porDia.values()).sort((a, b) => (a.numero_dia ?? 0) - (b.numero_dia ?? 0));
   }, [escopoInicial?.hibrido?.historicoSessoes]);
 
-  // Atualiza o molde ao selecionar um histórico
-  useEffect(() => {
-    if (escopoInicial?.hibrido) {
-      if (moldeSelecionado === "auto") {
-        // Pega o molde mais recente disponível no histórico como padrão
-        const ultimo = moldesHistoricos[moldesHistoricos.length - 1];
-        if (ultimo) {
-          escopoInicial.hibrido.sessaoTemplate = ultimo.blocks;
-        }
-      } else {
-        const selected = moldesHistoricos.find(m => m.id === moldeSelecionado);
-        if (selected) {
-          escopoInicial.hibrido.sessaoTemplate = selected.blocks;
-        }
-      }
-    }
-  }, [moldeSelecionado, moldesHistoricos, escopoInicial?.hibrido]);
+  // Constrói um payload estável sem mutar `escopoInicial.hibrido`.
+  // A continuação precisa sempre enviar um molde real para o servidor.
+  const hibridoPayload = useMemo(() => {
+    const base = escopoInicial?.hibrido;
+    if (!base) return null;
+
+    const escolhido = moldeSelecionado === "auto"
+      ? moldesHistoricos[moldesHistoricos.length - 1]
+      : moldesHistoricos.find((m) => m.id === moldeSelecionado);
+
+    return {
+      ...base,
+      sessaoTemplate: escolhido?.blocks ?? base.sessaoTemplate ?? [],
+    };
+  }, [escopoInicial?.hibrido, moldesHistoricos, moldeSelecionado]);
 
   // Mapeamento de escolas por metodologia
   const ESCOLAS_DISPONIVEIS: Record<string, { value: string; label: string }[]> = useMemo(() => ({
@@ -429,16 +591,16 @@ export function PrescreverIaDialog({
             tf: tfInicial ?? null,
             co: coInicial ?? null,
             hibrido: (metodologia === "hibrido" || metodologia === "kettlebell_fitness")
-              ? { 
-                  ...(escopoInicial?.hibrido || {}),
-                  sessaoTemplate: escopoInicial?.hibrido?.sessaoTemplate || null,
+              ? {
+                  ...(hibridoPayload || {}),
+                  sessaoTemplate: hibridoPayload?.sessaoTemplate ?? [],
                   modalidade: metodologia,
                   tituloPrograma: programa.titulo ?? "Continuar Progressão",
                   numeroSessoes: totalSessoes,
                   diasPorSemana: diasPorSemana,
                   dataInicio: escopoInicial?.dataInicio ?? new Date().toISOString().slice(0, 10),
-                  escola: escola !== "auto" ? escola : null
-                } 
+                  escola: escola !== "auto" ? escola : null,
+                }
               : null,
             setTypes: setTypes,
             customFormats: customFormats,
@@ -476,7 +638,7 @@ export function PrescreverIaDialog({
           };
         });
       }
-      setPrevia(res);
+      setPrevia(res as AiPrescription | PrescricaoHibrido);
       setTimeout(() => setProgresso([]), 1000);
     },
 
@@ -530,6 +692,20 @@ export function PrescreverIaDialog({
     mutationFn: async () => {
       if (!programa || !previa) throw new Error("Nada para salvar");
 
+      const isHibridoPreview = isHibrido && isPrescricaoHibrido(previa);
+
+      if (isHibridoPreview) {
+        await salvarPrescricaoHibrida({
+          programaId: programa.id,
+          diasPorSemana,
+          prescricao: previa,
+          template: hibridoPayload?.sessaoTemplate ?? [],
+        });
+      }
+
+      if (isHibridoPreview) {
+        // O retorno Híbrido já foi persistido por blocos e IDs reais.
+      } else {
       // Semana inicial: a última existente + 1, ou 1.
       const { data: semanasExistentes, error: we } = await supabase
         .from("program_weeks")
@@ -544,7 +720,8 @@ export function PrescreverIaDialog({
       // Mapeia semanas do JSON para IDs no banco
       const weekMap = new Map<number, string>();
 
-      for (const dia of previa.days) {
+      const diasPrevia = (previa as AiPrescription).days;
+      for (const dia of diasPrevia) {
         // Se a IA não mandou week_number, assume que tudo vai pra próxima semana
         const weekOffset = dia.week_number || 1;
         const targetWeekNum = ultimaSemanaReal + weekOffset;
@@ -640,6 +817,8 @@ export function PrescreverIaDialog({
         }
       }
 
+      }
+
       // Proveniência: guarda prompt + timestamp sem criar coluna nova.
       const { data: prog } = await supabase
         .from("programs")
@@ -665,7 +844,9 @@ export function PrescreverIaDialog({
         })
         .eq("id", programa.id);
 
-      return previa.days.length;
+      return isHibridoPreview
+        ? (previa as PrescricaoHibrido).sessoes.length
+        : (previa as AiPrescription).days.length;
     },
     onSuccess: (n) => {
       toast.success(`${n} treino(s) adicionado(s) à rotina`);
@@ -1040,21 +1221,28 @@ export function PrescreverIaDialog({
                 </div>
               )}
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h5 className="text-sm font-bold tracking-tight">
-                    Sessões Geradas ({previa.days.length})
-                  </h5>
-                  <Badge variant="outline" className="text-[10px] uppercase">
-                    Modo: Evolução em Bloco
-                  </Badge>
+              {isPrescricaoHibrido(previa) ? (
+                <HibridoPreview
+                  prescricao={previa}
+                  template={hibridoPayload?.sessaoTemplate ?? []}
+                />
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-sm font-bold tracking-tight">
+                      Sessões Geradas ({previa.days.length})
+                    </h5>
+                    <Badge variant="outline" className="text-[10px] uppercase">
+                      Modo: Evolução em Bloco
+                    </Badge>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {previa.days.map((dia, i) => (
+                      <DiaCard key={i} dia={dia} index={i} />
+                    ))}
+                  </div>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {previa.days.map((dia, i) => (
-                    <DiaCard key={i} dia={dia} index={i} />
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
           ) : (
             !gerarMut.isPending && (
