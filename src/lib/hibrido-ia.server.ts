@@ -505,8 +505,14 @@ export function normalizarPrescricaoHibrido(
         const disponiveis = poolCandidatos
           .filter((c) => !usadosNaSessao.has(c.id) && !finalIds.includes(c.id))
           .sort((a, b) => {
-            const pa = (usadosSessaoAnterior.has(a.id) ? 1000 : 0) + (usoGlobal.get(a.id) ?? 0);
-            const pb = (usadosSessaoAnterior.has(b.id) ? 1000 : 0) + (usoGlobal.get(b.id) ?? 0);
+            const pa =
+              (usadosSessaoAnterior.has(a.id) ? 1000 : 0) +
+              (usadosNaSequencia.has(a.id) ? 100 : 0) +
+              (usoGlobal.get(a.id) ?? 0);
+            const pb =
+              (usadosSessaoAnterior.has(b.id) ? 1000 : 0) +
+              (usadosNaSequencia.has(b.id) ? 100 : 0) +
+              (usoGlobal.get(b.id) ?? 0);
             return pa - pb;
           })
           .map((c) => c.id);
@@ -516,9 +522,11 @@ export function normalizarPrescricaoHibrido(
 
       finalIds.forEach((id) => {
         usadosNaSessao.add(id);
+        usadosNaSequencia.add(id);
         usoGlobal.set(id, (usoGlobal.get(id) ?? 0) + 1);
       });
       return { chave: bt.chave, exerciciosIds: finalIds };
+
     });
 
     finalSessoes.push({ blocos });
