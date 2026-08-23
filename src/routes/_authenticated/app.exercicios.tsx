@@ -80,6 +80,7 @@ function ExerciciosPage() {
   const { data: coach } = useCoach();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+
   const [metFilter, setMetFilter] = useState<Methodology | "todos">("todos");
   const [equipFilter, setEquipFilter] = useState<Equipamento | "todos">("todos");
   const [untaggedOnly, setUntaggedOnly] = useState(false);
@@ -210,11 +211,8 @@ function ExerciciosPage() {
   const location = useLocation();
   const isDuplicados = location.pathname.includes("/duplicados");
 
-  if (isDuplicados) {
-    return <Outlet />;
-  }
-
   return (
+
     <div className="mx-auto max-w-6xl p-6">
       <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:items-center sm:justify-between">
         <div className="min-w-0">
@@ -236,6 +234,18 @@ function ExerciciosPage() {
             {selectionMode ? "Cancelar seleção" : "Selecionar"}
           </Button>
           <Button
+            variant="outline"
+            onClick={() => {
+              navigate({ to: "/app/exercicios/duplicados" as any });
+            }}
+            className="gap-2"
+          >
+            <GitMerge className="h-4 w-4" />
+            Limpar duplicados
+          </Button>
+
+
+          <Button
           onClick={() => {
             setEditing(null);
             setOpen(true);
@@ -245,6 +255,10 @@ function ExerciciosPage() {
         </Button>
         </div>
       </div>
+
+      {isDuplicados ? <Outlet /> : (
+        <>
+
 
       {tagStats && tagStats.total > 0 && (
         <TagCoverage
@@ -580,9 +594,12 @@ function ExerciciosPage() {
           qc.invalidateQueries({ queryKey: ["exercises"] });
         }}
       />
+        </>
+      )}
     </div>
   );
 }
+
 
 function EquipChip({
   label,
@@ -1179,6 +1196,39 @@ function DuplicateResolverDialog({
                         )}
                       </Button>
                     )}
+                    {(!isGlobal || (isGlobal && coachId)) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={async () => {
+                          if (isGlobal) {
+                            // Se for global, apenas fecha esse fluxo (o usuário já sabe que não pode deletar o original)
+                            // ou poderíamos dar a opção de "Esconder" (soft delete) no futuro.
+                            // Por ora, se ele clicou aqui num global, apenas orientamos.
+                            toast.info("Exercícios globais não podem ser excluídos, mas você pode renomear sua nova versão.");
+                          } else if (confirm(`Deseja excluir permanentemente "${ex.nome_pt}"?`)) {
+                            setBusyId(ex.id);
+                            try {
+                              const { error } = await supabase.from("exercises").delete().eq("id", ex.id);
+                              if (error) throw error;
+                              toast.success("Exercício excluído");
+                              // Remove da lista de candidatos local para não precisar re-fetch imediato no dialog
+                              onMerged(); // Reutilizamos o callback de merge para fechar e atualizar
+                            } catch (e: any) {
+                              toast.error(e.message);
+                            } finally {
+                              setBusyId(null);
+                            }
+                          }
+                        }}
+                        disabled={busy}
+                      >
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                        Excluir duplicado
+                      </Button>
+                    )}
+
                   </div>
                 </div>
               </div>
