@@ -214,7 +214,7 @@ function ExerciciosPage() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">Banco de Exercícios</h1>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            se eu adicionei direto do github 1000 exercícios, vinculei a gif, onde esses movimentos estão? Na janela de exercícios, principalmente em todos, eu preciso ter acesso ao número exato de exercícios cadastrados. Na criação de treinos, seja manual ou IA, preciso ter acesso direto a esse banco de dados atualizado.
+            Acesso completo ao banco de dados pessoal de exercícios. Gerencie, edite e organize todos os movimentos utilizados na prescrição de treinos de forma independente.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-2">

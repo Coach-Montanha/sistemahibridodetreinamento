@@ -125,7 +125,7 @@ export const importExercises = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ dryRun: z.boolean().default(false) }).parse(data))
   .handler(async () => {
-    return { success: true, message: "Importação disparada", inserted: 0 };
+    return { success: true, message: "A conexão com GitHub foi desativada.", inserted: 0 };
   });
 
 export type ProjectionResult = {
