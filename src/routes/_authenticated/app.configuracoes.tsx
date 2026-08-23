@@ -1034,19 +1034,6 @@ function FormatosPanel() {
 
   function handleSave(next: FormatPreset) {
     if (next.builtin) {
-      // Salva tudo em uma única operação, incluindo a estrutura (base) do bloco.
-      saveBuiltin(next.id, {
-        label: next.label,
-        base: next.base,
-        set_type_id: next.set_type_id,
-        description: next.description,
-        defaults: next.defaults,
-      });
-    } else if (!next.id) {
-      addCustom({
-        label: next.label || "Novo formato",
-        base: next.base,
-        set_type_id: next.set_type_id,
       saveBuiltin(next.id, {
         label: next.label,
         base: next.base,
