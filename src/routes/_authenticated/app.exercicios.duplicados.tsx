@@ -150,25 +150,31 @@ function DuplicadosPage() {
                       </div>
 
                       <div className="flex shrink-0 gap-2">
-                        {!isGlobal && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 gap-1.5"
-                            onClick={async () => {
-                              const others = group.items.filter((i: any) => i.id !== ex.id).map((i: any) => i.id);
-                              if (confirm(`Deseja fundir todos os outros exercícios deste grupo em "${ex.nome_pt}"?`)) {
-                                setBusyId(ex.id);
-                                await mergeMutation.mutateAsync({ keeperId: ex.id, duplicateIds: others });
-                                setBusyId(null);
-                              }
-                            }}
-                            disabled={!!busyId}
-                          >
-                            <GitMerge className="h-3.5 w-3.5" />
-                            Manter e Fundir
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1.5"
+                          onClick={async () => {
+                            const duplicateIds = group.items
+                              .filter((i: any) => i.id !== ex.id && i.coach_id === coach?.id)
+                              .map((i: any) => i.id);
+                            
+                            if (duplicateIds.length === 0) {
+                              toast.info("Não há exercícios pessoais neste grupo para fundir neste item.");
+                              return;
+                            }
+
+                            if (confirm(`Deseja fundir os ${duplicateIds.length} exercícios pessoais deste grupo em "${ex.nome_pt}"?`)) {
+                              setBusyId(ex.id);
+                              await mergeMutation.mutateAsync({ keeperId: ex.id, duplicateIds });
+                              setBusyId(null);
+                            }
+                          }}
+                          disabled={!!busyId}
+                        >
+                          {isBusy && busyId === ex.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitMerge className="h-3.5 w-3.5" />}
+                          Manter e Fundir
+                        </Button>
                         
                         {!isGlobal && (
                           <Button
@@ -176,7 +182,7 @@ function DuplicadosPage() {
                             size="sm"
                             className="h-8 text-destructive hover:bg-destructive/10"
                             onClick={async () => {
-                              if (confirm(`Excluir permanentemente "${ex.nome_pt}"?`)) {
+                              if (confirm(`Excluir permanentemente seu exercício "${ex.nome_pt}"?`)) {
                                 setBusyId(ex.id);
                                 await deleteMutation.mutateAsync(ex.id);
                                 setBusyId(null);
@@ -184,7 +190,7 @@ function DuplicadosPage() {
                             }}
                             disabled={!!busyId}
                           >
-                            {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                            {isBusy && busyId === ex.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                           </Button>
                         )}
                       </div>
