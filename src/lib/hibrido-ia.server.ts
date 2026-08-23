@@ -154,7 +154,7 @@ export async function buscarCandidatosDoMolde(
       .select("id, nome_pt")
       .not("nome_pt", "ilike", "[Pendente] %")
       .order("nome_pt")
-      .limit(60);
+      .limit(1000);
 
     // Regras de conexão Bloco -> Equipamento (e Metodologia quando implícito)
     const metodologias = [...(bloco.fonteExercicios.metodologias ?? [])];
