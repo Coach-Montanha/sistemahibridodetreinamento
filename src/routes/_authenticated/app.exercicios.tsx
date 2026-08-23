@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Outlet, useLocation } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -199,6 +199,13 @@ function ExerciciosPage() {
   function exitSelectionMode() {
     setSelectionMode(false);
     clearSelection();
+  }
+
+  const location = useLocation();
+  const isDuplicados = location.pathname.includes("/duplicados");
+
+  if (isDuplicados) {
+    return <Outlet />;
   }
 
   return (
