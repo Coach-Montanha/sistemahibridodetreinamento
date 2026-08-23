@@ -1695,9 +1695,38 @@ function BulkEditDialog({
             </div>
           </section>
 
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Padrão de Movimento</h3>
+            <ModeTabs value={padraoMode} onChange={setPadraoMode} disabled={applying} />
+            <Input
+              placeholder="Ex: squat, hinge, push..."
+              value={padraoValue}
+              onChange={(e) => setPadraoValue(e.target.value)}
+              disabled={padraoMode === "manter" || applying}
+            />
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Unilateral</h3>
+            <div className="flex gap-2">
+              {(["manter", "sim", "nao"] as const).map((m) => (
+                <Button
+                  key={m}
+                  variant={unilateralMode === m ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setUnilateralMode(m)}
+                  className="flex-1 capitalize"
+                  disabled={applying}
+                >
+                  {m}
+                </Button>
+              ))}
+            </div>
+          </section>
+
           <div className="rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2.5">
             <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              Prévia
+              Prévia das Alterações
             </p>
             <p className="mt-1 text-xs leading-relaxed text-foreground/90">
               {summary()}
@@ -1708,8 +1737,47 @@ function BulkEditDialog({
             <div className="space-y-1.5">
               <Progress value={progress} className="h-1.5" />
               <p className="text-[11px] text-muted-foreground">
-                Aplicando… {progress}%
+                Processando... {progress}%
               </p>
+            </div>
+          )}
+
+          {!applying && (
+            <div className="pt-2">
+              {showDeleteConfirm ? (
+                <div className="flex flex-col gap-2 rounded-lg border border-destructive/50 bg-destructive/5 p-3">
+                  <p className="text-xs font-medium text-destructive">
+                    Tem certeza? Isso removerá permanentemente os exercícios selecionados que foram criados por você.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="flex-1"
+                      onClick={bulkDelete}
+                    >
+                      Confirmar Exclusão
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowDeleteConfirm(false)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir Selecionados
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -1722,7 +1790,7 @@ function BulkEditDialog({
             onClick={() => onOpenChange(false)}
             disabled={applying}
           >
-            Cancelar
+            Fechar
           </Button>
           <Button
             size="sm"
@@ -1738,7 +1806,7 @@ function BulkEditDialog({
             ) : (
               <>
                 <Wand2 className="h-3.5 w-3.5" />
-                Aplicar em {selectedIds.length}
+                Salvar Alterações
               </>
             )}
           </Button>
