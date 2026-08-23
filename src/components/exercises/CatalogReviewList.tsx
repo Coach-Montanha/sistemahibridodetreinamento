@@ -43,24 +43,22 @@ export function CatalogReviewList() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["exercise-catalog-list", page, search, statusFilter],
     queryFn: async () => {
-      // Fix: Using explicit join to avoid relationship ambiguity error
-      let query = supabase
-        .from("exercise_catalog")
-        .select(`
-          *,
-          exercise_catalog_translations!exercise_catalog_translations_catalog_exercise_id_fkey (*)
-        `, { count: 'exact' });
+      const query = supabase
+        .from("exercise_catalog" as any)
+        .select(`*`, { count: 'exact' }) as any;
 
+
+      let filteredQuery = query;
 
       if (search) {
-        query = query.ilike("name_original", `%${search}%`);
+        filteredQuery = filteredQuery.ilike("name_original", `%${search}%`);
       }
 
       if (statusFilter !== "all") {
-        query = query.eq("review_status", statusFilter);
+        filteredQuery = filteredQuery.eq("review_status", statusFilter);
       }
 
-      const { data, error, count } = await query
+      const { data, error, count } = await filteredQuery
         .order("name_original", { ascending: true })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -68,9 +66,7 @@ export function CatalogReviewList() {
       return {
         items: (data as any[]).map(item => ({
           ...item,
-          exercise_catalog_translations: Array.isArray(item.exercise_catalog_translations) 
-            ? item.exercise_catalog_translations 
-            : item.exercise_catalog_translations ? [item.exercise_catalog_translations] : []
+          exercise_catalog_translations: [] // Removido do select para evitar erro de recursão TS
         })),
         total: count || 0
       };

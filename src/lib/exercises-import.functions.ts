@@ -54,21 +54,21 @@ export const saveCatalogTranslationDraft = createServerFn({ method: "POST" })
     // Aprovar libera projeção; salvar rascunho não altera o estado de revisão.
     if (data.approve) {
       const { error } = await supabaseAdmin
-        .from("exercise_catalog")
+        .from("exercise_catalog" as any)
         .update({ review_status: "approved", approved_for_projection: true } as any)
         .eq("id", data.catalogId);
       if (error) throw new Error(error.message);
     }
 
     const { data: confirm } = await supabaseAdmin
-      .from("exercise_catalog_translations")
+      .from("exercise_catalog_translations" as any)
       .select("id, name_pt_br, translation_status")
       .eq("id", translationId)
       .maybeSingle();
 
     if (!confirm) throw new Error("Não foi possível confirmar a gravação da tradução.");
 
-    return { success: true, translationId, status: confirm.translation_status, name: confirm.name_pt_br };
+    return { success: true, translationId, status: (confirm as any).translation_status, name: (confirm as any).name_pt_br };
   });
 
 export const approveCatalogTranslation = createServerFn({ method: "POST" })
@@ -82,7 +82,7 @@ export const approveCatalogTranslation = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     const { error } = await supabaseAdmin
-      .from("exercise_catalog")
+      .from("exercise_catalog" as any)
       .update({ 
         review_status: data.status, 
         approved_for_projection: data.approved 
@@ -93,7 +93,7 @@ export const approveCatalogTranslation = createServerFn({ method: "POST" })
 
     if (data.approved) {
       await supabaseAdmin
-        .from("exercise_catalog_translations")
+        .from("exercise_catalog_translations" as any)
         .update({ translation_status: 'approved' } as any)
         .eq("catalog_exercise_id", data.catalogId);
     }
@@ -158,7 +158,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
     for (;;) {
       const { data: approved, error } = await supabaseAdmin
-        .from("exercise_catalog")
+        .from("exercise_catalog" as any)
         .select("id, name_original, source, source_exercise_id, projected_exercise_id")
         .eq("approved_for_projection", true)
         .order("imported_at", { ascending: true })
@@ -170,48 +170,48 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
       for (const item of approved) {
         // Tradução PT-BR aprovada buscada separadamente (sem relação aninhada ambígua).
         const { data: traducoes, error: tErr } = await supabaseAdmin
-          .from("exercise_catalog_translations")
+          .from("exercise_catalog_translations" as any)
           .select("*")
-          .eq("catalog_exercise_id", item.id)
-          .eq("locale", "pt-BR")
+          .eq("catalog_exercise_id" as any, (item as any).id)
+          .eq("locale" as any, "pt-BR")
           .order("updated_at", { ascending: false })
           .limit(5);
 
         if (tErr) {
           skipped++; bump("database_error");
-          details.push({ id: item.id, name: item.name_original, reason: "database_error" });
+          details.push({ id: (item as any).id, name: (item as any).name_original, reason: "database_error" });
           continue;
         }
 
         const traducao =
           (traducoes ?? []).find((t: any) => t.translation_status === "approved") ?? (traducoes ?? [])[0];
 
-        if (!traducao || !traducao.name_pt_br) {
+        if (!traducao || !(traducao as any).name_pt_br) {
           skipped++; bump("missing_translation");
-          details.push({ id: item.id, name: item.name_original, reason: "missing_translation" });
+          details.push({ id: (item as any).id, name: (item as any).name_original, reason: "missing_translation" });
           continue;
         }
 
         const payload = {
-          nome_pt: traducao.name_pt_br,
-          nome_en: item.name_original,
-          padrao_movimento: traducao.body_part_pt_br ?? null,
-          grupos_musculares: traducao.muscle_group_pt_br ? [traducao.muscle_group_pt_br] : [],
-          equipamento: traducao.equipment_pt_br ? [traducao.equipment_pt_br] : [],
-          instrucoes: traducao.instructions_pt_br ?? null,
-          source: item.source ?? "catalog",
-          source_id: item.source_exercise_id,
+          nome_pt: (traducao as any).name_pt_br,
+          nome_en: (item as any).name_original,
+          padrao_movimento: (traducao as any).body_part_pt_br ?? null,
+          grupos_musculares: (traducao as any).muscle_group_pt_br ? [(traducao as any).muscle_group_pt_br] : [],
+          equipamento: (traducao as any).equipment_pt_br ? [(traducao as any).equipment_pt_br] : [],
+          instrucoes: (traducao as any).instructions_pt_br ?? null,
+          source: (item as any).source ?? "catalog",
+          source_id: (item as any).source_exercise_id,
         };
 
         // Já projetado -> reprojeta no MESMO exercises.id (sem duplicar).
-        if (item.projected_exercise_id) {
+        if ((item as any).projected_exercise_id) {
           const { error: upErr } = await supabaseAdmin
             .from("exercises")
             .update(payload as any)
-            .eq("id", item.projected_exercise_id);
+            .eq("id", (item as any).projected_exercise_id);
           if (upErr) {
             skipped++; bump("database_error");
-            details.push({ id: item.id, name: item.name_original, reason: `database_error: ${upErr.message}` });
+            details.push({ id: (item as any).id, name: (item as any).name_original, reason: `database_error: ${upErr.message}` });
           } else {
             updated++; bump("reprojected");
           }
@@ -232,7 +232,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
           const { error: upErr } = await supabaseAdmin.from("exercises").update(payload as any).eq("id", exerciseId);
           if (upErr) {
             skipped++; bump("database_error");
-            details.push({ id: item.id, name: item.name_original, reason: `database_error: ${upErr.message}` });
+            details.push({ id: (item as any).id, name: (item as any).name_original, reason: `database_error: ${upErr.message}` });
             continue;
           }
           updated++;
@@ -244,7 +244,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
             .single();
           if (insErr || !novo) {
             skipped++; bump("database_error");
-            details.push({ id: item.id, name: item.name_original, reason: `database_error: ${insErr?.message}` });
+            details.push({ id: (item as any).id, name: (item as any).name_original, reason: `database_error: ${insErr?.message}` });
             continue;
           }
           exerciseId = novo.id;
@@ -252,12 +252,12 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
         }
 
         const { error: linkErr } = await supabaseAdmin
-          .from("exercise_catalog")
+          .from("exercise_catalog" as any)
           .update({ projected_exercise_id: exerciseId } as any)
-          .eq("id", item.id);
+          .eq("id", (item as any).id);
         if (linkErr) {
           bump("link_error");
-          details.push({ id: item.id, name: item.name_original, reason: `link_error: ${linkErr.message}` });
+          details.push({ id: (item as any).id, name: (item as any).name_original, reason: `link_error: ${linkErr.message}` });
         }
       }
 
