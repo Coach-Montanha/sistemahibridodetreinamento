@@ -2246,7 +2246,7 @@ function SortableBloco({
             <NumField label="Exercícios" value={bloco.num_exercicios} min={1} max={20}
               onChange={(n) => onChange({ ...bloco, num_exercicios: Math.max(1, n) })} />
             <NumField label="Séries" value={bloco.series ?? 0} min={1} max={20}
-              onChange={(n) => onChange({ ...bloco, series: n || 0 })} />
+              onChange={(n) => onChange({ ...bloco, series: n || 0, seriesMin: n || 0, seriesMax: n || 0 })} />
             <NumField label="Reps base" value={bloco.reps_base} min={1} max={100}
               onChange={(n) => onChange({ ...bloco, reps_base: Math.max(1, n), repsPorExercicio: Math.max(1, n) })} />
           </div>
