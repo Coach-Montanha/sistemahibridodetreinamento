@@ -58,12 +58,7 @@ import { Palette, FolderArchive, KeyRound, Link } from "lucide-react";
 import { ApiPanel } from "@/components/settings/api-panel";
 import { MarcaPanel } from "@/components/settings/marca-panel";
 import { ArquivosPanel } from "@/components/settings/arquivos-panel";
-import { ExerciseImportManager } from "@/components/exercises/ExerciseImportManager";
-import { ExerciseBulkMediaUpload } from "@/components/admin/ExerciseBulkMediaUpload";
-import { MediaCorrelationDashboard } from "@/components/admin/MediaCorrelationDashboard";
 import { SettingsHeader, Fold, DiagnosticPanel } from "@/components/settings/settings-shell";
-import { CatalogTranslationManager } from "@/components/admin/CatalogTranslationManager";
-import { MediaAuditDashboard } from "@/components/admin/MediaAuditDashboard";
 import { KpiRow, type Kpi } from "@/components/settings/kpi-row";
 import { useCoachFiles, formatBytes } from "@/components/settings/use-coach-files";
 import { useCoach } from "@/hooks/use-coach";
@@ -135,32 +130,8 @@ const SECTIONS = [
     hint: "Motor automático, formatos e API",
     icon: Sparkles,
   },
-  {
-    key: "catalogo",
-    label: "Catálogo IA",
-    hint: "Importação e curadoria de exercícios",
-    icon: Database,
-  },
-  {
-    key: "bulk-media",
-    label: "Importar Mídias",
-    hint: "Vínculo em massa de GIFs/Vídeos",
-    icon: FolderArchive,
-  },
   { key: "marca", label: "Marca", hint: "Logo, cores e rodapé", icon: Palette },
-  {
-    key: "media-sync",
-    label: "Sincronizar Mídias",
-    hint: "Correlacionar GIFs/Vídeos existentes",
-    icon: Link,
-  },
   { key: "arquivos", label: "Arquivos", hint: "Planilhas, PDFs e mídias", icon: FolderArchive },
-  {
-    key: "audit",
-    label: "Auditoria",
-    hint: "Limpeza e integridade de arquivos",
-    icon: ShieldAlert,
-  },
 ] as const;
 
 type SectionKey = (typeof SECTIONS)[number]["key"];
@@ -393,47 +364,6 @@ function ConfiguracoesPage() {
             description="Envie e baixe planilhas, PDFs, mídias e outros materiais do seu trabalho."
           >
             <ArquivosPanel />
-          </Fold>
-        )}
-        {section === "catalogo" && (
-          <div className="space-y-8">
-            <Fold
-              title="Tradução em Massa"
-              description="Traduz automaticamente o catálogo de exercícios do inglês para o português usando IA."
-            >
-              <CatalogTranslationManager />
-            </Fold>
-            
-            <Fold
-              title="Catálogo Externo & Sincronização"
-              description="Gerencie a importação, curadoria e projeção de exercícios do repositório oficial."
-            >
-              <ExerciseImportManager />
-            </Fold>
-          </div>
-        )}
-        {section === "audit" && (
-          <Fold
-            title="Auditoria e Integridade"
-            description="Identifique arquivos duplicados, órfãos ou com falha de vínculo para otimizar seu armazenamento."
-          >
-            <MediaAuditDashboard />
-          </Fold>
-        )}
-        {section === "media-sync" && (
-          <Fold
-            title="Sincronização de Mídias Existentes"
-            description="Correlacione arquivos já presentes no Storage com exercícios importados sem necessidade de novo upload."
-          >
-            <MediaCorrelationDashboard />
-          </Fold>
-        )}
-        {section === "bulk-media" && (
-          <Fold
-            title="Importar Mídias em Massa"
-            description="Selecione GIFs ou vídeos locais para fazer upload e vincular automaticamente aos exercícios pelo nome do arquivo."
-          >
-            <ExerciseBulkMediaUpload />
           </Fold>
         )}
         {section === "geracao" && (

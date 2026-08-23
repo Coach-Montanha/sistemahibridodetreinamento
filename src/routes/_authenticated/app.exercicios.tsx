@@ -230,12 +230,6 @@ function ExerciciosPage() {
             {selectionMode ? "Cancelar seleção" : "Selecionar"}
           </Button>
           <Button
-            variant="outline"
-            onClick={() => navigate({ to: "/app/exercicios/duplicados" })}
-          >
-            <GitMerge className="mr-2 h-4 w-4" /> Duplicados
-          </Button>
-          <Button
           onClick={() => {
             setEditing(null);
             setOpen(true);
