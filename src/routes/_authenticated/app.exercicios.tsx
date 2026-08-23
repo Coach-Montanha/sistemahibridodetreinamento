@@ -237,19 +237,15 @@ function ExerciciosPage() {
           </Button>
           <Button
             variant="outline"
-            onClick={async () => {
-              const { data } = await supabase.rpc('find_duplicate_exercises', { _coach_id: coach?.id });
-              if (data && data.length > 0) {
-                navigate({ to: "/app/exercicios/duplicados" });
-              } else {
-                toast.info("Nenhum exercício duplicado encontrado.");
-              }
+            onClick={() => {
+              navigate({ to: "/app/exercicios/duplicados" as any });
             }}
             className="gap-2"
           >
             <GitMerge className="h-4 w-4" />
             Limpar duplicados
           </Button>
+
 
           <Button
           onClick={() => {
