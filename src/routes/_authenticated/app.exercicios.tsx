@@ -1424,10 +1424,10 @@ function BulkEditDialog({
   }, [open]);
 
   const willChange =
-    (metMode !== "manter" && metValues.length > 0) ||
-    (equipMode !== "manter" && equipValues.length > 0) ||
-    metMode === "substituir" ||
-    equipMode === "substituir";
+    (metMode !== "manter" && (metMode === "substituir" || metValues.length > 0)) ||
+    (equipMode !== "manter" && (equipMode === "substituir" || equipValues.length > 0)) ||
+    (padraoMode !== "manter" && (padraoMode === "substituir" || padraoValue.trim().length > 0)) ||
+    unilateralMode !== "manter";
 
   const byId = useMemo(() => {
     const m = new Map<string, any>();
