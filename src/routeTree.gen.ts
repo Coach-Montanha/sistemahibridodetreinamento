@@ -29,7 +29,6 @@ import { Route as AuthenticatedAppAlunosRouteImport } from './routes/_authentica
 import { Route as ApiPublicProgramsIdRouteImport } from './routes/api/public/programs.$id'
 import { Route as AuthenticatedAppSessoesNovaRouteImport } from './routes/_authenticated/app.sessoes.nova'
 import { Route as AuthenticatedAppSessoesIdRouteImport } from './routes/_authenticated/app.sessoes.$id'
-import { Route as AuthenticatedAppExerciciosDuplicadosRouteImport } from './routes/_authenticated/app.exercicios.duplicados'
 import { Route as AuthenticatedAlunoSessaoIdRouteImport } from './routes/_authenticated/aluno.sessao.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -137,12 +136,6 @@ const AuthenticatedAppSessoesIdRoute =
     path: '/sessoes/$id',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const AuthenticatedAppExerciciosDuplicadosRoute =
-  AuthenticatedAppExerciciosDuplicadosRouteImport.update({
-    id: '/duplicados',
-    path: '/duplicados',
-    getParentRoute: () => AuthenticatedAppExerciciosRoute,
-  } as any)
 const AuthenticatedAlunoSessaoIdRoute =
   AuthenticatedAlunoSessaoIdRouteImport.update({
     id: '/sessao/$id',
@@ -159,7 +152,7 @@ export interface FileRoutesByFullPath {
   '/app/alunos': typeof AuthenticatedAppAlunosRoute
   '/app/arquivos': typeof AuthenticatedAppArquivosRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
-  '/app/exercicios': typeof AuthenticatedAppExerciciosRouteWithChildren
+  '/app/exercicios': typeof AuthenticatedAppExerciciosRoute
   '/app/gerar': typeof AuthenticatedAppGerarRoute
   '/app/marca': typeof AuthenticatedAppMarcaRoute
   '/app/programas': typeof AuthenticatedAppProgramasRoute
@@ -168,7 +161,6 @@ export interface FileRoutesByFullPath {
   '/api/public/programs': typeof ApiPublicProgramsRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
   '/aluno/sessao/$id': typeof AuthenticatedAlunoSessaoIdRoute
-  '/app/exercicios/duplicados': typeof AuthenticatedAppExerciciosDuplicadosRoute
   '/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
   '/app/sessoes/nova': typeof AuthenticatedAppSessoesNovaRoute
   '/api/public/programs/$id': typeof ApiPublicProgramsIdRoute
@@ -181,7 +173,7 @@ export interface FileRoutesByTo {
   '/app/alunos': typeof AuthenticatedAppAlunosRoute
   '/app/arquivos': typeof AuthenticatedAppArquivosRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
-  '/app/exercicios': typeof AuthenticatedAppExerciciosRouteWithChildren
+  '/app/exercicios': typeof AuthenticatedAppExerciciosRoute
   '/app/gerar': typeof AuthenticatedAppGerarRoute
   '/app/marca': typeof AuthenticatedAppMarcaRoute
   '/app/programas': typeof AuthenticatedAppProgramasRoute
@@ -190,7 +182,6 @@ export interface FileRoutesByTo {
   '/api/public/programs': typeof ApiPublicProgramsRouteWithChildren
   '/app': typeof AuthenticatedAppIndexRoute
   '/aluno/sessao/$id': typeof AuthenticatedAlunoSessaoIdRoute
-  '/app/exercicios/duplicados': typeof AuthenticatedAppExerciciosDuplicadosRoute
   '/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
   '/app/sessoes/nova': typeof AuthenticatedAppSessoesNovaRoute
   '/api/public/programs/$id': typeof ApiPublicProgramsIdRoute
@@ -206,7 +197,7 @@ export interface FileRoutesById {
   '/_authenticated/app/alunos': typeof AuthenticatedAppAlunosRoute
   '/_authenticated/app/arquivos': typeof AuthenticatedAppArquivosRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
-  '/_authenticated/app/exercicios': typeof AuthenticatedAppExerciciosRouteWithChildren
+  '/_authenticated/app/exercicios': typeof AuthenticatedAppExerciciosRoute
   '/_authenticated/app/gerar': typeof AuthenticatedAppGerarRoute
   '/_authenticated/app/marca': typeof AuthenticatedAppMarcaRoute
   '/_authenticated/app/programas': typeof AuthenticatedAppProgramasRoute
@@ -215,7 +206,6 @@ export interface FileRoutesById {
   '/api/public/programs': typeof ApiPublicProgramsRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/aluno/sessao/$id': typeof AuthenticatedAlunoSessaoIdRoute
-  '/_authenticated/app/exercicios/duplicados': typeof AuthenticatedAppExerciciosDuplicadosRoute
   '/_authenticated/app/sessoes/$id': typeof AuthenticatedAppSessoesIdRoute
   '/_authenticated/app/sessoes/nova': typeof AuthenticatedAppSessoesNovaRoute
   '/api/public/programs/$id': typeof ApiPublicProgramsIdRoute
@@ -240,7 +230,6 @@ export interface FileRouteTypes {
     | '/api/public/programs'
     | '/app/'
     | '/aluno/sessao/$id'
-    | '/app/exercicios/duplicados'
     | '/app/sessoes/$id'
     | '/app/sessoes/nova'
     | '/api/public/programs/$id'
@@ -262,7 +251,6 @@ export interface FileRouteTypes {
     | '/api/public/programs'
     | '/app'
     | '/aluno/sessao/$id'
-    | '/app/exercicios/duplicados'
     | '/app/sessoes/$id'
     | '/app/sessoes/nova'
     | '/api/public/programs/$id'
@@ -286,7 +274,6 @@ export interface FileRouteTypes {
     | '/api/public/programs'
     | '/_authenticated/app/'
     | '/_authenticated/aluno/sessao/$id'
-    | '/_authenticated/app/exercicios/duplicados'
     | '/_authenticated/app/sessoes/$id'
     | '/_authenticated/app/sessoes/nova'
     | '/api/public/programs/$id'
@@ -442,13 +429,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppSessoesIdRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/exercicios/duplicados': {
-      id: '/_authenticated/app/exercicios/duplicados'
-      path: '/duplicados'
-      fullPath: '/app/exercicios/duplicados'
-      preLoaderRoute: typeof AuthenticatedAppExerciciosDuplicadosRouteImport
-      parentRoute: typeof AuthenticatedAppExerciciosRoute
-    }
     '/_authenticated/aluno/sessao/$id': {
       id: '/_authenticated/aluno/sessao/$id'
       path: '/sessao/$id'
@@ -470,26 +450,11 @@ const AuthenticatedAlunoRouteChildren: AuthenticatedAlunoRouteChildren = {
 const AuthenticatedAlunoRouteWithChildren =
   AuthenticatedAlunoRoute._addFileChildren(AuthenticatedAlunoRouteChildren)
 
-interface AuthenticatedAppExerciciosRouteChildren {
-  AuthenticatedAppExerciciosDuplicadosRoute: typeof AuthenticatedAppExerciciosDuplicadosRoute
-}
-
-const AuthenticatedAppExerciciosRouteChildren: AuthenticatedAppExerciciosRouteChildren =
-  {
-    AuthenticatedAppExerciciosDuplicadosRoute:
-      AuthenticatedAppExerciciosDuplicadosRoute,
-  }
-
-const AuthenticatedAppExerciciosRouteWithChildren =
-  AuthenticatedAppExerciciosRoute._addFileChildren(
-    AuthenticatedAppExerciciosRouteChildren,
-  )
-
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAlunosRoute: typeof AuthenticatedAppAlunosRoute
   AuthenticatedAppArquivosRoute: typeof AuthenticatedAppArquivosRoute
   AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
-  AuthenticatedAppExerciciosRoute: typeof AuthenticatedAppExerciciosRouteWithChildren
+  AuthenticatedAppExerciciosRoute: typeof AuthenticatedAppExerciciosRoute
   AuthenticatedAppGerarRoute: typeof AuthenticatedAppGerarRoute
   AuthenticatedAppMarcaRoute: typeof AuthenticatedAppMarcaRoute
   AuthenticatedAppProgramasRoute: typeof AuthenticatedAppProgramasRoute
@@ -503,7 +468,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAlunosRoute: AuthenticatedAppAlunosRoute,
   AuthenticatedAppArquivosRoute: AuthenticatedAppArquivosRoute,
   AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
-  AuthenticatedAppExerciciosRoute: AuthenticatedAppExerciciosRouteWithChildren,
+  AuthenticatedAppExerciciosRoute: AuthenticatedAppExerciciosRoute,
   AuthenticatedAppGerarRoute: AuthenticatedAppGerarRoute,
   AuthenticatedAppMarcaRoute: AuthenticatedAppMarcaRoute,
   AuthenticatedAppProgramasRoute: AuthenticatedAppProgramasRoute,
