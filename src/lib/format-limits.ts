@@ -13,6 +13,7 @@ const LIMITS: Record<string, FormatLimit> = {
   preparacao_movimento: { maxExercicios: 10, maxSeries: 12 },
   forca_tecnica_pct: { maxExercicios: 8, maxSeries: 12 },
   bodybuilding_sets: { maxExercicios: 15, maxSeries: 12 },
+  series_tempo: { maxExercicios: 15, maxSeries: 12 },
   finalizador: { maxExercicios: 12, maxSeries: 15 },
   emom: { maxExercicios: 20, maxSeries: 60 },
   e2mom: { maxExercicios: 20, maxSeries: 60 },
