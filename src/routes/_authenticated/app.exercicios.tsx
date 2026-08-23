@@ -505,7 +505,7 @@ function ExerciciosPage() {
                         }}
 
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {del.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       </Button>
                     </div>
                   )}
