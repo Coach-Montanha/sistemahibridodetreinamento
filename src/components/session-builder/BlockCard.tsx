@@ -95,7 +95,10 @@ export function BlockCard({ block }: { block: BuilderBlock }) {
 function BlockBody({ block }: { block: BuilderBlock }) {
   const { presets } = useFormatRegistry();
   const format = block.formato;
-  const base = format.startsWith("custom:") ? presets.find(p => p.id === format)?.base : format;
+  const prefixed = format.startsWith("custom:") || format.startsWith("builtin:");
+  const base = prefixed
+    ? (presets.find(p => p.id === format)?.base ?? format.split(":")[1] ?? format)
+    : format;
 
   switch (base) {
     case "mobilidade":

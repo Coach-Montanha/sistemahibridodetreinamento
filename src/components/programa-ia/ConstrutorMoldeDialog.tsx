@@ -281,10 +281,12 @@ function BlocoConfigForm({
   bloco,
   onChange,
   formatLabel,
+  presets,
 }: {
   bloco: BlocoTemplate;
   onChange: (patch: Partial<BlocoTemplate>) => void;
   formatLabel: (f: string) => string;
+  presets: any[];
 }) {
   return (
     <div className="space-y-4 border-t border-border/60 pt-4">
@@ -294,7 +296,7 @@ function BlocoConfigForm({
           <Select 
             value={bloco.presetId || (bloco.formato.startsWith('builtin:') ? bloco.formato : `builtin:${bloco.formato}`)} 
             onValueChange={(v) => {
-              const p = useFormatRegistry().presets.find((pr: any) => pr.id === v);
+              const p = presets.find((pr: any) => pr.id === v);
               if (p) {
                 onChange({ 
                   formato: p.base,
@@ -308,7 +310,7 @@ function BlocoConfigForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {useFormatRegistry().presets.map((p: any) => (
+              {presets.map((p: any) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.label}
                 </SelectItem>
@@ -578,6 +580,7 @@ function BlocoCard({
   onChange,
   onRemove,
   formatLabel,
+  presets,
 }: {
   bloco: BlocoTemplate;
   aberto: boolean;
@@ -585,6 +588,7 @@ function BlocoCard({
   onChange: (patch: Partial<BlocoTemplate>) => void;
   onRemove: () => void;
   formatLabel: (f: string) => string;
+  presets: any[];
 }) {
   return (
     <div className="w-full">
