@@ -53,7 +53,7 @@ export function useFormatRegistry() {
       id: `builtin:${f}`,
       label: def?.label ?? BLOCK_FORMAT_LABEL[f],
       base: (def?.base_format as BlockFormat) ?? f,
-      set_type_id: (def?.metadata as any)?.set_type_id ?? getDefaultSetTypeForFormat(f),
+      set_type_id: (def as any)?.metadata?.set_type_id ?? getDefaultSetTypeForFormat(f),
       description: def?.description ?? undefined,
       defaults: (def?.default_config as Record<string, any>) ?? undefined,
       builtin: true,
