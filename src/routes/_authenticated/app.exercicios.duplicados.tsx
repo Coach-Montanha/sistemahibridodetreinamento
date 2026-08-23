@@ -31,14 +31,13 @@ function DuplicadosPage() {
     queryKey: ["exercises", "duplicates"],
     queryFn: async () => {
       if (!coach?.id) return [];
-      const { data, error } = await supabase.rpc('find_duplicate_exercises', { 
+      const { data, error } = await (supabase.rpc as any)('find_duplicate_exercises', { 
         _coach_id: coach.id 
       });
       if (error) throw error;
       
-      // Agrupar por nome normalizado para exibição
       const groups: Record<string, any[]> = {};
-      data.forEach((ex: any) => {
+      (data as any[] || []).forEach((ex: any) => {
         const key = ex.nome_pt.toLowerCase().trim();
         if (!groups[key]) groups[key] = [];
         groups[key].push(ex);
