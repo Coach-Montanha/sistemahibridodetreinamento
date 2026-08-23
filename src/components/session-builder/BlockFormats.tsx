@@ -618,6 +618,66 @@ export function SetsRepsForm({ block }: { block: BuilderBlock }) {
   );
 }
 
+/* ---------- Séries por tempo ---------- */
+export function SeriesTempoForm({ block }: { block: BuilderBlock }) {
+  const update = useBuilder((s) => s.updateBlock);
+  const cfg = block.config || {};
+  const setCfg = (patch: Record<string, unknown>) =>
+    update(block.tempId, { config: { ...cfg, ...patch } });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 p-3">
+        <div className="grid flex-1 grid-cols-3 gap-3 sm:max-w-md">
+          <div>
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Séries
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              className="tabular-nums"
+              value={cfg.series ?? 4}
+              onChange={(e) => setCfg({ series: Number(e.target.value) })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Tempo (seg)
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              step={5}
+              className="tabular-nums"
+              value={cfg.tempo_seg ?? 40}
+              onChange={(e) => setCfg({ tempo_seg: Number(e.target.value) })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Descanso (seg)
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              step={5}
+              className="tabular-nums"
+              value={cfg.descanso_seg ?? 60}
+              onChange={(e) => setCfg({ descanso_seg: Number(e.target.value) })}
+            />
+          </div>
+        </div>
+        <ModoToggle block={block} />
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Cada exercício é executado por tempo (ex.: 4 × 40s). Ajuste fino por exercício nas séries tipadas.
+      </p>
+      <BlockExercises block={block} agrupavel />
+    </div>
+  );
+}
+
 /* ---------- Bloco livre ---------- */
 export function LivreForm({ block }: { block: BuilderBlock }) {
   const update = useBuilder((s) => s.updateBlock);
