@@ -1179,6 +1179,39 @@ function DuplicateResolverDialog({
                         )}
                       </Button>
                     )}
+                    {(!isGlobal || (isGlobal && coachId)) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={async () => {
+                          if (isGlobal) {
+                            // Se for global, apenas fecha esse fluxo (o usuário já sabe que não pode deletar o original)
+                            // ou poderíamos dar a opção de "Esconder" (soft delete) no futuro.
+                            // Por ora, se ele clicou aqui num global, apenas orientamos.
+                            toast.info("Exercícios globais não podem ser excluídos, mas você pode renomear sua nova versão.");
+                          } else if (confirm(`Deseja excluir permanentemente "${ex.nome_pt}"?`)) {
+                            setBusyId(ex.id);
+                            try {
+                              const { error } = await supabase.from("exercises").delete().eq("id", ex.id);
+                              if (error) throw error;
+                              toast.success("Exercício excluído");
+                              // Remove da lista de candidatos local para não precisar re-fetch imediato no dialog
+                              onMerged(); // Reutilizamos o callback de merge para fechar e atualizar
+                            } catch (e: any) {
+                              toast.error(e.message);
+                            } finally {
+                              setBusyId(null);
+                            }
+                          }
+                        }}
+                        disabled={busy}
+                      >
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                        Excluir duplicado
+                      </Button>
+                    )}
+
                   </div>
                 </div>
               </div>
