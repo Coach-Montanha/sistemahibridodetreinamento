@@ -40,7 +40,7 @@ export const upsertFormatDefinition = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: any) => FORMAT_DEF_SCHEMA.parse(raw))
   .handler(async ({ data, context }) => {
-    const typed = data as any;
+    const typed = data as z.infer<typeof FORMAT_DEF_SCHEMA>;
     const { data: coach } = await context.supabase.from("coaches").select("id").maybeSingle();
     const { error } = await context.supabase
       .from("format_definitions")
@@ -48,7 +48,7 @@ export const upsertFormatDefinition = createServerFn({ method: "POST" })
         id: typed.id,
         base_format: typed.base_format,
         label: typed.label,
-        description: typed.description,
+        description: typed.description || null,
         default_config: (typed.default_config ?? {}) as Json,
         is_active: typed.is_active ?? true,
         is_builtin: typed.is_builtin ?? false,
