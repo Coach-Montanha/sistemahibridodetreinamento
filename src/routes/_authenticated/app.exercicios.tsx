@@ -1460,6 +1460,7 @@ function BulkEditDialog({
           batch.map(async (id) => {
             const ex = byId.get(id);
             if (!ex) return { kind: "fail" as const };
+            
             const nextMet =
               metMode !== "manter"
                 ? applyMode(ex.metodologias ?? [], metMode, metValues)
@@ -1468,22 +1469,34 @@ function BulkEditDialog({
               equipMode !== "manter"
                 ? applyMode(ex.equipamento ?? [], equipMode, equipValues)
                 : ex.equipamento ?? [];
+            const nextPadrao = 
+              padraoMode === "substituir" ? padraoValue :
+              padraoMode === "adicionar" ? (ex.padrao_movimento ? `${ex.padrao_movimento}, ${padraoValue}` : padraoValue) :
+              ex.padrao_movimento;
+            const nextUnilateral = 
+              unilateralMode === "sim" ? true :
+              unilateralMode === "nao" ? false :
+              ex.unilateral;
+
             const isGlobal = !ex.coach_id;
             if (isGlobal) {
-              // Clone-on-write: catálogo compartilhado nunca é sobrescrito.
+              // Clone-on-write
               const { error } = await supabase.from("exercises").insert({
                 coach_id: coachId,
                 nome_pt: ex.nome_pt,
-                padrao_movimento: ex.padrao_movimento ?? null,
+                padrao_movimento: nextPadrao || null,
                 metodologias: nextMet,
                 equipamento: nextEquip,
-                unilateral: ex.unilateral ?? false,
+                unilateral: nextUnilateral ?? false,
                 instrucoes: ex.instrucoes ?? null,
               });
               return { kind: error ? ("fail" as const) : ("cloned" as const), message: error?.message };
             }
+            
             const patch: Record<string, any> = {
               atualizado_em: new Date().toISOString(),
+              padrao_movimento: nextPadrao || null,
+              unilateral: nextUnilateral,
             };
             if (metMode !== "manter") patch.metodologias = nextMet;
             if (equipMode !== "manter") patch.equipamento = nextEquip;
