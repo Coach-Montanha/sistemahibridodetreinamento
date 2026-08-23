@@ -110,6 +110,22 @@ export function useFormatRegistry() {
         is_active: true,
       });
     },
+    /** Salva um formato padrão em uma única operação — nome, estrutura, descrição e valores padrão. */
+    saveBuiltin(
+      id: string,
+      patch: { label: string; base: BlockFormat; description?: string; defaults?: Record<string, any> },
+    ) {
+      const def = definitions.find((d: any) => d.id === id);
+      upsertMutation.mutate({
+        id,
+        base_format: patch.base,
+        label: patch.label,
+        description: patch.description ?? null,
+        default_config: patch.defaults ?? {},
+        is_active: def?.is_active ?? true,
+        is_builtin: true,
+      });
+    },
     resetBuiltin(base: BlockFormat) {
       deleteMutation.mutate(`builtin:${base}`);
     },

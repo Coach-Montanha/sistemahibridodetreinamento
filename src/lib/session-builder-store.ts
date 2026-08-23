@@ -130,6 +130,7 @@ export const DEFAULT_CONFIG: Record<string, Record<string, any>> = {
   },
   metcon: { series: 3, reps: "10", descanso_seg: 60, modo_execucao: "circuito" },
   bodybuilding_sets: { series: 4, reps: "8-12", descanso_seg: 60, modo_execucao: "series_fixas" },
+  series_tempo: { series: 4, tempo_seg: 40, descanso_seg: 60, modo_execucao: "series_fixas" },
   finalizador: { series: 3, reps: "15", descanso_seg: 45, modo_execucao: "circuito" },
   livre: { instrucoes: "" },
 };
