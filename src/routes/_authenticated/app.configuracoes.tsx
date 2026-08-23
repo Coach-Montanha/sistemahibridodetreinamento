@@ -53,7 +53,7 @@ import {
   Database,
   ShieldAlert,
 } from "lucide-react";
-import { Copy, Wand2 } from "lucide-react";
+import { Copy, Wand2, Dumbbell, Activity, Wrench, Wind } from "lucide-react";
 import { Palette, FolderArchive, KeyRound, Link } from "lucide-react";
 import { ApiPanel } from "@/components/settings/api-panel";
 import { MarcaPanel } from "@/components/settings/marca-panel";
