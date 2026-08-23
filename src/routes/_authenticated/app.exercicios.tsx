@@ -1402,6 +1402,10 @@ function BulkEditDialog({
   const [metValues, setMetValues] = useState<Methodology[]>([]);
   const [equipMode, setEquipMode] = useState<BulkMode>("manter");
   const [equipValues, setEquipValues] = useState<Equipamento[]>([]);
+  const [padraoMode, setPadraoMode] = useState<BulkMode>("manter");
+  const [padraoValue, setPadraoValue] = useState("");
+  const [unilateralMode, setUnilateralMode] = useState<"manter" | "sim" | "nao">("manter");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [applying, setApplying] = useState(false);
   const [progress, setProgress] = useState(0);
 
