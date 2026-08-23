@@ -170,8 +170,8 @@ export async function buscarCandidatosDoMolde(
     } else if (bloco.titulo?.toLowerCase() === "aquecimento" || (bloco.chave && bloco.chave.includes("aquecimento"))) {
       // Bloco de aquecimento só consegue solicitar e selecionar movimentos do bloco kettlebell e ginástico.
       equipamentos.push("Kettlebell", "Ginásticos");
-    } else if (metodologias.includes("musculacao") || payload.modalidade === "hibrido") {
-      // Para musculação ou híbrido, permitir explicitamente Alternativos Musculação se não houver filtro restritivo
+    } else if (metodologias.includes("musculacao")) {
+      // Para musculação, permitir explicitamente Alternativos Musculação se não houver filtro restritivo
       if (equipamentos.length === 0) {
         equipamentos.push("Kettlebell", "Ginásticos", "Dumbbell", "Barbell", "Alternativos Musculação");
       }
