@@ -1497,6 +1497,7 @@ function FormatoEditorDialog({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5">
               <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Estrutura do bloco
               </Label>
@@ -1604,36 +1605,18 @@ function FormatoEditorDialog({
               </div>
             </div>
           </div>
-              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {setTypes.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-[11px] text-muted-foreground">
-              O Tipo de Série define os campos técnicos (reps, carga, tempo, etc.) e como a IA gera os valores.
-            </p>
-          </div>
-
           <div className="space-y-1.5">
             <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Estrutura do bloco
+              Descrição
+              <span className="ml-1 normal-case tracking-normal text-muted-foreground/70">(opcional)</span>
             </Label>
-            <Select
-              value={draft.base}
-              onValueChange={(v) => setDraft({ ...draft, base: v as BlockFormat })}
-            >
-              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ENABLED_FORMATS.map((f) => (
-                  <SelectItem key={f} value={f}>{BLOCK_FORMAT_LABEL[f]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-[11px] text-muted-foreground">
-              Define o rótulo visual e organizacional (ex: EMOM, Musculação, Circuito).
-            </p>
+            <Textarea
+              rows={2}
+              value={draft.description ?? ""}
+              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              placeholder="Ex.: AMRAP curto para finalizar a sessão"
+              className="resize-none text-sm"
+            />
           </div>
 
           <div className="space-y-1.5">
