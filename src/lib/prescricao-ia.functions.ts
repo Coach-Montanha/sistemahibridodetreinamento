@@ -287,8 +287,8 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
     
     // Fallback de segurança para molde estrutural se vier vazio na continuidade
     if (isHibrido && data.hibrido && (!data.hibrido.sessaoTemplate || data.hibrido.sessaoTemplate.length === 0)) {
-      // Se não enviou molde, tentaremos buscar no histórico abaixo
       console.log("Aviso: Híbrido sem sessaoTemplate. Tentando recuperar do histórico...");
+      // Forçamos a busca no continuation context abaixo
     }
 
     const titulos: (string | null)[] = ((programa as any).program_weeks ?? []).flatMap(

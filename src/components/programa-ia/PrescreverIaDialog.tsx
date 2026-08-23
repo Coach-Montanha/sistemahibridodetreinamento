@@ -469,7 +469,7 @@ export function PrescreverIaDialog({
     if (!base) return null;
 
     const escolhido = moldeSelecionado === "auto"
-      ? moldesHistoricos[moldesHistoricos.length - 1]
+      ? (moldesHistoricos.length > 0 ? moldesHistoricos[moldesHistoricos.length - 1] : null)
       : moldesHistoricos.find((m) => m.id === moldeSelecionado);
 
     return {
