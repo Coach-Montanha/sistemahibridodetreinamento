@@ -498,10 +498,12 @@ function ExerciciosPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={del.isPending || !!ex.coach_id === false}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (confirm(`Remover "${ex.nome_pt}"?`)) del.mutate(ex.id);
                         }}
+
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
