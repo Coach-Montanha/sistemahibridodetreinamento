@@ -385,6 +385,7 @@ export function normalizarPrescricaoHibrido(
   bruto: string,
   template: SessaoTemplate,
   candidatos: CandidatosPorBloco,
+  numeroSessoesEsperadas?: number,
 ): PrescricaoHibrido {
   if (!bruto || bruto.trim().length === 0) {
     throw new Error("AI_EMPTY_CONTENT: A IA devolveu uma resposta vazia.");
@@ -426,8 +427,12 @@ export function normalizarPrescricaoHibrido(
     console.warn("HibridoIA: Iniciando fallback determinístico por falha no schema/parse da IA.");
   }
 
-  // O número de sessões é inferido pela resposta da IA ou, no fallback, assume 1
-  const numSessoes = usedFallback ? 1 : sessoesRaw.length;
+  // O número de sessões é inferido pela resposta da IA. No fallback, cobre
+  // todas as sessões pedidas (o preenchimento determinístico com rotação já
+  // garante variação entre elas) em vez de gerar uma única sessão silenciosa.
+  const numSessoes = usedFallback
+    ? Math.max(1, Math.min(52, numeroSessoesEsperadas ?? 1))
+    : sessoesRaw.length;
   const finalSessoes: PrescricaoHibridoSessao[] = [];
   const avisosDiversidade: string[] = [];
 
