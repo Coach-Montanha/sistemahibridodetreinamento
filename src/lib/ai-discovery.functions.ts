@@ -8,13 +8,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const getBestAvailableModel = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    // Em um cenário real, poderíamos consultar a lista de modelos permitidos via API
-    // Para TanStack Start e o Gateway do Lovable, os modelos são injetados.
-    // Como os logs indicam google/gemini-2.5-flash como o sucessor do 2.0,
-    // usaremos uma estratégia de fallback baseada em versões conhecidas.
-    
-    // Estratégia de detecção de modelo:
-    // Preferência por gemini-2.0-flash (estável) ou gemini-2.5-flash se disponível.
-    // Usaremos 'google/gemini-2.0-flash' como base estável no gateway Lovable.
-    return "google/gemini-2.0-flash"; 
+    // Delega ao adaptador único do gateway: resolve LOVABLE_AI_MODEL quando
+    // configurada e cai no modelo padrão permitido (google/gemini-2.5-flash).
+    const { resolveAiModel } = await import("@/lib/ai-gateway.server");
+    return resolveAiModel();
   });

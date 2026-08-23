@@ -83,8 +83,10 @@ const INPUT = z
 function configDoBloco(b: BlocoTemplate): Record<string, unknown> {
   const base = { chave: b.chave, descanso_apos_seg: b.descansoAposSeg };
 
+  // Tolera formatos legados persistidos com prefixo "builtin:"/"custom:".
+  const formato = (b.formato ?? "").replace(/^(builtin|custom):/, "");
 
-  switch (b.formato) {
+  switch (formato) {
     case "preparacao_movimento":
       return { ...base, rounds: b.seriesMin ?? 4, round_min: b.duracaoMin ?? 2, modo_execucao: b.modoExecucao };
     case "forca_tecnica_pct": {
@@ -96,7 +98,7 @@ function configDoBloco(b: BlocoTemplate): Record<string, unknown> {
       return {
         ...base,
         rounds: b.seriesMin ?? 8,
-        intervalo_min: b.intervaloMin ?? (b.formato === "e2mom" ? 2 : 1),
+        intervalo_min: b.intervaloMin ?? (formato === "e2mom" ? 2 : 1),
         modo_execucao: b.modoExecucao,
       };
     case "amrap":
@@ -175,7 +177,7 @@ export const gerarSessoesHibrido = createServerFn({ method: "POST" })
     }
 
     // 4. Parsing defensivo + validação de segurança (IDs alucinados são descartados).
-    const prescricao = normalizarPrescricaoHibrido(conteudo, template, candidatos);
+    const prescricao = normalizarPrescricaoHibrido(conteudo, template, candidatos, data.numeroSessoes);
 
 
     // 5. Cria o programa e distribui as sessões em semanas de `diasPorSemana`.
