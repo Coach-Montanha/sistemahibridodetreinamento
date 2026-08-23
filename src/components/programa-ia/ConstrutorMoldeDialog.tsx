@@ -621,7 +621,7 @@ function BlocoCard({
           </Button>
         </div>
         <CollapsibleContent className="px-3 pb-3">
-          <BlocoConfigForm bloco={bloco} onChange={onChange} formatLabel={formatLabel} />
+          <BlocoConfigForm bloco={bloco} onChange={onChange} formatLabel={formatLabel} presets={presets} />
         </CollapsibleContent>
       </Collapsible>
     </div>
@@ -824,6 +824,7 @@ export function ConstrutorMoldeDialog({
                           onChange={(patch) => atualizarBloco(b.chave, patch)}
                           onRemove={() => removerBloco(b.chave)}
                           formatLabel={getFormatLabel}
+                          presets={presets}
                         />
                       </div>
                     </SortableRow>

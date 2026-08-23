@@ -83,8 +83,10 @@ const INPUT = z
 function configDoBloco(b: BlocoTemplate): Record<string, unknown> {
   const base = { chave: b.chave, descanso_apos_seg: b.descansoAposSeg };
 
+  // Tolera formatos legados persistidos com prefixo "builtin:"/"custom:".
+  const formato = (b.formato ?? "").replace(/^(builtin|custom):/, "");
 
-  switch (b.formato) {
+  switch (formato) {
     case "preparacao_movimento":
       return { ...base, rounds: b.seriesMin ?? 4, round_min: b.duracaoMin ?? 2, modo_execucao: b.modoExecucao };
     case "forca_tecnica_pct": {
