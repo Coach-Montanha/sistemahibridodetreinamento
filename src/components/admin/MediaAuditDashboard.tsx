@@ -12,14 +12,27 @@ import {
   Loader2, 
   Info,
   FileSearch,
-  RefreshCcw
+  RefreshCcw,
+  Wand2
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { startMediaAudit, getLatestAuditReport } from "@/lib/audit.functions";
 import { repairPendingExerciseLinks } from "@/lib/repair.functions";
+import { executeAuditAction } from "@/lib/audit-actions.functions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function MediaAuditDashboard() {
   const queryClient = useQueryClient();
@@ -55,6 +68,20 @@ export function MediaAuditDashboard() {
       }
     }
   });
+
+  const actionMutation = useMutation({
+    mutationFn: executeAuditAction,
+    onSuccess: (res) => {
+      toast.success(res.message || "Ação executada com sucesso");
+      queryClient.invalidateQueries({ queryKey: ["latest-audit-report"] });
+    },
+    onError: (err: any) => toast.error(err.message)
+  });
+
+  const handleCleanupAll = () => {
+    if (!report?.id) return;
+    actionMutation.mutate({ action: "cleanup_report", reportId: report.id });
+  };
 
   const handleRunAudit = () => {
     setIsAuditing(true);
@@ -97,10 +124,52 @@ export function MediaAuditDashboard() {
             {repairMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
             Simular Reparo
           </Button>
-          <Button size="sm" onClick={() => repairMutation.mutate(false)} disabled={repairMutation.isPending}>
-            <CheckCircle2 className="mr-2 h-4 w-4" />
-            Executar Reparo Real
-          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="secondary" size="sm" className="bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 border-orange-500/20">
+                <Wand2 className="mr-2 h-4 w-4" />
+                Vincular Automaticamente
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Vincular Exercícios Pendentes?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Isso tentará encontrar correspondências automáticas para exercícios marcados como [Pendente] baseando-se no nome do arquivo e IDs do catálogo.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => repairMutation.mutate(false)}>
+                  Confirmar Reparo
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="destructive" disabled={summary.orphaned_files === 0 || actionMutation.isPending}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Limpar Todos os Órfãos
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remover todos os arquivos órfãos?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação é irreversível. {summary.orphaned_files} arquivos sem vínculo serão deletados permanentemente do storage.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleCleanupAll} className="bg-destructive text-destructive-foreground">
+                  Deletar Permanentemente
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
@@ -142,9 +211,17 @@ export function MediaAuditDashboard() {
                         </div>
                       </td>
                       <td className="p-3 text-right">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
+                        {item.is_orphaned && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => actionMutation.mutate({ action: "delete_orphan", itemId: item.id })}
+                            disabled={actionMutation.isPending}
+                          >
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
