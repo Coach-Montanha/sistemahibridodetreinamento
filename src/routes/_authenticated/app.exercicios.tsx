@@ -211,11 +211,8 @@ function ExerciciosPage() {
   const location = useLocation();
   const isDuplicados = location.pathname.includes("/duplicados");
 
-  if (isDuplicados) {
-    return <Outlet />;
-  }
-
   return (
+
     <div className="mx-auto max-w-6xl p-6">
       <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:items-center sm:justify-between">
         <div className="min-w-0">
