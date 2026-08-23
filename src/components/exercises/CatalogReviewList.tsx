@@ -43,24 +43,22 @@ export function CatalogReviewList() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["exercise-catalog-list", page, search, statusFilter],
     queryFn: async () => {
-      // Fix: Using explicit join to avoid relationship ambiguity error
-      let query = supabase
+      const query = supabase
         .from("exercise_catalog" as any)
-        .select(`*`, { count: 'exact' });
-      
-      // Omitir tradução da query principal e carregar sob demanda ou via join manual se necessário
-      // mas para evitar recursão infinita no TS, vamos simplificar o select.
+        .select(`*`, { count: 'exact' }) as any;
 
+
+      let filteredQuery = query;
 
       if (search) {
-        query = query.ilike("name_original", `%${search}%`);
+        filteredQuery = filteredQuery.ilike("name_original", `%${search}%`);
       }
 
       if (statusFilter !== "all") {
-        query = query.eq("review_status" as any, statusFilter);
+        filteredQuery = filteredQuery.eq("review_status", statusFilter);
       }
 
-      const { data, error, count } = await query
+      const { data, error, count } = await filteredQuery
         .order("name_original", { ascending: true })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
