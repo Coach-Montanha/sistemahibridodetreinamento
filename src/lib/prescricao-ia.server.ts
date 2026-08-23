@@ -38,7 +38,7 @@ Se o treinador fornecer o "CONTEXTO DA PROGRAMAÇÃO ATUAL" ou "HISTÓRICO COMPL
 
 PROIBIDO usar movimentos de kettlebell (swing, snatch, jerk, turkish get-up), levantamento de peso olímpico (clean, arranco, arremesso), ginásticos (muscle-up, handstand), CrossFit/MetCon (burpee, wall ball, box jump, thruster) ou qualquer condicionamento metabólico. Use apenas exercícios clássicos de sala de musculação com barra, halteres, polias, máquinas e peso corporal guiado.
 
-Você NÃO tem acesso a nenhum banco de exercícios: escreva os nomes por extenso, em português.
+Você tem acesso ao pool de exercícios da biblioteca através do histórico fornecido. Se for solicitado um novo exercício não presente no histórico, escreva o nome por extenso em português.
 Exercícios podem ser individuais ou combinados. Para combinar, use o mesmo prefixo em "group" ("A1"/"A2" = par combinado) e defina "group_type" como "biset", "triset" ou "superset". Exercício isolado: "group" vazio e "group_type" igual a "individual".
 
 Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, sem markdown, no formato:

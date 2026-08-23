@@ -214,7 +214,7 @@ function ExerciciosPage() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">Banco de Exercícios</h1>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Cadastre exercícios para usar no construtor de sessão.
+            se eu adicionei direto do github 1000 exercícios, vinculei a gif, onde esses movimentos estão? Na janela de exercícios, principalmente em todos, eu preciso ter acesso ao número exato de exercícios cadastrados. Na criação de treinos, seja manual ou IA, preciso ter acesso direto a esse banco de dados atualizado.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-2">
@@ -287,6 +287,7 @@ function ExerciciosPage() {
       >
         <EquipChip
           label="Todos"
+          count={tagStats?.total}
           active={equipFilter === "todos"}
           onClick={() => setEquipFilter("todos")}
         />
