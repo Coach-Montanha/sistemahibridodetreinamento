@@ -84,6 +84,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { FormatPreset } from "@/lib/format-registry";
 import { useFormatRegistry } from "@/lib/format-registry";
+import { getStoredTheme } from "@/lib/theme";
 import {
   getGeneratorPrefs,
   saveGeneratorPrefs,
