@@ -216,7 +216,7 @@ export function MediaAuditDashboard() {
                             variant="ghost" 
                             size="icon" 
                             className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => actionMutation.mutate({ action: "delete_orphan", itemId: item.id })}
+                            onClick={() => actionMutation.mutate({ data: { action: "delete_orphan", itemId: item.id } })}
                             disabled={actionMutation.isPending}
                           >
                             <Trash2 className="h-3 w-3 text-destructive" />
