@@ -1024,6 +1024,7 @@ function FormatosPanel() {
       id: "",
       label: "",
       base: "bodybuilding_sets",
+      set_type_id: "reps_carga",
       description: "",
       defaults: { series: 4, reps: "8-12", descanso_seg: 60 },
       builtin: false,
@@ -1036,6 +1037,7 @@ function FormatosPanel() {
       saveBuiltin(next.id, {
         label: next.label,
         base: next.base,
+        set_type_id: next.set_type_id,
         description: next.description,
         defaults: next.defaults,
       });
@@ -1043,6 +1045,7 @@ function FormatosPanel() {
       addCustom({
         label: next.label || "Novo formato",
         base: next.base,
+        set_type_id: next.set_type_id,
         description: next.description,
         defaults: next.defaults,
       });
@@ -1050,6 +1053,7 @@ function FormatosPanel() {
       updateCustom(next.id, {
         label: next.label,
         base: next.base,
+        set_type_id: next.set_type_id,
         description: next.description,
         defaults: next.defaults,
       });

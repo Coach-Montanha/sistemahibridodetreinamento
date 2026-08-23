@@ -53,7 +53,7 @@ export function useFormatRegistry() {
       id: `builtin:${f}`,
       label: def?.label ?? BLOCK_FORMAT_LABEL[f],
       base: (def?.base_format as BlockFormat) ?? f,
-      set_type_id: (def?.metadata?.set_type_id as string) ?? getDefaultSetTypeForFormat(f),
+      set_type_id: (def?.metadata as any)?.set_type_id ?? getDefaultSetTypeForFormat(f),
       description: def?.description ?? undefined,
       defaults: (def?.default_config as Record<string, any>) ?? undefined,
       builtin: true,
@@ -66,7 +66,7 @@ export function useFormatRegistry() {
       id: d.id,
       label: d.label,
       base: d.base_format as BlockFormat,
-      set_type_id: (d.metadata?.set_type_id as string) ?? "reps_carga",
+      set_type_id: ((d as any).metadata as any)?.set_type_id ?? "reps_carga",
       description: d.description ?? undefined,
       defaults: (d.default_config as Record<string, any>) ?? undefined,
       builtin: false,
@@ -124,7 +124,7 @@ export function useFormatRegistry() {
         label: patch.label,
         description: patch.description ?? null,
         default_config: patch.defaults ?? {},
-        metadata: { ...(def?.metadata || {}), set_type_id: patch.set_type_id },
+        metadata: { ...((def as any)?.metadata || {}), set_type_id: patch.set_type_id },
         is_active: def?.is_active ?? true,
         is_builtin: true,
       });
@@ -181,7 +181,7 @@ export function useFormatRegistry() {
         label: patch.label ?? def.label,
         description: patch.description ?? def.description,
         default_config: patch.defaults ?? def.default_config,
-        metadata: { ...(def.metadata || {}), set_type_id: patch.set_type_id ?? def.metadata?.set_type_id },
+        metadata: { ...((def as any).metadata || {}), set_type_id: patch.set_type_id ?? (def as any).metadata?.set_type_id },
       });
     },
     async duplicatePreset(source: FormatPreset) {
