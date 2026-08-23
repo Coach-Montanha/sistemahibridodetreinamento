@@ -51,7 +51,8 @@ export function useFormatRegistry() {
     return {
       id: `builtin:${f}`,
       label: def?.label ?? BLOCK_FORMAT_LABEL[f],
-      base: f,
+      // A estrutura (base) é totalmente editável pelo coach — inclusive nos padrões.
+      base: (def?.base_format as BlockFormat) ?? f,
       description: def?.description ?? undefined,
       defaults: (def?.default_config as Record<string, any>) ?? undefined,
       builtin: true,
