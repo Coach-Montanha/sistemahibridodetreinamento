@@ -57,8 +57,9 @@ Gere a prescrição em português (Brasil). Responda APENAS com JSON válido, se
   "notes": "RELATÓRIO DE EVOLUÇÃO: Descreva detalhadamente a ESTRATÉGIA DE PERIODIZAÇÃO ONDULATÓRIA usada para todo o bloco gerado (ex: Semana 1 adaptação, Semana 2 carga, Semana 3 pico, Semana 4 deload) e justifique a escolha/troca dos exercícios em relação ao histórico."
 }
 Regras: 4 a 8 exercícios por dia; 'load' e 'observations' podem ser vazios; 'day_label' segue o tipo de nomenclatura da rotina.
-Se você for informado sobre 'TIPOS DE SÉRIES DISPONÍVEIS', utilize preferencialmente esses formatos e nomenclaturas no campo 'load' ou 'observations' conforme adequado ao contexto.
-Se você for informado sobre 'FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS', utilize-os para entender a estrutura dos blocos solicitados.`;
+ Se você for informado sobre 'TIPOS DE SÉRIES DISPONÍVEIS', utilize preferencialmente esses formatos e nomenclaturas no campo 'load' ou 'observations' conforme adequado ao contexto.
+ Se você for informado sobre 'FORMATOS DE BLOCO CUSTOMIZADOS DISPONÍVEIS', utilize-os para entender a estrutura dos blocos solicitados.
+ Cada formato de bloco customizado pode ter 'field_labels' específicos (ex: 'Rounds' em vez de 'Séries'). Ao preencher os campos técnicos, use a nomenclatura sugerida pelo treinador nos field_labels quando disponível.`;
 
 export type RotinaContexto = {
   titulo: string;
@@ -75,6 +76,7 @@ export type RotinaContexto = {
   resumo_anterior?: string | null;
   continuation?: import("./continuation.server").ContinuationContext | null;
   set_types?: any[];
+  custom_formats?: any[];
   aluno_info?: string | null;
 };
 
@@ -111,6 +113,7 @@ export function montarUserPrompt(ctx: RotinaContexto, instrucoes: string): strin
     ctx.aluno_info ? `- LIMITAÇÕES E INFO DO ALUNO: ${ctx.aluno_info}` : null,
     ctx.objetivos ? `- Objetivos: ${ctx.objetivos}` : null,
     ctx.set_types ? `- TIPOS DE SÉRIES DISPONÍVEIS: ${ctx.set_types.map(t => `${t.label} (ID: ${t.id})`).join(", ")}` : null,
+    ctx.custom_formats ? `- FORMATOS DE BLOCO CUSTOMIZADOS: ${ctx.custom_formats.map(f => `${f.label} (Base: ${f.base}, SetType: ${f.set_type_id}, Rótulos: ${JSON.stringify(f.field_labels || {})})`).join("; ")}` : null,
     "",
     dias
       ? `OBRIGATÓRIO: gere o programa completo conforme o escopo selecionado (${ctx.escopo_label ?? `${ctx.duracao_semanas} semanas`}). Se o escopo for de múltiplas semanas, gere exatamente ${dias} dia(s) distintos PARA CADA SEMANA, garantindo a evolução entre elas (ex: se gerar 2 semanas com 3 dias/sem, gere 6 dias no total, identificando "week_number" de 1 a 2). Use apenas o histórico compacto fornecido para evitar repetições.`
