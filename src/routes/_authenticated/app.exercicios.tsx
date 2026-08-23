@@ -1415,6 +1415,10 @@ function BulkEditDialog({
       setMetValues([]);
       setEquipMode("manter");
       setEquipValues([]);
+      setPadraoMode("manter");
+      setPadraoValue("");
+      setUnilateralMode("manter");
+      setShowDeleteConfirm(false);
       setProgress(0);
     }
   }, [open]);
