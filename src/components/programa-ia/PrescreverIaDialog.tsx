@@ -425,10 +425,27 @@ export function PrescreverIaDialog({
   const [moldeSelecionado, setMoldeSelecionado] = useState<string>("auto");
   const isHibrido = metodologia === "hibrido" || metodologia === "kettlebell_fitness";
 
-  // Efeito para carregar as regras persistidas do programa
+  // Efeito para carregar as regras persistidas do programa E preferências globais
   useEffect(() => {
-    async function carregarRegras() {
+    async function carregarConfiguracoes() {
       if (!programa?.id) return;
+      
+      // 1. Carregar preferências da modalidade (Geração Automática)
+      const { data: coach } = await supabase.from("coaches").select("id").maybeSingle();
+      if (coach && isHibrido) {
+        const { data: pref } = await supabase
+          .from("generator_preferences")
+          .select("blocos")
+          .eq("coach_id", coach.id)
+          .eq("metodologia", metodologia)
+          .maybeSingle();
+        
+        // Se o coach configurou blocos e não temos um template manual no escopo, podemos sugerir
+        // mas o payload de "Continuar Progressão" já vem com o histórico injetado no escopoInicial.
+        // A IA no servidor agora já faz o merge se vier vazio.
+      }
+
+      // 2. Carregar regras específicas do programa
       const { data, error } = await supabase
         .from("programs")
         .select("regras_progressao")
@@ -446,8 +463,8 @@ export function PrescreverIaDialog({
         if (r.prompt) setPrompt(r.prompt);
       }
     }
-    carregarRegras();
-  }, [programa?.id]);
+    carregarConfiguracoes();
+  }, [programa?.id, methodology, isHibrido]);
 
   // Moldes únicos extraídos do histórico
   const moldesHistoricos = useMemo(() => {
