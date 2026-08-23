@@ -25,16 +25,12 @@ export function ExerciseImportManager() {
     queryKey: ["exercise-catalog-stats"],
     queryFn: async () => {
       // Cálculo dinâmico do esperado via fetch do dataset
-      const DATASET_SHA = "fe2e63a4a2cbf634c88e38644ec86068d9127735";
-      const DATASET_URL = `https://raw.githubusercontent.com/Coach-Montanha/exercises-dataset/${DATASET_SHA}/data/exercises.json`;
-      
-      const [res, catalogRes, transRes] = await Promise.all([
-        fetch(DATASET_URL).then(r => r.json()),
+      const [catalogRes, transRes] = await Promise.all([
         supabase.from("exercise_catalog").select("id, review_status, approved_for_projection, projected_exercise_id"),
         supabase.from("exercise_catalog_translations").select("catalog_exercise_id")
       ]);
 
-      const expectedTotal = Array.isArray(res) ? res.length : 0;
+      const expectedTotal = catalogRes.data?.length || 0;
       const catalog = catalogRes.data || [];
       const translatedCount = transRes.data?.length || 0;
 
@@ -124,11 +120,11 @@ export function ExerciseImportManager() {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard 
-          title="Fonte vs Catálogo" 
-          value={`${stats?.total ?? 0} / ${stats?.expected ?? 0}`} 
+          title="Total no Catálogo" 
+          value={stats?.total ?? 0} 
           icon={Database} 
           loading={statsLoading} 
-          color={(stats?.total || 0) < (stats?.expected || 0) ? "text-amber-500" : "text-green-500"}
+          color="text-primary"
         />
 
         <StatCard 
@@ -159,18 +155,10 @@ export function ExerciseImportManager() {
             <div>
               <CardTitle>Sincronização do Dataset</CardTitle>
               <CardDescription>
-                Importe exercícios do repositório GitHub e projete itens aprovados para a biblioteca oficial.
+                Gerencie os exercícios do catálogo e projete itens aprovados para a biblioteca oficial do sistema.
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={handleImport} 
-                disabled={isImporting}
-              >
-                {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                GitHub
-              </Button>
               <Button 
                 onClick={handleProjection} 
                 disabled={isProjecting || (stats?.approved ?? 0) === 0}
