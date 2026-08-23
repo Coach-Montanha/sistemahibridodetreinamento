@@ -167,57 +167,73 @@
 /* ================= Theme: Pulse ================= */
 [data-tema="pulse"] {
   --radius: 2rem; /* 32px roughly */
-  --background: oklch(0.12 0.005 260); /* #0A0A0C approx */
+  --background: oklch(0.12 0.005 260); /* #0A0A0C */
   --foreground: oklch(0.98 0.005 100); /* #F5F5F5 */
-  --card: oklch(0.16 0.008 260); /* #18181C approx */
+  --card: oklch(0.16 0.008 260); /* #18181C */
   --card-foreground: oklch(0.98 0.005 100);
   --popover: oklch(0.16 0.008 260);
   --popover-foreground: oklch(0.98 0.005 100);
-  --primary: oklch(0.70 0.25 45); /* #FF6B00 vibrante */
+  --primary: oklch(0.70 0.25 45); /* #FF6B00 */
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.20 0.01 260);
   --secondary-foreground: oklch(0.98 0.005 100);
   --muted: oklch(0.18 0.008 260);
-  --muted-foreground: oklch(0.65 0.01 260); /* #8A8A93 approx */
-  --accent: oklch(0.60 0.15 250); /* #3B82F6 sutil */
+  --muted-foreground: oklch(0.65 0.01 260); /* #8A8A93 */
+  --accent: oklch(0.60 0.15 250); /* #3B82F6 */
   --accent-foreground: oklch(1 0 0);
-  --border: oklch(0.18 0.008 260); /* #232328 approx */
+  --border: oklch(0.18 0.008 260); /* #232328 */
   --input: oklch(0.18 0.008 260);
   --ring: oklch(0.70 0.25 45);
 }
 
-/* Specific component overrides for Pulse theme */
-[data-tema="pulse"] .rounded-lg, 
-[data-tema="pulse"] .rounded-xl,
-[data-tema="pulse"] .rounded-2xl {
-  border-radius: var(--radius);
-}
+/* Base Overrides for Pulse theme tokens */
+[data-tema="pulse"] {
+  /* Cards & Sections */
+  .rounded-2xl, .rounded-xl, section {
+    border-radius: var(--radius) !important;
+  }
 
-[data-tema="pulse"] button:not(.rounded-none),
-[data-tema="pulse"] .badge,
-[data-tema="pulse"] .chip {
-  border-radius: 9999px;
-}
+  /* Buttons & Chips */
+  .rounded-md, .rounded-lg, button:not(.rounded-none), .badge, .chip {
+    border-radius: 9999px !important;
+  }
 
-[data-tema="pulse"] .avatar-ring {
-  box-shadow: 0 0 0 2px var(--color-primary);
-}
+  /* Typography Weight & Style */
+  h1, h2, h3, .text-xl, .text-2xl, .text-3xl, .text-4xl, .text-5xl, .text-6xl, .text-7xl {
+    font-weight: 800 !important;
+    letter-spacing: -0.025em !important;
+  }
 
-[data-tema="pulse"] .stat-card-icon-container {
-  border-radius: 50%;
-  background-color: color-mix(in oklab, var(--color-primary) 15%, transparent);
-}
+  /* Metric/Statistics Labels */
+  .text-\[11px\].uppercase, .text-xs.uppercase, p.uppercase {
+    font-weight: 500 !important;
+    letter-spacing: 0.08em !important;
+  }
 
-[data-tema="pulse"] .metric-value {
-  font-weight: 800;
-  letter-spacing: -0.025em;
-}
+  /* Shadows avoidance & Subtle borders */
+  .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
+    box-shadow: none !important;
+  }
+  
+  .border {
+    border-width: 1px !important;
+    border-color: var(--border) !important;
+  }
 
-[data-tema="pulse"] .label-caps {
-  font-weight: 500;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  /* Avatar ring */
+  img.rounded-full {
+    box-shadow: 0 0 0 2px var(--primary) !important;
+  }
+
+  /* Icon Substrates */
+  .bg-primary\/10 {
+    background-color: color-mix(in oklab, var(--primary) 15%, transparent) !important;
+  }
+
+  /* KPI/Metric containers */
+  .bg-card\/60, .bg-muted\/40, div.group.rounded-xl.border.border-border\/60 {
+    background-color: var(--card) !important;
+  }
 }
 
 #lovable-badge {
