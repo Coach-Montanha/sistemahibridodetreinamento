@@ -106,19 +106,32 @@ export const getGeneratorPrefs = createServerFn({ method: "GET" })
 
     const blocos: BlocoPref[] = (templates ?? []).map((t: any) => ({
       formato: t.formato,
+      presetId: t.config?.presetId ?? `builtin:${t.formato}`,
       titulo: t.nome,
       duracao_min: t.duracao_min ?? null,
       num_exercicios: t.config?.num_exercicios ?? 3,
       series: t.config?.series ?? 3,
+      seriesMin: t.config?.seriesMin ?? (t.config?.series ?? 3),
+      seriesMax: t.config?.seriesMax ?? (t.config?.series ?? 3),
       reps_base: t.config?.reps_base ?? 10,
+      repsPorExercicio: t.config?.repsPorExercicio ?? 10,
       reps_pattern: t.config?.reps_pattern ?? [],
       progressao: t.config?.progressao ?? "nenhuma",
       passos: t.config?.passos ?? [],
       tempo_trabalho: t.config?.tempo_trabalho ?? null,
       tempo_descanso: t.config?.tempo_descanso ?? null,
+      descansoAposSeg: t.config?.descansoAposSeg ?? 0,
+      descansoEntreSeriesSeg: t.config?.descansoEntreSeriesSeg ?? null,
+      intervaloMin: t.config?.intervaloMin ?? null,
+      percentual1rm: t.config?.percentual1rm ?? null,
+      modoExecucao: t.config?.modoExecucao ?? "circuito",
+      selecaoExercicios: t.config?.selecaoExercicios ?? "ia",
+      exerciciosFixos: t.config?.exerciciosFixos ?? [],
+      slot: t.config?.slot ?? null,
       modalidades_alvo: t.config?.modalidades_alvo ?? [],
       equipamentos_alvo: t.config?.equipamentos_alvo ?? [],
       exercicios_permitidos: t.config?.exercicios_permitidos ?? [],
+      fonteExercicios: t.config?.fonteExercicios ?? {},
     }));
 
     return { blocos, origem: "template" as const };
