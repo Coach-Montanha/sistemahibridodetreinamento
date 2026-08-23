@@ -20,6 +20,7 @@ export type FormatPreset = {
   id: string;
   label: string;
   base: BlockFormat;
+  set_type_id: string; // Nova governança técnica
   description?: string;
   defaults?: Record<string, any>;
   builtin?: boolean;
@@ -51,8 +52,8 @@ export function useFormatRegistry() {
     return {
       id: `builtin:${f}`,
       label: def?.label ?? BLOCK_FORMAT_LABEL[f],
-      // A estrutura (base) é totalmente editável pelo coach — inclusive nos padrões.
       base: (def?.base_format as BlockFormat) ?? f,
+      set_type_id: (def?.metadata?.set_type_id as string) ?? getDefaultSetTypeForFormat(f),
       description: def?.description ?? undefined,
       defaults: (def?.default_config as Record<string, any>) ?? undefined,
       builtin: true,
@@ -65,6 +66,7 @@ export function useFormatRegistry() {
       id: d.id,
       label: d.label,
       base: d.base_format as BlockFormat,
+      set_type_id: (d.metadata?.set_type_id as string) ?? "reps_carga",
       description: d.description ?? undefined,
       defaults: (d.default_config as Record<string, any>) ?? undefined,
       builtin: false,
@@ -113,7 +115,7 @@ export function useFormatRegistry() {
     /** Salva um formato padrão em uma única operação — nome, estrutura, descrição e valores padrão. */
     saveBuiltin(
       id: string,
-      patch: { label: string; base: BlockFormat; description?: string; defaults?: Record<string, any> },
+      patch: { label: string; base: BlockFormat; set_type_id: string; description?: string; defaults?: Record<string, any> },
     ) {
       const def = definitions.find((d: any) => d.id === id);
       upsertMutation.mutate({
@@ -122,6 +124,7 @@ export function useFormatRegistry() {
         label: patch.label,
         description: patch.description ?? null,
         default_config: patch.defaults ?? {},
+        metadata: { ...(def?.metadata || {}), set_type_id: patch.set_type_id },
         is_active: def?.is_active ?? true,
         is_builtin: true,
       });
@@ -163,6 +166,7 @@ export function useFormatRegistry() {
         label: preset.label,
         description: preset.description,
         default_config: preset.defaults,
+        metadata: { set_type_id: preset.set_type_id },
         is_builtin: false,
         is_active: true,
       });
@@ -177,6 +181,7 @@ export function useFormatRegistry() {
         label: patch.label ?? def.label,
         description: patch.description ?? def.description,
         default_config: patch.defaults ?? def.default_config,
+        metadata: { ...(def.metadata || {}), set_type_id: patch.set_type_id ?? def.metadata?.set_type_id },
       });
     },
     async duplicatePreset(source: FormatPreset) {
@@ -203,4 +208,20 @@ export function useFormatLabel(base: BlockFormat): string {
   const { presets } = useFormatRegistry();
   const found = presets.find(p => p.id === `builtin:${base}` || p.id === base);
   return found?.label ?? BLOCK_FORMAT_LABEL[base] ?? base;
+}
+
+function getDefaultSetTypeForFormat(format: BlockFormat): string {
+  switch (format) {
+    case "mobilidade":
+    case "preparacao_movimento":
+      return "reps_tempo";
+    case "series_tempo":
+      return "reps_tempo";
+    case "forca_tecnica_pct":
+      return "reps_carga"; // Aqui a IA injeta o % no campo carga ou obs, mas reps_carga é a base
+    case "corrida":
+      return "corrida";
+    default:
+      return "reps_carga";
+  }
 }
