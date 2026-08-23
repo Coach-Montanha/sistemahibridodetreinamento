@@ -464,7 +464,7 @@ export function PrescreverIaDialog({
       }
     }
     carregarConfiguracoes();
-  }, [programa?.id, methodology, isHibrido]);
+  }, [programa?.id, metodologia, isHibrido]);
 
   // Moldes únicos extraídos do histórico
   const moldesHistoricos = useMemo(() => {
