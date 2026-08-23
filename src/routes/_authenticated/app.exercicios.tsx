@@ -79,7 +79,10 @@ type Equipamento = (typeof EQUIPAMENTOS)[number];
 function ExerciciosPage() {
   const { data: coach } = useCoach();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDuplicados = location.pathname.endsWith("/duplicados");
   const [q, setQ] = useState("");
+
   const [metFilter, setMetFilter] = useState<Methodology | "todos">("todos");
   const [equipFilter, setEquipFilter] = useState<Equipamento | "todos">("todos");
   const [untaggedOnly, setUntaggedOnly] = useState(false);
@@ -257,6 +260,10 @@ function ExerciciosPage() {
         </Button>
         </div>
       </div>
+
+      {isDuplicados ? <Outlet /> : (
+        <>
+
 
       {tagStats && tagStats.total > 0 && (
         <TagCoverage

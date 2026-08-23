@@ -8,7 +8,6 @@ import {
   GitMerge, 
   Trash2, 
   ChevronLeft, 
-  AlertTriangle,
   Loader2,
   Globe2
 } from "lucide-react";
@@ -16,6 +15,7 @@ import { toast } from "sonner";
 import { useCoach } from "@/hooks/use-coach";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useState } from "react";
+
 
 export const Route = createFileRoute("/_authenticated/app/exercicios/duplicados")({
   component: DuplicadosPage,
