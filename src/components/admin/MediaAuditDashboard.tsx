@@ -80,7 +80,7 @@ export function MediaAuditDashboard() {
 
   const handleCleanupAll = () => {
     if (!report?.id) return;
-    actionMutation.mutate({ action: "cleanup_report", reportId: report.id });
+    actionMutation.mutate({ data: { action: "cleanup_report", reportId: report.id } });
   };
 
   const handleRunAudit = () => {
