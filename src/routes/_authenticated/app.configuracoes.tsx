@@ -1047,16 +1047,34 @@ function FormatosPanel() {
         label: next.label || "Novo formato",
         base: next.base,
         set_type_id: next.set_type_id,
+      saveBuiltin(next.id, {
+        label: next.label,
+        base: next.base,
+        set_type_id: next.set_type_id,
         description: next.description,
         defaults: next.defaults,
+        enabled_fields: next.enabled_fields,
+        field_labels: next.field_labels,
       });
-    } else {
+    } else if (next.id) {
       updateCustom(next.id, {
         label: next.label,
         base: next.base,
         set_type_id: next.set_type_id,
         description: next.description,
         defaults: next.defaults,
+        enabled_fields: next.enabled_fields,
+        field_labels: next.field_labels,
+      });
+    } else {
+      addCustom({
+        label: next.label,
+        base: next.base,
+        set_type_id: next.set_type_id,
+        description: next.description,
+        defaults: next.defaults,
+        enabled_fields: next.enabled_fields,
+        field_labels: next.field_labels,
       });
     }
     setEditing(null);
