@@ -147,7 +147,9 @@ function ExerciciosPage() {
     onSuccess: () => {
       toast.success("Exercício removido");
       qc.invalidateQueries({ queryKey: ["exercises"] });
+      qc.invalidateQueries({ queryKey: ["exercises", "tag-stats"] });
     },
+
     onError: (e: any) => toast.error(e.message),
   });
 
