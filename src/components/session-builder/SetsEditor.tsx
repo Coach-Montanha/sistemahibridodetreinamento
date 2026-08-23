@@ -91,7 +91,7 @@ export function SetsEditor({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-[min(92vw,380px)] p-4">
             <AddSetForm
-              defaultType={lastType}
+              defaultType={sets.at(-1)?.tipo ?? block?.set_type_id ?? "reps_carga"}
               onSubmit={(draft) => {
                 addSet(block.tempId, exercise.tempId, draft);
                 setAddOpen(false);

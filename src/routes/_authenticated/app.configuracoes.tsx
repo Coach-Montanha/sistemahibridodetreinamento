@@ -995,6 +995,7 @@ function FormatosPanel() {
     duplicatePreset,
     reorderPresets,
   } = useFormatRegistry();
+  const { presets: setTypes } = useSetTypeRegistry();
 
   const [editing, setEditing] = useState<FormatPreset | null>(null);
   const [showHidden, setShowHidden] = useState(false);
@@ -1024,6 +1025,7 @@ function FormatosPanel() {
       id: "",
       label: "",
       base: "bodybuilding_sets",
+      set_type_id: "reps_carga",
       description: "",
       defaults: { series: 4, reps: "8-12", descanso_seg: 60 },
       builtin: false,
@@ -1036,6 +1038,7 @@ function FormatosPanel() {
       saveBuiltin(next.id, {
         label: next.label,
         base: next.base,
+        set_type_id: next.set_type_id,
         description: next.description,
         defaults: next.defaults,
       });
@@ -1043,6 +1046,7 @@ function FormatosPanel() {
       addCustom({
         label: next.label || "Novo formato",
         base: next.base,
+        set_type_id: next.set_type_id,
         description: next.description,
         defaults: next.defaults,
       });
@@ -1050,6 +1054,7 @@ function FormatosPanel() {
       updateCustom(next.id, {
         label: next.label,
         base: next.base,
+        set_type_id: next.set_type_id,
         description: next.description,
         defaults: next.defaults,
       });
@@ -1161,6 +1166,7 @@ function FormatosPanel() {
           const p = presets.find(x => x.id === id) || builtins.find(x => x.id === id);
           if (p) setConfirmDelete(p);
         }}
+        setTypes={setTypes}
       />
 
       <DeleteFormatDialog
@@ -1415,12 +1421,14 @@ function FormatoEditorDialog({
   onOpenChange,
   onSave,
   onDelete,
+  setTypes,
 }: {
   open: boolean;
   preset: FormatPreset | null;
   onOpenChange: (v: boolean) => void;
   onSave: (next: FormatPreset) => void;
   onDelete?: (id: string) => void;
+  setTypes: SetTypePreset[];
 }) {
   const [draft, setDraft] = useState<FormatPreset | null>(null);
 
@@ -1463,6 +1471,26 @@ function FormatoEditorDialog({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Mecânica da Série (Tipo)
+            </Label>
+            <Select
+              value={draft.set_type_id}
+              onValueChange={(v) => setDraft({ ...draft, set_type_id: v })}
+            >
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {setTypes.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              O Tipo de Série define os campos técnicos (reps, carga, tempo, etc.) e como a IA gera os valores.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Estrutura do bloco
             </Label>
             <Select
@@ -1477,7 +1505,7 @@ function FormatoEditorDialog({
               </SelectContent>
             </Select>
             <p className="text-[11px] text-muted-foreground">
-              Define como o bloco é montado e preenchido no construtor (séries × reps, tempo, circuito, %1RM etc.). Editável em qualquer formato, inclusive nos padrões.
+              Define o rótulo visual e organizacional (ex: EMOM, Musculação, Circuito).
             </p>
           </div>
 

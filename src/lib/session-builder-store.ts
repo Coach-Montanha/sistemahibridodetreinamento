@@ -41,6 +41,7 @@ export type BuilderBlock = {
   tempId: string;
   id?: string;
   formato: BlockFormat;
+  set_type_id?: string;
   titulo?: string | null;
   duracao_min?: number | null;
   ordem: number;
@@ -148,6 +149,7 @@ export const useBuilder = create<State>((set) => ({
         {
           tempId: uid(),
           formato,
+          set_type_id: extras?.config?.set_type_id,
           ordem: s.blocks.length,
           titulo: extras?.titulo ?? null,
           config: { ...DEFAULT_CONFIG[formato as string], ...(extras?.config ?? {}) },
@@ -231,19 +233,20 @@ export const useBuilder = create<State>((set) => ({
       }),
     })),
   addSet: (blockTempId, exTempId, input) =>
-    set((s) =>
-      mapExerciseSets(s, blockTempId, exTempId, (sets) => [
+    set((s) => {
+      const block = s.blocks.find((b) => b.tempId === blockTempId);
+      return mapExerciseSets(s, blockTempId, exTempId, (sets) => [
         ...sets,
         {
           id: uid(),
-          tipo: input?.tipo ?? sets.at(-1)?.tipo ?? "reps_carga",
+          tipo: input?.tipo ?? sets.at(-1)?.tipo ?? block?.set_type_id ?? "reps_carga",
           serie_rep: input?.serie_rep ?? "",
           carga: input?.carga ?? "",
           intervalo_seg: input?.intervalo_seg ?? "",
           ...input,
         },
-      ])
-    ),
+      ]);
+    }),
   updateSet: (blockTempId, exTempId, setId, patch) =>
     set((s) =>
       mapExerciseSets(s, blockTempId, exTempId, (sets) =>

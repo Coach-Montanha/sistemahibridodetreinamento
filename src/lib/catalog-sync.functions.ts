@@ -14,6 +14,7 @@ const FORMAT_DEF_SCHEMA = z.object({
   default_config: z.any().optional(),
   is_active: z.boolean().optional(),
   is_builtin: z.boolean().optional(),
+  metadata: z.any().optional(),
 });
 
 const SET_TYPE_DEF_SCHEMA = z.object({
@@ -41,18 +42,20 @@ export const upsertFormatDefinition = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const typed = data as any;
     const { data: coach } = await context.supabase.from("coaches").select("id").maybeSingle();
+    const payload: any = { 
+      id: typed.id,
+      base_format: typed.base_format,
+      label: typed.label,
+      description: typed.description || null,
+      default_config: (typed.default_config ?? {}) as Json,
+      is_active: typed.is_active ?? true,
+      is_builtin: typed.is_builtin ?? false,
+      metadata: (typed.metadata ?? {}) as Json,
+      coach_id: coach?.id 
+    };
     const { error } = await context.supabase
       .from("format_definitions")
-      .upsert({ 
-        id: typed.id,
-        base_format: typed.base_format,
-        label: typed.label,
-        description: typed.description,
-        default_config: (typed.default_config ?? {}) as Json,
-        is_active: typed.is_active ?? true,
-        is_builtin: typed.is_builtin ?? false,
-        coach_id: coach?.id 
-      });
+      .upsert(payload);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
