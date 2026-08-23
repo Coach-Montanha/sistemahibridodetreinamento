@@ -45,7 +45,7 @@ export function CatalogReviewList() {
     queryFn: async () => {
       // Fix: Using explicit join to avoid relationship ambiguity error
       let query = supabase
-        .from("exercise_catalog")
+        .from("exercise_catalog" as any)
         .select(`
           *,
           exercise_catalog_translations!exercise_catalog_translations_catalog_exercise_id_fkey (*)
@@ -57,7 +57,7 @@ export function CatalogReviewList() {
       }
 
       if (statusFilter !== "all") {
-        query = query.eq("review_status", statusFilter);
+        query = query.eq("review_status" as any, statusFilter);
       }
 
       const { data, error, count } = await query

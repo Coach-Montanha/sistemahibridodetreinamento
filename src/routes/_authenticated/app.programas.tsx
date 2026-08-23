@@ -110,7 +110,6 @@ function montarEscopoHibridoContinuacao(p: any) {
           // O molde é obrigatório para a Server Function; não depender de
           // mutação posterior de props nem enviar lista vazia.
           sessaoTemplate: ultimoHistorico?.blocks ?? [],
-          numeroSessoes: diasPorSemana,
         }
       : null,
   };
