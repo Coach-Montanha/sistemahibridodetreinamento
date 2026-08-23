@@ -172,7 +172,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
         const { data: traducoes, error: tErr } = await supabaseAdmin
           .from("exercise_catalog_translations" as any)
           .select("*")
-          .eq("catalog_exercise_id" as any, item.id)
+          .eq("catalog_exercise_id" as any, (item as any).id)
           .eq("locale" as any, "pt-BR")
           .order("updated_at", { ascending: false })
           .limit(5);
@@ -254,7 +254,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
         const { error: linkErr } = await supabaseAdmin
           .from("exercise_catalog" as any)
           .update({ projected_exercise_id: exerciseId } as any)
-          .eq("id", item.id);
+          .eq("id", (item as any).id);
         if (linkErr) {
           bump("link_error");
           details.push({ id: (item as any).id, name: (item as any).name_original, reason: `link_error: ${linkErr.message}` });
