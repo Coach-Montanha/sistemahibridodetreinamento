@@ -57,6 +57,7 @@ import { Copy, Wand2 } from "lucide-react";
 import { Palette, FolderArchive, KeyRound, Link } from "lucide-react";
 import { ApiPanel } from "@/components/settings/api-panel";
 import { MarcaPanel } from "@/components/settings/marca-panel";
+import { AparenciaPanel } from "@/components/settings/aparencia-panel";
 import { ArquivosPanel } from "@/components/settings/arquivos-panel";
 import { SettingsHeader, Fold, DiagnosticPanel } from "@/components/settings/settings-shell";
 import { KpiRow, type Kpi } from "@/components/settings/kpi-row";
