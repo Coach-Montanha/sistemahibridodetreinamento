@@ -468,7 +468,24 @@ export function PrescreverIaDialog({
     const base = escopoInicial?.hibrido;
     if (!base) return null;
 
-    const escolhido = moldeSelecionado === "auto"
+    let template = base.sessaoTemplate;
+    if (moldeSelecionado !== "auto") {
+      const molde = moldesHistoricos.find((m) => String(m.id) === moldeSelecionado);
+      if (molde?.blocks) {
+        template = molde.blocks;
+      }
+    }
+
+    // Garante que o template nunca vá vazio para o motor
+    if (!template || template.length === 0) {
+      console.warn("PrescreverIaDialog: sessaoTemplate está vazio no hibridoPayload");
+    }
+
+    return {
+      ...base,
+      sessaoTemplate: template,
+    };
+  }, [escopoInicial?.hibrido, moldeSelecionado, moldesHistoricos]);
       ? (moldesHistoricos.length > 0 ? moldesHistoricos[moldesHistoricos.length - 1] : null)
       : moldesHistoricos.find((m) => m.id === moldeSelecionado);
 
