@@ -1320,6 +1320,13 @@ export type Database = {
       auth_coach_id: { Args: never; Returns: string }
       auth_coach_id_for_user: { Args: { _user_id: string }; Returns: string }
       auth_student_id: { Args: never; Returns: string }
+      find_duplicate_exercises: {
+        Args: { _coach_id: string }
+        Returns: {
+          id: string
+          nome_pt: string
+        }[]
+      }
       get_exercises_pending_translation: {
         Args: { _limit?: number }
         Returns: {

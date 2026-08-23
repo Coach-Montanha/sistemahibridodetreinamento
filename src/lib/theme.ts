@@ -1,74 +1,64 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useState, useEffect } from 'react';
 
-export type Theme = "light" | "dark" | "system";
-const KEY = "shdt.theme";
+export const themeInitScript = `
+  (function() {
+    try {
+      var visualTheme = localStorage.getItem('visual-theme') || 'padrao';
+      document.documentElement.setAttribute('data-tema', visualTheme);
+      
+      var theme = localStorage.getItem('theme') || 'system';
+      var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      
+      if (visualTheme === 'pulse' || isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch (e) {}
+  })();
+`;
 
-function systemPrefersDark(): boolean {
-  if (typeof window === "undefined") return true;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+export type VisualTheme = "padrao" | "pulse";
+
+export function getStoredTheme(): VisualTheme {
+  if (typeof window === 'undefined') return 'padrao';
+  return (localStorage.getItem('visual-theme') as VisualTheme) || 'padrao';
 }
 
-function readStored(): Theme {
-  if (typeof window === "undefined") return "dark";
-  const raw = window.localStorage.getItem(KEY);
-  if (raw === "light" || raw === "dark" || raw === "system") return raw;
-  return "dark";
+export function setStoredTheme(theme: VisualTheme) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('visual-theme', theme);
+  document.documentElement.setAttribute('data-tema', theme);
+  
+  const uiTheme = localStorage.getItem('theme') || 'system';
+  const isDark = uiTheme === 'dark' || (uiTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  if (theme === 'pulse' || isDark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
 }
 
-function applyTheme(theme: Theme) {
-  if (typeof document === "undefined") return;
-  const isDark = theme === "dark" || (theme === "system" && systemPrefersDark());
-  document.documentElement.classList.toggle("dark", isDark);
-  document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (meta) meta.content = isDark ? "#0F1115" : "#FAFAF7";
-}
+export function useTheme() {
+  const [theme, setThemeState] = useState<'light' | 'dark' | 'system'>(() => {
+    if (typeof window === 'undefined') return 'system';
+    return (localStorage.getItem('theme') as any) || 'system';
+  });
 
-function subscribe(cb: () => void) {
-  if (typeof window === "undefined") return () => {};
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === KEY) cb();
+  const setTheme = (t: 'light' | 'dark' | 'system') => {
+    setThemeState(t);
+    localStorage.setItem('theme', t);
+    const visualTheme = getStoredTheme();
+    const isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    if (visualTheme === 'pulse' || isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   };
-  const onChange = () => cb();
-  window.addEventListener("storage", onStorage);
-  window.addEventListener("shdt:theme", onChange);
-  const mm = window.matchMedia("(prefers-color-scheme: dark)");
-  mm.addEventListener("change", onChange);
-  return () => {
-    window.removeEventListener("storage", onStorage);
-    window.removeEventListener("shdt:theme", onChange);
-    mm.removeEventListener("change", onChange);
-  };
+
+  return { theme, setTheme };
 }
 
-export function setTheme(theme: Theme) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(KEY, theme);
-  applyTheme(theme);
-  window.dispatchEvent(new Event("shdt:theme"));
-}
-
-export function useTheme(): { theme: Theme; setTheme: (t: Theme) => void; resolved: "light" | "dark" } {
-  const theme = useSyncExternalStore<Theme>(subscribe, readStored, () => "dark" as const);
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
-  const resolved: "light" | "dark" =
-    theme === "system" ? (systemPrefersDark() ? "dark" : "light") : theme;
-  return { theme, setTheme, resolved };
-}
-
-/**
- * Inline script string, executed before React hydrates, to avoid the flash
- * of the wrong theme on first paint. Reads localStorage + system preference
- * and sets `class="dark"` on <html> synchronously.
- */
-export const themeInitScript = `(() => {
-  try {
-    var t = localStorage.getItem("${KEY}") || "dark";
-    var isDark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
-    var root = document.documentElement;
-    root.classList.toggle("dark", isDark);
-    root.style.colorScheme = isDark ? "dark" : "light";
-  } catch (e) {}
-})();`;

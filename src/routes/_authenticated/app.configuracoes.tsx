@@ -57,6 +57,7 @@ import { Copy, Wand2 } from "lucide-react";
 import { Palette, FolderArchive, KeyRound, Link } from "lucide-react";
 import { ApiPanel } from "@/components/settings/api-panel";
 import { MarcaPanel } from "@/components/settings/marca-panel";
+import { AparenciaPanel } from "@/components/settings/aparencia-panel";
 import { ArquivosPanel } from "@/components/settings/arquivos-panel";
 import { SettingsHeader, Fold, DiagnosticPanel } from "@/components/settings/settings-shell";
 import { KpiRow, type Kpi } from "@/components/settings/kpi-row";
@@ -83,6 +84,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { FormatPreset } from "@/lib/format-registry";
 import { useFormatRegistry } from "@/lib/format-registry";
+import { getStoredTheme } from "@/lib/theme";
 import {
   getGeneratorPrefs,
   saveGeneratorPrefs,
@@ -130,7 +132,8 @@ const SECTIONS = [
     hint: "Motor automático, formatos e API",
     icon: Sparkles,
   },
-  { key: "marca", label: "Marca", hint: "Logo, cores e rodapé", icon: Palette },
+  { key: "aparencia", label: "Aparência", hint: "Tema e visual", icon: Palette },
+  { key: "marca", label: "Marca", hint: "Logo, cores e rodapé", icon: Layers },
   { key: "arquivos", label: "Arquivos", hint: "Planilhas, PDFs e mídias", icon: FolderArchive },
 ] as const;
 
@@ -268,8 +271,22 @@ function ConfiguracoesPage() {
       })
     : "—";
 
+  const activeVisualTheme = getStoredTheme();
   const kpis: Kpi[] =
-    section === "marca"
+    section === "aparencia"
+      ? [
+          {
+            label: "Tema ativo",
+            value: activeVisualTheme === "pulse" ? "Pulse" : "Padrão",
+            icon: Palette,
+          },
+          {
+            label: "Estilo visual",
+            value: activeVisualTheme === "pulse" ? "Moderno" : "Clássico",
+            hint: "Afeta bordas e cores",
+          },
+        ]
+      : section === "marca"
       ? [
           {
             label: "Logo",
@@ -359,6 +376,14 @@ function ConfiguracoesPage() {
       <KpiRow items={kpis} loading={section === "arquivos" ? filesLoading : false} />
 
       <div className="min-w-0 space-y-6">
+        {section === "aparencia" && (
+          <Fold
+            title="Aparência do sistema"
+            description="Escolha o tema visual que melhor se adapta ao seu estilo de trabalho."
+          >
+            <AparenciaPanel />
+          </Fold>
+        )}
         {section === "marca" && (
           <Fold
             title="Marca do treinador"
