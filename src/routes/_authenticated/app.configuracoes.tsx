@@ -270,8 +270,22 @@ function ConfiguracoesPage() {
       })
     : "—";
 
+  const activeVisualTheme = getStoredTheme();
   const kpis: Kpi[] =
-    section === "marca"
+    section === "aparencia"
+      ? [
+          {
+            label: "Tema ativo",
+            value: activeVisualTheme === "pulse" ? "Pulse" : "Padrão",
+            icon: Palette,
+          },
+          {
+            label: "Estilo visual",
+            value: activeVisualTheme === "pulse" ? "Moderno" : "Clássico",
+            hint: "Afeta bordas e cores",
+          },
+        ]
+      : section === "marca"
       ? [
           {
             label: "Logo",
