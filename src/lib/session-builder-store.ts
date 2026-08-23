@@ -41,6 +41,7 @@ export type BuilderBlock = {
   tempId: string;
   id?: string;
   formato: BlockFormat;
+  set_type_id?: string;
   titulo?: string | null;
   duracao_min?: number | null;
   ordem: number;
@@ -148,6 +149,7 @@ export const useBuilder = create<State>((set) => ({
         {
           tempId: uid(),
           formato,
+          set_type_id: extras?.config?.set_type_id,
           ordem: s.blocks.length,
           titulo: extras?.titulo ?? null,
           config: { ...DEFAULT_CONFIG[formato as string], ...(extras?.config ?? {}) },
