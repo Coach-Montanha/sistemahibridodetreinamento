@@ -115,6 +115,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Dumbbell, Activity, Wrench, Wind } from "lucide-react";
 import { Flame } from "lucide-react";
+import { useSetTypeRegistry } from "@/lib/set-type-registry";
 
 export const Route = createFileRoute("/_authenticated/app/configuracoes")({
   validateSearch: (search: Record<string, unknown>) => ({

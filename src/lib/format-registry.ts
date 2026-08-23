@@ -20,9 +20,11 @@ export type FormatPreset = {
   id: string;
   label: string;
   base: BlockFormat;
-  set_type_id: string; // Nova governança técnica
+  set_type_id: string; // Governança técnica
   description?: string;
   defaults?: Record<string, any>;
+  enabled_fields?: string[]; // Quais campos do set_type estão visíveis
+  field_labels?: Record<string, string>; // Nomenclatura contextual (ex: "rounds" vs "séries")
   builtin?: boolean;
 };
 
@@ -54,6 +56,8 @@ export function useFormatRegistry() {
       label: def?.label ?? BLOCK_FORMAT_LABEL[f],
       base: (def?.base_format as BlockFormat) ?? f,
       set_type_id: (def as any)?.metadata?.set_type_id ?? getDefaultSetTypeForFormat(f),
+      enabled_fields: (def as any)?.metadata?.enabled_fields ?? undefined,
+      field_labels: (def as any)?.metadata?.field_labels ?? undefined,
       description: def?.description ?? undefined,
       defaults: (def?.default_config as Record<string, any>) ?? undefined,
       builtin: true,
@@ -67,6 +71,8 @@ export function useFormatRegistry() {
       label: d.label,
       base: d.base_format as BlockFormat,
       set_type_id: ((d as any).metadata as any)?.set_type_id ?? "reps_carga",
+      enabled_fields: ((d as any).metadata as any)?.enabled_fields ?? undefined,
+      field_labels: ((d as any).metadata as any)?.field_labels ?? undefined,
       description: d.description ?? undefined,
       defaults: (d.default_config as Record<string, any>) ?? undefined,
       builtin: false,
@@ -115,7 +121,7 @@ export function useFormatRegistry() {
     /** Salva um formato padrão em uma única operação — nome, estrutura, descrição e valores padrão. */
     saveBuiltin(
       id: string,
-      patch: { label: string; base: BlockFormat; set_type_id: string; description?: string; defaults?: Record<string, any> },
+      patch: { label: string; base: BlockFormat; set_type_id: string; description?: string; defaults?: Record<string, any>; enabled_fields?: string[]; field_labels?: Record<string, string> },
     ) {
       const def = definitions.find((d: any) => d.id === id);
       upsertMutation.mutate({
@@ -124,7 +130,12 @@ export function useFormatRegistry() {
         label: patch.label,
         description: patch.description ?? null,
         default_config: patch.defaults ?? {},
-        metadata: { ...((def as any)?.metadata || {}), set_type_id: patch.set_type_id },
+        metadata: { 
+          ...((def as any)?.metadata || {}), 
+          set_type_id: patch.set_type_id,
+          enabled_fields: patch.enabled_fields,
+          field_labels: patch.field_labels
+        },
         is_active: def?.is_active ?? true,
         is_builtin: true,
       });
@@ -166,7 +177,11 @@ export function useFormatRegistry() {
         label: preset.label,
         description: preset.description,
         default_config: preset.defaults,
-        metadata: { set_type_id: preset.set_type_id },
+        metadata: { 
+          set_type_id: preset.set_type_id,
+          enabled_fields: preset.enabled_fields,
+          field_labels: preset.field_labels
+        },
         is_builtin: false,
         is_active: true,
       });
@@ -181,7 +196,12 @@ export function useFormatRegistry() {
         label: patch.label ?? def.label,
         description: patch.description ?? def.description,
         default_config: patch.defaults ?? def.default_config,
-        metadata: { ...((def as any).metadata || {}), set_type_id: patch.set_type_id ?? (def as any).metadata?.set_type_id },
+        metadata: { 
+          ...((def as any).metadata || {}), 
+          set_type_id: patch.set_type_id ?? (def as any).metadata?.set_type_id,
+          enabled_fields: patch.enabled_fields ?? (def as any).metadata?.enabled_fields,
+          field_labels: patch.field_labels ?? (def as any).metadata?.field_labels
+        },
       });
     },
     async duplicatePreset(source: FormatPreset) {
