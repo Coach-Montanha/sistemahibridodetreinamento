@@ -157,16 +157,25 @@ function makeEmpty(): State {
 function novoBloco(): BlocoPref {
   return {
     formato: "preparacao_movimento",
+    presetId: "builtin:preparacao_movimento",
     titulo: "Novo bloco",
     duracao_min: 10,
     num_exercicios: 3,
     series: 3,
+    seriesMin: 3,
+    seriesMax: 3,
     reps_base: 10,
+    repsPorExercicio: 10,
     reps_pattern: [],
     progressao: "nenhuma",
     passos: [],
     tempo_trabalho: null,
     tempo_descanso: null,
+    descansoAposSeg: 0,
+    modoExecucao: "circuito",
+    selecaoExercicios: "ia",
+    exerciciosFixos: [],
+    fonteExercicios: {},
     modalidades_alvo: [],
     equipamentos_alvo: [],
     exercicios_permitidos: [],
@@ -481,16 +490,25 @@ function ensureKbBloco(blocos: BlocoPref[]): BlocoPref {
   if (blocos.length > 0) return blocos[0];
   return {
     formato: "kb_timed_sets",
+    presetId: "builtin:kb_timed_sets",
     titulo: "Kettlebell Fitness",
     duracao_min: null,
     num_exercicios: 6,
     series: 6,
+    seriesMin: 6,
+    seriesMax: 6,
     reps_base: 12,
+    repsPorExercicio: 12,
     reps_pattern: [],
     progressao: "nenhuma",
     passos: [],
     tempo_trabalho: null,
     tempo_descanso: null,
+    descansoAposSeg: 0,
+    modoExecucao: "circuito",
+    selecaoExercicios: "ia",
+    exerciciosFixos: [],
+    fonteExercicios: {},
     modalidades_alvo: [],
     equipamentos_alvo: [],
     exercicios_permitidos: [],
@@ -2202,7 +2220,7 @@ function SortableBloco({
           <div className="grid gap-3 md:grid-cols-[220px_1fr]">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Formato</Label>
-              <Select value={bloco.formato} onValueChange={(v) => onChange({ ...bloco, formato: v as any })}>
+              <Select value={bloco.formato} onValueChange={(v) => onChange({ ...bloco, formato: v as any, presetId: v.includes(':') ? v : `builtin:${v}` })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ENABLED_FORMATS.map((f) => (
@@ -2227,10 +2245,10 @@ function SortableBloco({
               onChange={(n) => onChange({ ...bloco, duracao_min: n || null })} />
             <NumField label="Exercícios" value={bloco.num_exercicios} min={1} max={20}
               onChange={(n) => onChange({ ...bloco, num_exercicios: Math.max(1, n) })} />
-            <NumField label="Séries" value={bloco.series} min={1} max={20}
-              onChange={(n) => onChange({ ...bloco, series: Math.max(1, n) })} />
+            <NumField label="Séries" value={bloco.series ?? 0} min={1} max={20}
+              onChange={(n) => onChange({ ...bloco, series: n || 0, seriesMin: n || 0, seriesMax: n || 0 })} />
             <NumField label="Reps base" value={bloco.reps_base} min={1} max={100}
-              onChange={(n) => onChange({ ...bloco, reps_base: Math.max(1, n) })} />
+              onChange={(n) => onChange({ ...bloco, reps_base: Math.max(1, n), repsPorExercicio: Math.max(1, n) })} />
           </div>
 
           {/* Direcionamento: modalidades + equipamentos */}
@@ -2289,6 +2307,30 @@ function SortableBloco({
                       onChange={(n) => onChange({ ...bloco, tempo_descanso: n || null })} />
                   </div>
                 )}
+                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                  <NumField label="Descanso bloco (s)" value={bloco.descansoAposSeg} min={0} max={600}
+                    onChange={(n) => onChange({ ...bloco, descansoAposSeg: n })} />
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Execução</Label>
+                    <Select value={bloco.modoExecucao} onValueChange={(v) => onChange({ ...bloco, modoExecucao: v as any })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="circuito">Circuito</SelectItem>
+                        <SelectItem value="series_fixas">Séries Fixas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Seleção Exerc.</Label>
+                    <Select value={bloco.selecaoExercicios} onValueChange={(v) => onChange({ ...bloco, selecaoExercicios: v as any })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ia">Inteligência Artificial</SelectItem>
+                        <SelectItem value="manual">Manual (Curadoria)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             )}
           </div>

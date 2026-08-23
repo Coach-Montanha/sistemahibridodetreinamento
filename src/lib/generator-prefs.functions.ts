@@ -33,27 +33,40 @@ const PASSO_PCT = z.object({
 });
 
 const BLOCO = z.object({
-  formato: FORMATO,
+  formato: z.string().min(1).max(120), // Widen to support builtin: and custom:
+  presetId: z.string().nullable().optional(),
   titulo: z.string().min(1).max(120),
   duracao_min: z.number().int().min(1).max(180).nullable().optional(),
   num_exercicios: z.number().int().min(1).max(20).default(3),
-  series: z.number().int().min(1).max(20).default(3),
+  series: z.number().int().min(1).max(20).nullable().optional(), // Can be null for AMRAP
+  seriesMin: z.number().int().min(1).max(20).nullable().optional(),
+  seriesMax: z.number().int().min(1).max(20).nullable().optional(),
   reps_base: z.number().int().min(1).max(100).default(10),
+  repsPorExercicio: z.union([z.string(), z.number()]).nullable().optional(),
   reps_pattern: z.array(z.number().int().min(1).max(100)).default([]),
   progressao: z.enum(["nenhuma", "piramide_crescente", "piramide_decrescente", "onda"]).default("nenhuma"),
   passos: z.array(PASSO_PCT).default([]),
   tempo_trabalho: z.number().int().min(1).max(600).nullable().optional(),
   tempo_descanso: z.number().int().min(0).max(600).nullable().optional(),
-  modalidades_alvo: z.array(METODOLOGIA).default([]),
+  descansoAposSeg: z.number().int().min(0).max(600).default(0),
+  descansoEntreSeriesSeg: z.number().int().min(0).max(600).nullable().optional(),
+  intervaloMin: z.number().int().min(1).max(60).nullable().optional(),
+  percentual1rm: z.number().int().min(1).max(100).nullable().optional(),
+  modoExecucao: z.enum(["circuito", "series_fixas"]).default("circuito"),
+  selecaoExercicios: z.enum(["ia", "manual"]).default("ia"),
+  exerciciosFixos: z.array(z.string().uuid()).default([]),
+  slot: z.enum(["mobilidade", "aquecimento"]).nullable().optional(),
+  modalidades_alvo: z.array(z.string()).default([]), // Widen for flexibility
   equipamentos_alvo: z.array(z.string().min(1).max(60)).default([]),
   exercicios_permitidos: z.array(z.string().uuid()).default([]),
-  // Config exclusiva do motor Kettlebell Fitness (opcional; ignorada nas outras modalidades).
-  kb_categorias_ativas: z
-    .record(z.string(), z.boolean())
-    .optional(),
+  fonteExercicios: z.object({
+    metodologias: z.array(z.string()).optional(),
+    equipamento: z.array(z.string()).optional(),
+  }).default({}),
+  // Config exclusiva do motor Kettlebell Fitness
+  kb_categorias_ativas: z.record(z.string(), z.boolean()).optional(),
   kb_num_estacoes_override: z.number().int().min(3).max(10).nullable().optional(),
   kb_duracao_min_override: z.number().int().min(10).max(60).nullable().optional(),
-  // Preparação de Movimento opcional que antecede o bloco automático do KB Fitness.
   kb_prep_enabled: z.boolean().optional(),
   kb_prep_duracao_min: z.number().int().min(1).max(30).nullable().optional(),
   kb_prep_mobilidade: z.number().int().min(0).max(10).nullable().optional(),
@@ -93,19 +106,32 @@ export const getGeneratorPrefs = createServerFn({ method: "GET" })
 
     const blocos: BlocoPref[] = (templates ?? []).map((t: any) => ({
       formato: t.formato,
+      presetId: t.config?.presetId ?? `builtin:${t.formato}`,
       titulo: t.nome,
       duracao_min: t.duracao_min ?? null,
       num_exercicios: t.config?.num_exercicios ?? 3,
       series: t.config?.series ?? 3,
+      seriesMin: t.config?.seriesMin ?? (t.config?.series ?? 3),
+      seriesMax: t.config?.seriesMax ?? (t.config?.series ?? 3),
       reps_base: t.config?.reps_base ?? 10,
+      repsPorExercicio: t.config?.repsPorExercicio ?? 10,
       reps_pattern: t.config?.reps_pattern ?? [],
       progressao: t.config?.progressao ?? "nenhuma",
       passos: t.config?.passos ?? [],
       tempo_trabalho: t.config?.tempo_trabalho ?? null,
       tempo_descanso: t.config?.tempo_descanso ?? null,
+      descansoAposSeg: t.config?.descansoAposSeg ?? 0,
+      descansoEntreSeriesSeg: t.config?.descansoEntreSeriesSeg ?? null,
+      intervaloMin: t.config?.intervaloMin ?? null,
+      percentual1rm: t.config?.percentual1rm ?? null,
+      modoExecucao: t.config?.modoExecucao ?? "circuito",
+      selecaoExercicios: t.config?.selecaoExercicios ?? "ia",
+      exerciciosFixos: t.config?.exerciciosFixos ?? [],
+      slot: t.config?.slot ?? null,
       modalidades_alvo: t.config?.modalidades_alvo ?? [],
       equipamentos_alvo: t.config?.equipamentos_alvo ?? [],
       exercicios_permitidos: t.config?.exercicios_permitidos ?? [],
+      fonteExercicios: t.config?.fonteExercicios ?? {},
     }));
 
     return { blocos, origem: "template" as const };
