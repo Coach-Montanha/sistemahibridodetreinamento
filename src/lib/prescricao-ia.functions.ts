@@ -434,23 +434,24 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         : isHibrido
         ? await (async () => {
             let template = data.hibrido.sessaoTemplate;
-            
-            // 1. Tentar carregar das preferências do treinador se o template vier vazio
+            const methodologyForQuery = metodologiaEfetiva === "kettlebell_fitness" ? "kettlebell_fitness" : "hibrido";
+
+            // 1. Tentar carregar das preferências do treinador se o template vier vazio ou for "auto"
             if (!template || !Array.isArray(template) || template.length === 0) {
-              console.log("[prescribeTrainingWithAi] Híbrido sem sessaoTemplate. Buscando generator_preferences...");
+              console.log(`[prescribeTrainingWithAi] Híbrido sem sessaoTemplate. Buscando prefs para ${methodologyForQuery}...`);
               const { data: coach } = await supabase.from("coaches").select("id").maybeSingle();
               if (coach) {
                 const { data: pref } = await supabase
                   .from("generator_preferences")
                   .select("blocos")
                   .eq("coach_id", coach.id)
-                  .eq("metodologia", metodologiaEfetiva)
+                  .eq("metodologia", methodologyForQuery)
                   .maybeSingle();
                 
                 if (pref?.blocos && Array.isArray(pref.blocos) && pref.blocos.length > 0) {
-                  console.log("[prescribeTrainingWithAi] Usando blocos das configurações.");
-                  template = (pref.blocos as any[]).map(b => ({
-                    chave: b.chave || `bloco_${Math.random().toString(36).substr(2, 4)}`,
+                  console.log("[prescribeTrainingWithAi] Usando blocos das configurações persistidas.");
+                  template = (pref.blocos as any[]).map((b, idx) => ({
+                    chave: b.chave || `bloco_${idx + 1}`,
                     formato: b.formato,
                     titulo: b.titulo,
                     selecaoExercicios: b.selecaoExercicios || "ia",
@@ -463,16 +464,17 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
 
             // 2. Fallback para a estrutura da última sessão se ainda estiver vazio
             if (!template || !Array.isArray(template) || template.length === 0) {
-              console.log("[prescribeTrainingWithAi] Fallback: Usando histórico...");
-              template = continuation.lastSessionStructure?.map((b: any) => ({
+              console.log("[prescribeTrainingWithAi] Fallback: Usando histórico da última sessão...");
+              template = (continuation.lastSessionStructure ?? []).map((b: any) => ({
                 chave: b.chave,
                 formato: b.formato,
                 titulo: b.titulo,
                 selecaoExercicios: "ia",
                 numeroExercicios: b.numeroExercicios || 1,
                 fonteExercicios: b.fonteExercicios || { metodologias: [metodologiaEfetiva] }
-              })) || [];
+              }));
             }
+
 
             
             if (!template || template.length === 0) {
