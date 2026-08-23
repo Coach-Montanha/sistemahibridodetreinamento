@@ -2307,6 +2307,30 @@ function SortableBloco({
                       onChange={(n) => onChange({ ...bloco, tempo_descanso: n || null })} />
                   </div>
                 )}
+                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                  <NumField label="Descanso bloco (s)" value={bloco.descansoAposSeg} min={0} max={600}
+                    onChange={(n) => onChange({ ...bloco, descansoAposSeg: n })} />
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Execução</Label>
+                    <Select value={bloco.modoExecucao} onValueChange={(v) => onChange({ ...bloco, modoExecucao: v as any })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="circuito">Circuito</SelectItem>
+                        <SelectItem value="series_fixas">Séries Fixas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Seleção Exerc.</Label>
+                    <Select value={bloco.selecaoExercicios} onValueChange={(v) => onChange({ ...bloco, selecaoExercicios: v as any })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ia">Inteligência Artificial</SelectItem>
+                        <SelectItem value="manual">Manual (Curadoria)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             )}
           </div>
