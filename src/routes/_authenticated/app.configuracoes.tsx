@@ -361,6 +361,14 @@ function ConfiguracoesPage() {
       <KpiRow items={kpis} loading={section === "arquivos" ? filesLoading : false} />
 
       <div className="min-w-0 space-y-6">
+        {section === "aparencia" && (
+          <Fold
+            title="Aparência do sistema"
+            description="Escolha o tema visual que melhor se adapta ao seu estilo de trabalho."
+          >
+            <AparenciaPanel />
+          </Fold>
+        )}
         {section === "marca" && (
           <Fold
             title="Marca do treinador"
