@@ -476,24 +476,11 @@ export function PrescreverIaDialog({
       }
     }
 
-    // Garante que o template nunca vá vazio para o motor
-    if (!template || template.length === 0) {
-      console.warn("PrescreverIaDialog: sessaoTemplate está vazio no hibridoPayload");
-    }
-
     return {
       ...base,
-      sessaoTemplate: template,
+      sessaoTemplate: template ?? [],
     };
   }, [escopoInicial?.hibrido, moldeSelecionado, moldesHistoricos]);
-      ? (moldesHistoricos.length > 0 ? moldesHistoricos[moldesHistoricos.length - 1] : null)
-      : moldesHistoricos.find((m) => m.id === moldeSelecionado);
-
-    return {
-      ...base,
-      sessaoTemplate: escolhido?.blocks ?? base.sessaoTemplate ?? [],
-    };
-  }, [escopoInicial?.hibrido, moldesHistoricos, moldeSelecionado]);
 
   // Mapeamento de escolas por metodologia
   const ESCOLAS_DISPONIVEIS: Record<string, { value: string; label: string }[]> = useMemo(() => ({
