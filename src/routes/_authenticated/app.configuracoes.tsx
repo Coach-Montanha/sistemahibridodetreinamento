@@ -1463,50 +1463,160 @@ function FormatoEditorDialog({
             <Input
               value={draft.label}
               onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-              placeholder={BLOCK_FORMAT_LABEL[draft.base]}
+              placeholder={BLOCK_FORMAT_LABEL[draft.base] || draft.base}
               className="h-10"
               autoFocus
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Mecânica da Série (Tipo)
-            </Label>
-            <Select
-              value={draft.set_type_id}
-              onValueChange={(v) => setDraft({ ...draft, set_type_id: v })}
-            >
-              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {setTypes.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-[11px] text-muted-foreground">
-              O Tipo de Série define os campos técnicos (reps, carga, tempo, etc.) e como a IA gera os valores.
-            </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Mecânica da Série (Tipo)
+              </Label>
+              <Select
+                value={draft.set_type_id}
+                onValueChange={(v) => {
+                  const newSetType = setTypes.find(t => t.id === v);
+                  setDraft({ 
+                    ...draft, 
+                    set_type_id: v,
+                    enabled_fields: newSetType?.fields.map(f => f.key)
+                  });
+                }}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {setTypes.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Estrutura do bloco
+              </Label>
+              <Select
+                value={draft.base}
+                onValueChange={(v) => setDraft({ ...draft, base: v })}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ENABLED_FORMATS.map((f) => (
+                    <SelectItem key={f} value={f}>
+                      {BLOCK_FORMAT_LABEL[f] || f}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Estrutura do bloco
+              Campos visíveis e Rótulos
             </Label>
-            <Select
-              value={draft.base}
-              onValueChange={(v) => setDraft({ ...draft, base: v as BlockFormat })}
-            >
-              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ENABLED_FORMATS.map((f) => (
-                  <SelectItem key={f} value={f}>{BLOCK_FORMAT_LABEL[f]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-[11px] text-muted-foreground">
-              Define o rótulo visual e organizacional (ex: EMOM, Musculação, Circuito).
-            </p>
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+              <div className="grid grid-cols-1 gap-3">
+                {setTypes.find(t => t.id === draft.set_type_id)?.fields.map(field => {
+                  const isEnabled = draft.enabled_fields?.includes(field.key) ?? true;
+                  const customLabel = draft.field_labels?.[field.key] || field.label;
+                  
+                  return (
+                    <div key={field.key} className="flex items-center gap-3">
+                      <Checkbox 
+                        id={`field-${field.key}`}
+                        checked={isEnabled}
+                        onCheckedChange={(checked) => {
+                          const currentFields = draft.enabled_fields || setTypes.find(t => t.id === draft.set_type_id)?.fields.map(f => f.key) || [];
+                          const nextFields = checked 
+                            ? [...currentFields, field.key]
+                            : currentFields.filter(k => k !== field.key);
+                          setDraft({ ...draft, enabled_fields: nextFields });
+                        }}
+                      />
+                      <div className="flex-1 grid grid-cols-2 gap-2 items-center">
+                        <Label htmlFor={`field-${field.key}`} className="text-xs cursor-pointer">
+                          {field.label}
+                        </Label>
+                        <Input 
+                          size={1}
+                          className="h-7 text-[11px]"
+                          placeholder={field.label}
+                          value={customLabel}
+                          onChange={(e) => {
+                            setDraft({
+                              ...draft,
+                              field_labels: {
+                                ...(draft.field_labels || {}),
+                                [field.key]: e.target.value
+                              }
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Valores Padrão</Label>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {setTypes.find(t => t.id === draft.set_type_id)?.fields
+                .filter(f => draft.enabled_fields?.includes(f.key) ?? true)
+                .map(field => (
+                  <div key={field.key} className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">{draft.field_labels?.[field.key] || field.label}</Label>
+                    <Input 
+                      className="h-8 text-xs tabular-nums"
+                      value={draft.defaults?.[field.key] ?? ""}
+                      onChange={(e) => setDefault(field.key, e.target.value)}
+                    />
+                  </div>
+                ))
+              }
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Exercícios</Label>
+                <Input 
+                  type="number"
+                  className="h-8 text-xs"
+                  value={draft.defaults?.numeroExercicios ?? ""}
+                  onChange={(e) => setDefault("numeroExercicios", Number(e.target.value))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Descanso Pós (s)</Label>
+                <Input 
+                  type="number"
+                  className="h-8 text-xs"
+                  value={draft.defaults?.descansoAposSeg ?? ""}
+                  onChange={(e) => setDefault("descansoAposSeg", Number(e.target.value))}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Descrição
+              <span className="ml-1 normal-case tracking-normal text-muted-foreground/70">(opcional)</span>
+            </Label>
+            <Textarea
+              rows={2}
+              value={draft.description ?? ""}
+              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              placeholder="Ex.: AMRAP curto para finalizar a sessão"
+              className="resize-none text-sm"
+            />
           </div>
 
           <div className="space-y-1.5">

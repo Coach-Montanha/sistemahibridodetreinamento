@@ -604,10 +604,16 @@ export function PrescreverIaDialog({
                   diasPorSemana: diasPorSemana,
                   dataInicio: escopoInicial?.dataInicio ?? new Date().toISOString().slice(0, 10),
                   escola: escola !== "auto" ? escola : null,
+                  set_types: setTypes.map(t => ({ id: t.id, label: t.label })),
+                  custom_formats: customFormats.map(f => ({
+                    id: f.id,
+                    label: f.label,
+                    base: f.base,
+                    set_type_id: f.set_type_id,
+                    field_labels: f.field_labels
+                  }))
                 }
               : null,
-            setTypes: setTypes,
-            customFormats: customFormats,
           },
         });
         setProgresso(prev => [...prev, "Gerando relatório de evolução...", "Finalizando prescrição em bloco!"]);
