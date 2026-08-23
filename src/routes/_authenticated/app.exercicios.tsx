@@ -1543,31 +1543,46 @@ function BulkEditDialog({
     }
   }
 
+  async function bulkDelete() {
+    if (selectedIds.length === 0) return;
+    setApplying(true);
+    setProgress(0);
+    try {
+      const { error } = await supabase
+        .from("exercises")
+        .delete()
+        .in("id", selectedIds)
+        .not("coach_id", "is", null); // Apenas deleta os próprios
+      
+      if (error) throw error;
+      
+      toast.success(`${selectedIds.length} exercícios removidos (apenas seus exercícios foram afetados)`);
+      onApplied();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao excluir em massa");
+    } finally {
+      setApplying(false);
+      setShowDeleteConfirm(false);
+    }
+  }
+
   function summary(): string {
     const parts: string[] = [];
-    if (metMode === "manter") parts.push("modalidades inalteradas");
-    else {
+    if (metMode !== "manter") {
       const labels = metValues.map((m) => METHODOLOGY_LABEL[m]).join(", ") || "—";
-      parts.push(
-        metMode === "adicionar"
-          ? `+ modalidades: ${labels}`
-          : metMode === "remover"
-            ? `− modalidades: ${labels}`
-            : `modalidades = ${labels}`
-      );
+      parts.push(`Metodologias: ${MODE_LABEL[metMode]} (${labels})`);
     }
-    if (equipMode === "manter") parts.push("equipamento inalterado");
-    else {
+    if (equipMode !== "manter") {
       const labels = equipValues.join(", ") || "—";
-      parts.push(
-        equipMode === "adicionar"
-          ? `+ equipamento: ${labels}`
-          : equipMode === "remover"
-            ? `− equipamento: ${labels}`
-            : `equipamento = ${labels}`
-      );
+      parts.push(`Equipamento: ${MODE_LABEL[equipMode]} (${labels})`);
     }
-    return parts.join(" · ");
+    if (padraoMode !== "manter") {
+      parts.push(`Padrão: ${MODE_LABEL[padraoMode]} ("${padraoValue}")`);
+    }
+    if (unilateralMode !== "manter") {
+      parts.push(`Unilateral: ${unilateralMode}`);
+    }
+    return parts.length > 0 ? parts.join(" · ") : "Nenhuma alteração selecionada";
   }
 
   return (
