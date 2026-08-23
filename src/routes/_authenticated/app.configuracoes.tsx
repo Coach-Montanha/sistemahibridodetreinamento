@@ -986,9 +986,7 @@ function FormatosPanel() {
     builtins,
 
     presets,
-    renameBuiltin,
-    describeBuiltin,
-    setBuiltinDefaults,
+    saveBuiltin,
     resetBuiltin,
     toggleBuiltin,
     addCustom,
