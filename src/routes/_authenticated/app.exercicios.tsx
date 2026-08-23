@@ -599,9 +599,12 @@ function ExerciciosPage() {
           qc.invalidateQueries({ queryKey: ["exercises"] });
         }}
       />
+        </>
+      )}
     </div>
   );
 }
+
 
 function EquipChip({
   label,
