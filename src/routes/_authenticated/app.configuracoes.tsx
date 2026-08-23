@@ -1034,29 +1034,34 @@ function FormatosPanel() {
 
   function handleSave(next: FormatPreset) {
     if (next.builtin) {
-      // Salva tudo em uma única operação, incluindo a estrutura (base) do bloco.
       saveBuiltin(next.id, {
         label: next.label,
         base: next.base,
         set_type_id: next.set_type_id,
         description: next.description,
         defaults: next.defaults,
+        enabled_fields: next.enabled_fields,
+        field_labels: next.field_labels,
       });
-    } else if (!next.id) {
-      addCustom({
-        label: next.label || "Novo formato",
-        base: next.base,
-        set_type_id: next.set_type_id,
-        description: next.description,
-        defaults: next.defaults,
-      });
-    } else {
+    } else if (next.id) {
       updateCustom(next.id, {
         label: next.label,
         base: next.base,
         set_type_id: next.set_type_id,
         description: next.description,
         defaults: next.defaults,
+        enabled_fields: next.enabled_fields,
+        field_labels: next.field_labels,
+      });
+    } else {
+      addCustom({
+        label: next.label,
+        base: next.base,
+        set_type_id: next.set_type_id,
+        description: next.description,
+        defaults: next.defaults,
+        enabled_fields: next.enabled_fields,
+        field_labels: next.field_labels,
       });
     }
     setEditing(null);
