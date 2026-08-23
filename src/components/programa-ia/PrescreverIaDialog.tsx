@@ -1381,6 +1381,16 @@ export function PrescreverIaDialog({
           >
             Cancelar
           </Button>
+          {previa && (
+            <Button
+              variant="outline"
+              onClick={baixarTxt}
+              className="w-full gap-2 sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Baixar .txt
+            </Button>
+          )}
           <Button
             onClick={() => salvarMut.mutate()}
             disabled={!previa || salvarMut.isPending}
