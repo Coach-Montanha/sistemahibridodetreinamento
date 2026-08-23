@@ -885,7 +885,90 @@ export function PrescreverIaDialog({
     onError: (e: any) => toast.error(e?.message ?? "Falha ao adicionar os treinos"),
   });
 
+  const baixarTxt = useCallback(async () => {
+    if (!previa) return;
+
+    let txt = `PROGRAMA DE TREINAMENTO: ${programa?.titulo || "SEM TÍTULO"}\n`;
+    txt += `MODALIDADE: ${METHODOLOGY_LABEL[metodologia as Methodology] || metodologia}\n`;
+    txt += `DATA DE GERAÇÃO: ${new Date().toLocaleDateString("pt-BR")}\n`;
+    txt += `================================================================================\n\n`;
+
+    if (isPrescricaoHibrido(previa)) {
+      // Híbrido
+      const template = hibridoPayload?.sessaoTemplate ?? [];
+      const labels = new Map(template.map((b) => [b.chave, b.titulo || b.formato]));
+
+      for (let i = 0; i < previa.sessoes.length; i++) {
+        const sessao = previa.sessoes[i];
+        txt += `SESSÃO ${i + 1}\n`;
+        txt += `--------------------------------------------------------------------------------\n`;
+
+        for (const bloco of sessao.blocos) {
+          const titulo = labels.get(bloco.chave) || bloco.chave;
+          txt += `[${titulo.toUpperCase()}]\n`;
+          
+          if (bloco.exerciciosIds.length > 0) {
+            // Como temos apenas os IDs no preview híbrido antes de salvar, a IA retorna nomes nos logs de progresso ou podemos buscar. 
+            // Mas no preview atual da UI para Híbrido, exibimos apenas contagem.
+            // Para o TXT ser útil, vamos listar o que temos.
+            txt += `Exercícios selecionados (${bloco.exerciciosIds.length})\n`;
+            bloco.exerciciosIds.forEach((id, idx) => {
+               txt += `${idx + 1}. ID: ${id}\n`;
+            });
+          } else {
+            txt += `Nenhum exercício selecionado.\n`;
+          }
+          txt += `\n`;
+        }
+        txt += `\n`;
+      }
+    } else {
+      // Musculação / KB Sport / WL / Funcional / Corrida
+      const p = previa as AiPrescription;
+      for (const dia of p.days) {
+        txt += `${dia.name || "TREINO"} ${dia.day_label ? `(${dia.day_label})` : ""}\n`;
+        if (dia.description) txt += `DESCRIÇÃO: ${dia.description}\n`;
+        txt += `--------------------------------------------------------------------------------\n`;
+
+        dia.exercises.forEach((e, i) => {
+          let linha = `${i + 1}. ${e.name}`;
+          if (e.group_type !== "individual" && e.group) {
+            linha += ` [${COMBINACAO_LABEL[e.group_type] || e.group_type} ${e.group}]`;
+          }
+          txt += `${linha}\n`;
+          
+          const detalhes = [];
+          if (e.sets_reps) detalhes.push(`Séries/Reps: ${e.sets_reps}`);
+          if (e.load) detalhes.push(`Carga: ${e.load}`);
+          if (e.rest_seconds) detalhes.push(`Descanso: ${e.rest_seconds}s`);
+          
+          if (detalhes.length > 0) {
+            txt += `   ${detalhes.join(" | ")}\n`;
+          }
+          
+          if (e.observations) {
+            txt += `   OBS: ${e.observations}\n`;
+          }
+          txt += `\n`;
+        });
+        txt += `\n`;
+      }
+    }
+
+    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `programa-${programa?.titulo?.toLowerCase().replace(/\s+/g, "-") || "treino"}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Arquivo .txt gerado com sucesso");
+  }, [previa, programa, metodologia, hibridoPayload]);
+
   const podeGerar = useMemo(
+
     () => !gerarMut.isPending,
     [gerarMut.isPending],
   );
