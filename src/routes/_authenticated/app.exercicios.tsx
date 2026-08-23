@@ -338,15 +338,17 @@ function ExerciciosPage() {
                 <button
                   type="button"
                   disabled={selectingAll}
-                  onClick={() => selectAllInDatabase()}
+                  onClick={allVisibleSelected ? clearSelection : selectAllVisible}
                   className="inline-flex h-8 items-center gap-1.5 px-3 text-sm font-medium text-foreground outline-none transition-colors duration-150 hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {selectingAll ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : allVisibleSelected ? (
+                    <X className="h-3.5 w-3.5" />
                   ) : (
                     <CheckSquare className="h-3.5 w-3.5" />
                   )}
-                  Selecionar todos
+                  {allVisibleSelected ? "Desmarcar visíveis" : "Selecionar visíveis"}
                 </button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -361,14 +363,14 @@ function ExerciciosPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-64">
                     <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                      Escolha o escopo
+                      Escopo de seleção
                     </DropdownMenuLabel>
                     <DropdownMenuItem onSelect={() => selectAllInDatabase()}>
                       <CheckSquare className="mr-2 h-4 w-4" />
                       <div className="flex flex-col">
-                        <span>Todos os exercícios</span>
+                        <span>Todo o banco de dados</span>
                         <span className="text-xs text-muted-foreground">
-                          Ignora filtros e busca
+                          Ignora filtros e busca atual
                         </span>
                       </div>
                     </DropdownMenuItem>
@@ -377,42 +379,20 @@ function ExerciciosPage() {
                     >
                       <Dumbbell className="mr-2 h-4 w-4" />
                       <div className="flex flex-col">
-                        <span>Somente meus</span>
+                        <span>Somente meus exercícios</span>
                         <span className="text-xs text-muted-foreground">
-                          Exclui os globais
+                          Exclui exercícios compartilhados
                         </span>
                       </div>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={
-                        allVisibleSelected ? clearSelection : selectAllVisible
-                      }
-                    >
-                      <Search className="mr-2 h-4 w-4" />
-                      <div className="flex flex-col">
-                        <span>
-                          {allVisibleSelected
-                            ? "Desmarcar visíveis"
-                            : "Selecionar visíveis"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {visibleIds.length} com os filtros atuais
-                        </span>
-                      </div>
+                    <DropdownMenuItem onSelect={clearSelection}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Limpar seleção</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              {selected.size > 0 && (
-                <button
-                  type="button"
-                  onClick={clearSelection}
-                  className="ml-auto rounded-md px-2 py-1 text-sm text-muted-foreground outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                >
-                  Limpar seleção
-                </button>
-              )}
             </div>
           )}
           <div className={"grid gap-3 " + (selectionMode && selected.size > 0 ? "pb-28 sm:pb-24" : "")}>
