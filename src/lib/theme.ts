@@ -1,13 +1,18 @@
+import { useState, useEffect } from 'react';
+
 export const themeInitScript = `
   (function() {
     try {
-      var theme = localStorage.getItem('visual-theme') || 'padrao';
-      document.documentElement.setAttribute('data-tema', theme);
-      if (theme === 'pulse') {
+      var visualTheme = localStorage.getItem('visual-theme') || 'padrao';
+      document.documentElement.setAttribute('data-tema', visualTheme);
+      
+      var theme = localStorage.getItem('theme') || 'system';
+      var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      
+      if (visualTheme === 'pulse' || isDark) {
         document.documentElement.classList.add('dark');
       } else {
-        // Maintain existing logic for standard dark mode if any
-        // but for now, we just ensure data-tema is set.
+        document.documentElement.classList.remove('dark');
       }
     } catch (e) {}
   })();
@@ -25,11 +30,35 @@ export function setStoredTheme(theme: VisualTheme) {
   localStorage.setItem('visual-theme', theme);
   document.documentElement.setAttribute('data-tema', theme);
   
-  // The Pulse theme is a dark theme by nature
-  if (theme === 'pulse') {
+  const uiTheme = localStorage.getItem('theme') || 'system';
+  const isDark = uiTheme === 'dark' || (uiTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  if (theme === 'pulse' || isDark) {
     document.documentElement.classList.add('dark');
   } else {
-    // For 'padrao', we let the existing dark mode logic handle it
-    // but typically it follows the 'dark' class.
+    document.documentElement.classList.remove('dark');
   }
 }
+
+export function useTheme() {
+  const [theme, setThemeState] = useState<'light' | 'dark' | 'system'>(() => {
+    if (typeof window === 'undefined') return 'system';
+    return (localStorage.getItem('theme') as any) || 'system';
+  });
+
+  const setTheme = (t: 'light' | 'dark' | 'system') => {
+    setThemeState(t);
+    localStorage.setItem('theme', t);
+    const visualTheme = getStoredTheme();
+    const isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    if (visualTheme === 'pulse' || isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  return { theme, setTheme };
+}
+
