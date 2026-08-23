@@ -287,6 +287,7 @@ function ExerciciosPage() {
       >
         <EquipChip
           label="Todos"
+          count={tagStats?.total}
           active={equipFilter === "todos"}
           onClick={() => setEquipFilter("todos")}
         />
