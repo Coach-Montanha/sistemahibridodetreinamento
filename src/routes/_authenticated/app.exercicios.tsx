@@ -147,8 +147,14 @@ function ExerciciosPage() {
     onSuccess: () => {
       toast.success("Exercício removido");
       qc.invalidateQueries({ queryKey: ["exercises"] });
+      qc.invalidateQueries({ queryKey: ["exercises", "tag-stats"] });
     },
-    onError: (e: any) => toast.error(e.message),
+
+    onError: (e: any) => {
+      console.error("Erro ao deletar exercício:", e);
+      toast.error(e.message || "Erro ao remover exercício. Verifique se você tem permissão.");
+    },
+
   });
 
   const visibleIds = useMemo(
@@ -498,12 +504,14 @@ function ExerciciosPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={del.isPending || !!ex.coach_id === false}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (confirm(`Remover "${ex.nome_pt}"?`)) del.mutate(ex.id);
                         }}
+
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {del.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       </Button>
                     </div>
                   )}
