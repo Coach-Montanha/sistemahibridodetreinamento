@@ -19,6 +19,7 @@ import {
   ForcaPctForm,
   KbTimedForm,
   SetsRepsForm,
+  SeriesTempoForm,
   LivreForm,
 } from "./BlockFormats";
 
@@ -112,6 +113,8 @@ function BlockBody({ block }: { block: BuilderBlock }) {
       return <ForcaPctForm block={block} />;
     case "kb_timed_sets":
       return <KbTimedForm block={block} />;
+    case "series_tempo":
+      return <SeriesTempoForm block={block} />;
     case "bodybuilding_sets":
     case "circuito":
     case "metcon":

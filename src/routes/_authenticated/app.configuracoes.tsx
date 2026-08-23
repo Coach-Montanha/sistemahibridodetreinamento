@@ -986,9 +986,7 @@ function FormatosPanel() {
     builtins,
 
     presets,
-    renameBuiltin,
-    describeBuiltin,
-    setBuiltinDefaults,
+    saveBuiltin,
     resetBuiltin,
     toggleBuiltin,
     addCustom,
@@ -1025,18 +1023,22 @@ function FormatosPanel() {
     setEditing({
       id: "",
       label: "",
-      base: "amrap",
+      base: "bodybuilding_sets",
       description: "",
-      defaults: { duracao_min: 12 },
+      defaults: { series: 4, reps: "8-12", descanso_seg: 60 },
       builtin: false,
     });
   }
 
   function handleSave(next: FormatPreset) {
     if (next.builtin) {
-      renameBuiltin(next.base, next.label);
-      describeBuiltin(next.base, next.description ?? "");
-      setBuiltinDefaults(next.base, next.defaults ?? {});
+      // Salva tudo em uma única operação, incluindo a estrutura (base) do bloco.
+      saveBuiltin(next.id, {
+        label: next.label,
+        base: next.base,
+        description: next.description,
+        defaults: next.defaults,
+      });
     } else if (!next.id) {
       addCustom({
         label: next.label || "Novo formato",
@@ -1461,11 +1463,10 @@ function FormatoEditorDialog({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Baseado em
+              Estrutura do bloco
             </Label>
             <Select
               value={draft.base}
-              disabled={draft.builtin}
               onValueChange={(v) => setDraft({ ...draft, base: v as BlockFormat })}
             >
               <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
@@ -1475,9 +1476,9 @@ function FormatoEditorDialog({
                 ))}
               </SelectContent>
             </Select>
-            {draft.builtin && (
-              <p className="text-[11px] text-muted-foreground">Formatos padrão têm base fixa. Duplique para criar variações.</p>
-            )}
+            <p className="text-[11px] text-muted-foreground">
+              Define como o bloco é montado e preenchido no construtor (séries × reps, tempo, circuito, %1RM etc.). Editável em qualquer formato, inclusive nos padrões.
+            </p>
           </div>
 
           <div className="space-y-1.5">

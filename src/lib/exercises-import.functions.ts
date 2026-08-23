@@ -169,8 +169,8 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
       for (const item of approved) {
         // Tradução PT-BR aprovada buscada separadamente (sem relação aninhada ambígua).
-        const { data: traducoes, error: tErr } = await supabaseAdmin
-          .from("exercise_catalog_translations" as any)
+        const { data: traducoes, error: tErr } = await (supabaseAdmin
+          .from("exercise_catalog_translations" as any) as any)
           .select("*")
           .eq("catalog_exercise_id" as any, (item as any).id)
           .eq("locale" as any, "pt-BR")

@@ -51,7 +51,8 @@ export function useFormatRegistry() {
     return {
       id: `builtin:${f}`,
       label: def?.label ?? BLOCK_FORMAT_LABEL[f],
-      base: f,
+      // A estrutura (base) é totalmente editável pelo coach — inclusive nos padrões.
+      base: (def?.base_format as BlockFormat) ?? f,
       description: def?.description ?? undefined,
       defaults: (def?.default_config as Record<string, any>) ?? undefined,
       builtin: true,
@@ -107,6 +108,22 @@ export function useFormatRegistry() {
         default_config: defaults,
         is_builtin: true,
         is_active: true,
+      });
+    },
+    /** Salva um formato padrão em uma única operação — nome, estrutura, descrição e valores padrão. */
+    saveBuiltin(
+      id: string,
+      patch: { label: string; base: BlockFormat; description?: string; defaults?: Record<string, any> },
+    ) {
+      const def = definitions.find((d: any) => d.id === id);
+      upsertMutation.mutate({
+        id,
+        base_format: patch.base,
+        label: patch.label,
+        description: patch.description ?? null,
+        default_config: patch.defaults ?? {},
+        is_active: def?.is_active ?? true,
+        is_builtin: true,
       });
     },
     resetBuiltin(base: BlockFormat) {

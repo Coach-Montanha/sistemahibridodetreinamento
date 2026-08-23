@@ -31,6 +31,7 @@ export const BLOCK_FORMAT_LABEL: Record<BlockFormat, string> = {
   kb_timed_sets: "Kettlebell Sport (AQ/TR)",
   metcon: "MetCon",
   bodybuilding_sets: "Musculação (séries × reps)",
+  series_tempo: "Séries por tempo",
   finalizador: "Finalizador",
   livre: "Bloco livre",
 };
@@ -38,6 +39,7 @@ export const BLOCK_FORMAT_LABEL: Record<BlockFormat, string> = {
 /** Todos os formatos disponíveis para uso em blocos de treino. */
 export const ENABLED_FORMATS: BlockFormat[] = [
   "mobilidade",
+  "preparacao_movimento",
   "forca_tecnica_pct",
   "emom",
   "e2mom",
@@ -46,6 +48,7 @@ export const ENABLED_FORMATS: BlockFormat[] = [
   "kb_timed_sets",
   "metcon",
   "bodybuilding_sets",
+  "series_tempo",
   "finalizador",
   "livre",
 ];
