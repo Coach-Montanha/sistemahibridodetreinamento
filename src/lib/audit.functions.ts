@@ -12,7 +12,10 @@ export const startMediaAudit = createServerFn({ method: "POST" })
     
     // Resolve coach_id
     const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
-    if (!coachId) throw new Error("Coach ID não resolvido.");
+    if (!coachId) {
+      console.error("[Audit] Coach ID não resolvido para usuário:", context.userId);
+      throw new Error("Sessão inválida ou Coach ID não resolvido. Tente fazer login novamente.");
+    }
 
     // 1. Criar o job de auditoria
     const { data: report, error: reportError } = await supabaseAdmin
@@ -115,6 +118,8 @@ export const getLatestAuditReport = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
+    
+    if (!coachId) return null;
 
     const { data: report } = await supabaseAdmin
       .from("media_audit_reports")
