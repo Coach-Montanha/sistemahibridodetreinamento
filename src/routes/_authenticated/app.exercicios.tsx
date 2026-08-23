@@ -338,15 +338,17 @@ function ExerciciosPage() {
                 <button
                   type="button"
                   disabled={selectingAll}
-                  onClick={() => selectAllInDatabase()}
+                  onClick={allVisibleSelected ? clearSelection : selectAllVisible}
                   className="inline-flex h-8 items-center gap-1.5 px-3 text-sm font-medium text-foreground outline-none transition-colors duration-150 hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {selectingAll ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : allVisibleSelected ? (
+                    <X className="h-3.5 w-3.5" />
                   ) : (
                     <CheckSquare className="h-3.5 w-3.5" />
                   )}
-                  Selecionar todos
+                  {allVisibleSelected ? "Desmarcar visíveis" : "Selecionar visíveis"}
                 </button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -361,14 +363,14 @@ function ExerciciosPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-64">
                     <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                      Escolha o escopo
+                      Escopo de seleção
                     </DropdownMenuLabel>
                     <DropdownMenuItem onSelect={() => selectAllInDatabase()}>
                       <CheckSquare className="mr-2 h-4 w-4" />
                       <div className="flex flex-col">
-                        <span>Todos os exercícios</span>
+                        <span>Todo o banco de dados</span>
                         <span className="text-xs text-muted-foreground">
-                          Ignora filtros e busca
+                          Ignora filtros e busca atual
                         </span>
                       </div>
                     </DropdownMenuItem>
@@ -377,42 +379,20 @@ function ExerciciosPage() {
                     >
                       <Dumbbell className="mr-2 h-4 w-4" />
                       <div className="flex flex-col">
-                        <span>Somente meus</span>
+                        <span>Somente meus exercícios</span>
                         <span className="text-xs text-muted-foreground">
-                          Exclui os globais
+                          Exclui exercícios compartilhados
                         </span>
                       </div>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={
-                        allVisibleSelected ? clearSelection : selectAllVisible
-                      }
-                    >
-                      <Search className="mr-2 h-4 w-4" />
-                      <div className="flex flex-col">
-                        <span>
-                          {allVisibleSelected
-                            ? "Desmarcar visíveis"
-                            : "Selecionar visíveis"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {visibleIds.length} com os filtros atuais
-                        </span>
-                      </div>
+                    <DropdownMenuItem onSelect={clearSelection}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Limpar seleção</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              {selected.size > 0 && (
-                <button
-                  type="button"
-                  onClick={clearSelection}
-                  className="ml-auto rounded-md px-2 py-1 text-sm text-muted-foreground outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                >
-                  Limpar seleção
-                </button>
-              )}
             </div>
           )}
           <div className={"grid gap-3 " + (selectionMode && selected.size > 0 ? "pb-28 sm:pb-24" : "")}>
@@ -1402,6 +1382,10 @@ function BulkEditDialog({
   const [metValues, setMetValues] = useState<Methodology[]>([]);
   const [equipMode, setEquipMode] = useState<BulkMode>("manter");
   const [equipValues, setEquipValues] = useState<Equipamento[]>([]);
+  const [padraoMode, setPadraoMode] = useState<BulkMode>("manter");
+  const [padraoValue, setPadraoValue] = useState("");
+  const [unilateralMode, setUnilateralMode] = useState<"manter" | "sim" | "nao">("manter");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [applying, setApplying] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -1411,15 +1395,19 @@ function BulkEditDialog({
       setMetValues([]);
       setEquipMode("manter");
       setEquipValues([]);
+      setPadraoMode("manter");
+      setPadraoValue("");
+      setUnilateralMode("manter");
+      setShowDeleteConfirm(false);
       setProgress(0);
     }
   }, [open]);
 
   const willChange =
-    (metMode !== "manter" && metValues.length > 0) ||
-    (equipMode !== "manter" && equipValues.length > 0) ||
-    metMode === "substituir" ||
-    equipMode === "substituir";
+    (metMode !== "manter" && (metMode === "substituir" || metValues.length > 0)) ||
+    (equipMode !== "manter" && (equipMode === "substituir" || equipValues.length > 0)) ||
+    (padraoMode !== "manter" && (padraoMode === "substituir" || padraoValue.trim().length > 0)) ||
+    unilateralMode !== "manter";
 
   const byId = useMemo(() => {
     const m = new Map<string, any>();
@@ -1452,6 +1440,7 @@ function BulkEditDialog({
           batch.map(async (id) => {
             const ex = byId.get(id);
             if (!ex) return { kind: "fail" as const };
+            
             const nextMet =
               metMode !== "manter"
                 ? applyMode(ex.metodologias ?? [], metMode, metValues)
@@ -1460,22 +1449,34 @@ function BulkEditDialog({
               equipMode !== "manter"
                 ? applyMode(ex.equipamento ?? [], equipMode, equipValues)
                 : ex.equipamento ?? [];
+            const nextPadrao = 
+              padraoMode === "substituir" ? padraoValue :
+              padraoMode === "adicionar" ? (ex.padrao_movimento ? `${ex.padrao_movimento}, ${padraoValue}` : padraoValue) :
+              ex.padrao_movimento;
+            const nextUnilateral = 
+              unilateralMode === "sim" ? true :
+              unilateralMode === "nao" ? false :
+              ex.unilateral;
+
             const isGlobal = !ex.coach_id;
             if (isGlobal) {
-              // Clone-on-write: catálogo compartilhado nunca é sobrescrito.
+              // Clone-on-write
               const { error } = await supabase.from("exercises").insert({
                 coach_id: coachId,
                 nome_pt: ex.nome_pt,
-                padrao_movimento: ex.padrao_movimento ?? null,
+                padrao_movimento: nextPadrao || null,
                 metodologias: nextMet,
                 equipamento: nextEquip,
-                unilateral: ex.unilateral ?? false,
+                unilateral: nextUnilateral ?? false,
                 instrucoes: ex.instrucoes ?? null,
               });
               return { kind: error ? ("fail" as const) : ("cloned" as const), message: error?.message };
             }
+            
             const patch: Record<string, any> = {
               atualizado_em: new Date().toISOString(),
+              padrao_movimento: nextPadrao || null,
+              unilateral: nextUnilateral,
             };
             if (metMode !== "manter") patch.metodologias = nextMet;
             if (equipMode !== "manter") patch.equipamento = nextEquip;
@@ -1522,31 +1523,46 @@ function BulkEditDialog({
     }
   }
 
+  async function bulkDelete() {
+    if (selectedIds.length === 0) return;
+    setApplying(true);
+    setProgress(0);
+    try {
+      const { error } = await supabase
+        .from("exercises")
+        .delete()
+        .in("id", selectedIds)
+        .not("coach_id", "is", null); // Apenas deleta os próprios
+      
+      if (error) throw error;
+      
+      toast.success(`${selectedIds.length} exercícios removidos (apenas seus exercícios foram afetados)`);
+      onApplied();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao excluir em massa");
+    } finally {
+      setApplying(false);
+      setShowDeleteConfirm(false);
+    }
+  }
+
   function summary(): string {
     const parts: string[] = [];
-    if (metMode === "manter") parts.push("modalidades inalteradas");
-    else {
+    if (metMode !== "manter") {
       const labels = metValues.map((m) => METHODOLOGY_LABEL[m]).join(", ") || "—";
-      parts.push(
-        metMode === "adicionar"
-          ? `+ modalidades: ${labels}`
-          : metMode === "remover"
-            ? `− modalidades: ${labels}`
-            : `modalidades = ${labels}`
-      );
+      parts.push(`Metodologias: ${MODE_LABEL[metMode]} (${labels})`);
     }
-    if (equipMode === "manter") parts.push("equipamento inalterado");
-    else {
+    if (equipMode !== "manter") {
       const labels = equipValues.join(", ") || "—";
-      parts.push(
-        equipMode === "adicionar"
-          ? `+ equipamento: ${labels}`
-          : equipMode === "remover"
-            ? `− equipamento: ${labels}`
-            : `equipamento = ${labels}`
-      );
+      parts.push(`Equipamento: ${MODE_LABEL[equipMode]} (${labels})`);
     }
-    return parts.join(" · ");
+    if (padraoMode !== "manter") {
+      parts.push(`Padrão: ${MODE_LABEL[padraoMode]} ("${padraoValue}")`);
+    }
+    if (unilateralMode !== "manter") {
+      parts.push(`Unilateral: ${unilateralMode}`);
+    }
+    return parts.length > 0 ? parts.join(" · ") : "Nenhuma alteração selecionada";
   }
 
   return (
@@ -1659,9 +1675,38 @@ function BulkEditDialog({
             </div>
           </section>
 
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Padrão de Movimento</h3>
+            <ModeTabs value={padraoMode} onChange={setPadraoMode} disabled={applying} />
+            <Input
+              placeholder="Ex: squat, hinge, push..."
+              value={padraoValue}
+              onChange={(e) => setPadraoValue(e.target.value)}
+              disabled={padraoMode === "manter" || applying}
+            />
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Unilateral</h3>
+            <div className="flex gap-2">
+              {(["manter", "sim", "nao"] as const).map((m) => (
+                <Button
+                  key={m}
+                  variant={unilateralMode === m ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setUnilateralMode(m)}
+                  className="flex-1 capitalize"
+                  disabled={applying}
+                >
+                  {m}
+                </Button>
+              ))}
+            </div>
+          </section>
+
           <div className="rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2.5">
             <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              Prévia
+              Prévia das Alterações
             </p>
             <p className="mt-1 text-xs leading-relaxed text-foreground/90">
               {summary()}
@@ -1672,8 +1717,47 @@ function BulkEditDialog({
             <div className="space-y-1.5">
               <Progress value={progress} className="h-1.5" />
               <p className="text-[11px] text-muted-foreground">
-                Aplicando… {progress}%
+                Processando... {progress}%
               </p>
+            </div>
+          )}
+
+          {!applying && (
+            <div className="pt-2">
+              {showDeleteConfirm ? (
+                <div className="flex flex-col gap-2 rounded-lg border border-destructive/50 bg-destructive/5 p-3">
+                  <p className="text-xs font-medium text-destructive">
+                    Tem certeza? Isso removerá permanentemente os exercícios selecionados que foram criados por você.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="flex-1"
+                      onClick={bulkDelete}
+                    >
+                      Confirmar Exclusão
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowDeleteConfirm(false)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir Selecionados
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -1686,7 +1770,7 @@ function BulkEditDialog({
             onClick={() => onOpenChange(false)}
             disabled={applying}
           >
-            Cancelar
+            Fechar
           </Button>
           <Button
             size="sm"
@@ -1702,7 +1786,7 @@ function BulkEditDialog({
             ) : (
               <>
                 <Wand2 className="h-3.5 w-3.5" />
-                Aplicar em {selectedIds.length}
+                Salvar Alterações
               </>
             )}
           </Button>
