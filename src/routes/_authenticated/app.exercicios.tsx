@@ -150,7 +150,11 @@ function ExerciciosPage() {
       qc.invalidateQueries({ queryKey: ["exercises", "tag-stats"] });
     },
 
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      console.error("Erro ao deletar exercício:", e);
+      toast.error(e.message || "Erro ao remover exercício. Verifique se você tem permissão.");
+    },
+
   });
 
   const visibleIds = useMemo(
