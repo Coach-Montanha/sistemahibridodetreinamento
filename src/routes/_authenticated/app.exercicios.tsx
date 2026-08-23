@@ -884,11 +884,7 @@ function ExerciseDialog({
             >
               <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Este é um exercício do{" "}
-                <span className="font-medium text-foreground">catálogo compartilhado</span>.
-                Ao salvar, uma{" "}
-                <span className="font-medium text-foreground">cópia personalizada</span>{" "}
-                será criada no seu catálogo — o original não é alterado.
+                editar responde com mensagem de criação de copia, e apagar exercicio na apaga. O vínculo com o github é apenas de extração de informação e adequação, não pode ser uma limitação ao que o git apresenta
               </p>
             </div>
           )}
