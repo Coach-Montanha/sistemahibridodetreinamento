@@ -22,7 +22,6 @@ export function AparenciaPanel() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <ThemeCard
-        id="padrao"
         label="Padrão"
         description="O visual clássico do Coach Montanha."
         isActive={activeTheme === "padrao"}
@@ -30,7 +29,6 @@ export function AparenciaPanel() {
         colors={["#F26B1F", "#0F1115", "#F5F5F4"]}
       />
       <ThemeCard
-        id="pulse"
         label="Pulse"
         description="Visual moderno com bordas arredondadas e alto contraste."
         isActive={activeTheme === "pulse"}
