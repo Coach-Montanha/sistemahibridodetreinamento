@@ -541,10 +541,10 @@ export function normalizarPrescricaoHibrido(
   return { 
     sessoes: finalSessoes, 
     week_numbers: Array.isArray(json?.week_numbers) ? json.week_numbers : finalSessoes.map((_, i) => i + 1),
-    notes: typeof json?.notes === "string" ? json.notes : (usedFallback ? "A IA não retornou o schema esperado; a sessão foi montada com fallback seguro." : "Sessões geradas com base no molde."),
+    notes: typeof json?.notes === "string" ? json.notes : (usedFallback ? "A IA não retornou o schema esperado; as sessões foram montadas com fallback determinístico a partir do molde." : "Sessões geradas com base no molde."),
     usedFallback,
     avisos: [
-      ...(usedFallback ? ["A IA não retornou o schema esperado; a sessão foi montada com fallback seguro."] : []),
+      ...(usedFallback ? ["A IA não retornou o schema esperado; as sessões foram montadas com fallback determinístico a partir do molde."] : []),
       ...Array.from(new Set(avisosDiversidade)),
     ],
   } as any;
