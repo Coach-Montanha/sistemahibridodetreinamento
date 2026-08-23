@@ -32,7 +32,8 @@ import type {
   SlotPreparacao,
 } from "@/lib/hibrido-ia.server";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
-import { useFormatRegistry } from "@/lib/format-registry";
+import { useFormatRegistry, type FormatPreset } from "@/lib/format-registry";
+import { useSetTypeRegistry } from "@/lib/set-type-registry";
 
 const EQUIPAMENTO_VALORES = [
   "Kettlebell",
@@ -287,8 +288,18 @@ function BlocoConfigForm({
   bloco: BlocoTemplate;
   onChange: (patch: Partial<BlocoTemplate>) => void;
   formatLabel: (f: string) => string;
-  presets: any[];
+  presets: FormatPreset[];
 }) {
+  const { presets: setTypes } = useSetTypeRegistry();
+  const activePreset = presets.find(p => p.id === bloco.presetId || p.id === `builtin:${bloco.formato}`);
+  const activeSetType = setTypes.find(t => t.id === activePreset?.set_type_id);
+
+  // Helper para rótulo e visibilidade
+  const getFieldMeta = (key: string) => {
+    const isEnabled = activePreset?.enabled_fields ? activePreset.enabled_fields.includes(key) : true;
+    const label = activePreset?.field_labels?.[key] || activeSetType?.fields.find(f => f.key === key)?.label || key;
+    return { isEnabled, label };
+  };
   return (
     <div className="space-y-4 border-t border-border/60 pt-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -299,10 +310,21 @@ function BlocoConfigForm({
             onValueChange={(v) => {
               const p = presets.find((pr: any) => pr.id === v);
               if (p) {
+                // Reset para padrão ao trocar
                 onChange({ 
                   formato: p.base,
                   presetId: p.id,
-                  titulo: p.label
+                  titulo: p.label,
+                  // Aplicar defaults do preset
+                  duracaoMin: p.defaults?.duracaoMin ?? 10,
+                  seriesMin: p.defaults?.seriesMin ?? 3,
+                  seriesMax: p.defaults?.seriesMax ?? 3,
+                  numeroExercicios: p.defaults?.numeroExercicios ?? 2,
+                  repsPorExercicio: p.defaults?.repsPorExercicio ?? 12,
+                  descansoEntreSeriesSeg: p.defaults?.descansoEntreSeriesSeg ?? null,
+                  descansoAposSeg: p.defaults?.descansoAposSeg ?? 0,
+                  percentual1rm: p.defaults?.percentual1rm ?? null,
+                  intervaloMin: p.defaults?.intervaloMin ?? null,
                 });
               }
             }}
@@ -337,46 +359,58 @@ function BlocoConfigForm({
           suffix="min"
         />
 
-        {USA_SERIES.includes(bloco.formato) && (
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Séries / rounds</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={1}
-                className="h-9 w-16 tabular-nums"
-                value={bloco.seriesMin ?? ""}
-                onChange={(e) => onChange({ seriesMin: e.target.value ? Number(e.target.value) : null })}
-              />
-              <span className="text-xs text-muted-foreground">a</span>
-              <Input
-                type="number"
-                min={1}
-                className="h-9 w-16 tabular-nums"
-                value={bloco.seriesMax ?? ""}
-                onChange={(e) => onChange({ seriesMax: e.target.value ? Number(e.target.value) : null })}
-              />
-            </div>
-          </div>
-        )}
+        {activeSetType?.fields.filter(f => activePreset?.enabled_fields ? activePreset.enabled_fields.includes(f.key) : true).map(field => {
+          const meta = getFieldMeta(field.key);
+          
+          if (field.key === 'serie_rep') {
+             return (
+              <div key={field.key} className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">{meta.label}</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    className="h-9 w-16 tabular-nums"
+                    value={bloco.seriesMin ?? ""}
+                    onChange={(e) => onChange({ seriesMin: e.target.value ? Number(e.target.value) : null })}
+                  />
+                  <span className="text-xs text-muted-foreground">a</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    className="h-9 w-16 tabular-nums"
+                    value={bloco.seriesMax ?? ""}
+                    onChange={(e) => onChange({ seriesMax: e.target.value ? Number(e.target.value) : null })}
+                  />
+                </div>
+              </div>
+            );
+          }
 
-        {USA_INTERVALO.includes(bloco.formato) && (
-          <CampoNumero
-            label="Intervalo de cada ciclo"
-            value={bloco.intervaloMin}
-            onChange={(v) => onChange({ intervaloMin: v })}
-            suffix="min"
-          />
-        )}
+          if (field.key === 'intervalo_seg' || field.key === 'tempo_seg' || field.key === 'ritmo') {
+            // Campos de tempo/ritmo
+             return (
+              <CampoNumero
+                key={field.key}
+                label={meta.label}
+                value={field.key === 'intervalo_seg' ? bloco.descansoEntreSeriesSeg : (bloco as any)[field.key]}
+                onChange={(v) => onChange({ [field.key === 'intervalo_seg' ? 'descansoEntreSeriesSeg' : field.key]: v })}
+                suffix={field.key === 'ritmo' ? "min/km" : "seg"}
+              />
+            );
+          }
 
-        {USA_PERCENTUAL.includes(bloco.formato) && (
-          <CampoNumero
-            label="Percentual de 1RM"
-            value={bloco.percentual1rm}
-            onChange={(v) => onChange({ percentual1rm: v })}
-            suffix="%"
-          />
-        )}
+          return (
+             <div key={field.key} className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">{meta.label}</Label>
+                <Input
+                  className="h-9"
+                  value={(bloco as any)[field.key === 'carga' ? 'percentual1rm' : 'repsPorExercicio'] ?? ""}
+                  onChange={(e) => onChange({ [field.key === 'carga' ? 'percentual1rm' : 'repsPorExercicio']: e.target.value })}
+                />
+              </div>
+          );
+        })}
 
         {USA_NUMERO_EXERCICIOS(bloco.formato) && (
           <CampoNumero
@@ -384,25 +418,6 @@ function BlocoConfigForm({
             value={bloco.numeroExercicios}
             onChange={(v) => onChange({ numeroExercicios: v ?? 1 })}
             min={1}
-          />
-        )}
-
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Reps por exercício</Label>
-          <Input
-            className="h-9"
-            placeholder="12 ou 8-12"
-            value={bloco.repsPorExercicio ?? ""}
-            onChange={(e) => onChange({ repsPorExercicio: e.target.value || null })}
-          />
-        </div>
-
-        {USA_DESCANSO_ENTRE_SERIES.includes(bloco.formato) && (
-          <CampoNumero
-            label="Descanso entre séries"
-            value={bloco.descansoEntreSeriesSeg}
-            onChange={(v) => onChange({ descansoEntreSeriesSeg: v })}
-            suffix="seg"
           />
         )}
 
