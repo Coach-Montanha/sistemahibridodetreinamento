@@ -54,14 +54,14 @@ export const saveCatalogTranslationDraft = createServerFn({ method: "POST" })
     // Aprovar libera projeção; salvar rascunho não altera o estado de revisão.
     if (data.approve) {
       const { error } = await supabaseAdmin
-        .from("exercise_catalog")
+        .from("exercise_catalog" as any)
         .update({ review_status: "approved", approved_for_projection: true } as any)
         .eq("id", data.catalogId);
       if (error) throw new Error(error.message);
     }
 
     const { data: confirm } = await supabaseAdmin
-      .from("exercise_catalog_translations")
+      .from("exercise_catalog_translations" as any)
       .select("id, name_pt_br, translation_status")
       .eq("id", translationId)
       .maybeSingle();
@@ -82,7 +82,7 @@ export const approveCatalogTranslation = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     const { error } = await supabaseAdmin
-      .from("exercise_catalog")
+      .from("exercise_catalog" as any)
       .update({ 
         review_status: data.status, 
         approved_for_projection: data.approved 
@@ -93,7 +93,7 @@ export const approveCatalogTranslation = createServerFn({ method: "POST" })
 
     if (data.approved) {
       await supabaseAdmin
-        .from("exercise_catalog_translations")
+        .from("exercise_catalog_translations" as any)
         .update({ translation_status: 'approved' } as any)
         .eq("catalog_exercise_id", data.catalogId);
     }
@@ -158,7 +158,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
 
     for (;;) {
       const { data: approved, error } = await supabaseAdmin
-        .from("exercise_catalog")
+        .from("exercise_catalog" as any)
         .select("id, name_original, source, source_exercise_id, projected_exercise_id")
         .eq("approved_for_projection", true)
         .order("imported_at", { ascending: true })
@@ -170,7 +170,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
       for (const item of approved) {
         // Tradução PT-BR aprovada buscada separadamente (sem relação aninhada ambígua).
         const { data: traducoes, error: tErr } = await supabaseAdmin
-          .from("exercise_catalog_translations")
+          .from("exercise_catalog_translations" as any)
           .select("*")
           .eq("catalog_exercise_id", item.id)
           .eq("locale", "pt-BR")
@@ -252,7 +252,7 @@ export const projectApprovedExercises = createServerFn({ method: "POST" })
         }
 
         const { error: linkErr } = await supabaseAdmin
-          .from("exercise_catalog")
+          .from("exercise_catalog" as any)
           .update({ projected_exercise_id: exerciseId } as any)
           .eq("id", item.id);
         if (linkErr) {
