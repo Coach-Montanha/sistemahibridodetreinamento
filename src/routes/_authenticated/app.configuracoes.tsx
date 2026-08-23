@@ -1485,8 +1485,18 @@ function FormatoEditorDialog({
                   });
                 }}
               >
-...
-            <div className="space-y-1.5">
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {setTypes.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
               <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Estrutura do bloco
               </Label>
