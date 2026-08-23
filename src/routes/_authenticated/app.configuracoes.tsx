@@ -131,7 +131,8 @@ const SECTIONS = [
     hint: "Motor automático, formatos e API",
     icon: Sparkles,
   },
-  { key: "marca", label: "Marca", hint: "Logo, cores e rodapé", icon: Palette },
+  { key: "aparencia", label: "Aparência", hint: "Tema e visual", icon: Palette },
+  { key: "marca", label: "Marca", hint: "Logo, cores e rodapé", icon: Layers },
   { key: "arquivos", label: "Arquivos", hint: "Planilhas, PDFs e mídias", icon: FolderArchive },
 ] as const;
 
