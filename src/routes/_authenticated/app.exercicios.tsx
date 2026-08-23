@@ -71,6 +71,7 @@ const EQUIPAMENTOS = [
   "Mobilidade",
   "Barbell",
   "Dumbbell",
+  "Alternativos Musculação",
   "Objetos Alternativos",
 ] as const;
 type Equipamento = (typeof EQUIPAMENTOS)[number];

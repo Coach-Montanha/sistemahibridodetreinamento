@@ -30,8 +30,7 @@ export function ExercisePicker({
       let query = supabase
         .from("exercises")
         .select("*, exercise_media(*)")
-        .order("nome_pt")
-        .limit(100);
+        .order("nome_pt");
 
       if (q) {
         // Busca flexível por nome em PT ou EN
