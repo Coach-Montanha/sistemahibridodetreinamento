@@ -468,15 +468,19 @@ export function PrescreverIaDialog({
     const base = escopoInicial?.hibrido;
     if (!base) return null;
 
-    const escolhido = moldeSelecionado === "auto"
-      ? (moldesHistoricos.length > 0 ? moldesHistoricos[moldesHistoricos.length - 1] : null)
-      : moldesHistoricos.find((m) => m.id === moldeSelecionado);
+    let template = base.sessaoTemplate;
+    if (moldeSelecionado !== "auto") {
+      const molde = moldesHistoricos.find((m) => String(m.id) === moldeSelecionado);
+      if (molde?.blocks) {
+        template = molde.blocks;
+      }
+    }
 
     return {
       ...base,
-      sessaoTemplate: escolhido?.blocks ?? base.sessaoTemplate ?? [],
+      sessaoTemplate: template ?? [],
     };
-  }, [escopoInicial?.hibrido, moldesHistoricos, moldeSelecionado]);
+  }, [escopoInicial?.hibrido, moldeSelecionado, moldesHistoricos]);
 
   // Mapeamento de escolas por metodologia
   const ESCOLAS_DISPONIVEIS: Record<string, { value: string; label: string }[]> = useMemo(() => ({

@@ -433,23 +433,25 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
           })
         : isHibrido
         ? await (async () => {
-            const template = data.hibrido.sessaoTemplate?.length > 0 
-              ? data.hibrido.sessaoTemplate 
-              : continuation.lastSessionStructure 
-                ? continuation.lastSessionStructure.map((b: any) => ({
-                    chave: b.chave,
-                    formato: b.formato,
-                    titulo: b.titulo,
-                    selecaoExercicios: "ia",
-                    numeroExercicios: b.numeroExercicios,
-                    fonteExercicios: b.fonteExercicios
-                  }))
-                : [];
+            let template = data.hibrido.sessaoTemplate;
+            
+            // Se o template vier vazio ou inválido, tenta fallback para a estrutura da última sessão
+            if (!template || !Array.isArray(template) || template.length === 0) {
+              console.log("[prescribeTrainingWithAi] Híbrido sem sessaoTemplate válido. Usando histórico...");
+              template = continuation.lastSessionStructure?.map((b: any) => ({
+                chave: b.chave,
+                formato: b.formato,
+                titulo: b.titulo,
+                selecaoExercicios: "ia",
+                numeroExercicios: b.numeroExercicios || 1,
+                fonteExercicios: b.fonteExercicios || { metodologias: [metodologiaEfetiva] }
+              })) || [];
+            }
             
             if (!template || template.length === 0) {
-              throw new Error("Não foi possível identificar o molde da sessão anterior para continuar a progressão. Verifique se a rotina já possui treinos cadastrados ou configure o molde manualmente.");
+              console.error("[prescribeTrainingWithAi] Falha Crítica: Nenhum molde disponível.");
+              throw new Error("Não foi possível identificar o molde da sessão anterior para continuar a progressão. Configure o molde manualmente ou verifique se a rotina já possui treinos cadastrados.");
             }
-
 
             return montarHibridoPrompt({
               payload: { ...data.hibrido, sessaoTemplate: template },

@@ -782,17 +782,19 @@ function ProgramaCard({
                                     {s.session_blocks && s.session_blocks.length > 0 && (
                                       <div className="grid gap-2 border-t border-border/40 pt-2">
                                         {s.session_blocks
-                                          .sort((a: any, b: any) => a.ordem - b.ordem)
+                                          .sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0))
                                           .map((block: any) => (
                                             <div key={block.id} className="text-[11px] leading-tight">
                                               <span className="font-bold uppercase text-primary/80">
-                                                {block.titulo || block.formato.replace("builtin:", "")}:
+                                                {block.titulo || (block.formato ? block.formato.replace("builtin:", "") : "Bloco")}:
                                               </span>
                                               <span className="ml-1 text-muted-foreground">
-                                                {block.session_block_exercises
-                                                  ?.sort((a: any, b: any) => a.ordem - b.ordem)
-                                                  .map((e: any) => e.exercises?.nome_pt || e.nome_livre)
-                                                  .join(", ") || "Sem exercícios"}
+                                                {block.session_block_exercises && block.session_block_exercises.length > 0
+                                                  ? block.session_block_exercises
+                                                      .sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0))
+                                                      .map((e: any) => e.exercises?.nome_pt || e.nome_livre || "Exercício")
+                                                      .join(", ")
+                                                  : "Sem exercícios"}
                                               </span>
                                             </div>
                                           ))}
