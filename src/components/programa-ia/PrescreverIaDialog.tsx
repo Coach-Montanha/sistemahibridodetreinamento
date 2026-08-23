@@ -11,6 +11,7 @@ import {
   Weight,
   Plus,
   Minus,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
