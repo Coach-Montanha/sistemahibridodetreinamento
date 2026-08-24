@@ -60,9 +60,9 @@ stderr:
 ts (file:///dev-server/node_modules/@tanstack/start-plugin-core/dist/esm/vite/planning.js:95:23)
     at async Object.buildApp (file:///dev-server/node_modules/@tanstack/start-plugin-core/dist/esm/vite/plugin.js:113:8)
     at async Object.buildApp (file:///dev-server/node_modules/vite/dist/node/chunks/node.js:33667:6)
-    at async CAC.{"<"}anonymous{">"}(file:///dev-server/node_modules/vite/dist/node/cli.js:777:3) {{
+    at async CAC.{"<"}anonymous{">"}(file:///dev-server/node_modules/vite/dist/node/cli.js:777:3) {"{{"}
   errors: [Getter/Setter]
-}}
+{"}}"}
 error: script "build:dev" exited with code 1
 
 stdout:
