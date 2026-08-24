@@ -217,7 +217,7 @@ function DuplicadosPage() {
                               setBusyId(null);
                             }
                           }}
-                          disabled={!!busyId}
+                          disabled={!!busyId || !canMergeHere}
                         >
                           {isBusy && busyId === ex.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitMerge className="h-3.5 w-3.5" />}
                           Manter e Fundir
