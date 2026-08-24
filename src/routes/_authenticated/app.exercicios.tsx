@@ -846,7 +846,7 @@ function ExerciseDialog({
         e?.code === "42501" ||
         /row-level security|row level security/i.test(raw);
       const friendly = isRls
-        ? "Este nome bate com um exercício existente que você não pode sobrescrever. Ajuste o nome e tente de novo."
+        ? "Erro de permissão ao salvar. Verifique se o nome não está em conflito."
         : raw;
       // Se o dialog de duplicados NÃO está aberto, cai no toast padrão.
       if (!duplicates) toast.error(friendly);
