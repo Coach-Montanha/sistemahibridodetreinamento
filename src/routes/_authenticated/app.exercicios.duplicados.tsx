@@ -206,7 +206,7 @@ function DuplicadosPage() {
                               return;
                             }
 
-                            if (confirm(`Deseja fundir os ${duplicateIds.length} exercícios pessoais deste grupo em "${ex.nome_pt}"?`)) {
+                            if (confirm(`Deseja fundir os ${duplicateIds.length} exercícios duplicados deste grupo em "${ex.nome_pt}"?`)) {
                               setBusyId(ex.id);
                               await mergeMutation.mutateAsync({ keeperId: ex.id, duplicateIds });
                               setBusyId(null);
