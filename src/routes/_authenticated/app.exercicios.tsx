@@ -142,11 +142,12 @@ function ExerciciosPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
+      // Remover referências primeiro se necessário (opcional, dependendo do ON DELETE)
       const { error } = await supabase.from("exercises").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Exercício removido");
+      toast.success("Exercício removido definitivamente");
       qc.invalidateQueries({ queryKey: ["exercises"] });
       qc.invalidateQueries({ queryKey: ["exercises", "tag-stats"] });
     },
@@ -516,7 +517,7 @@ function ExerciciosPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled={del.isPending || !!ex.coach_id === false}
+                        disabled={del.isPending}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (confirm(`Remover "${ex.nome_pt}"?`)) del.mutate(ex.id);
@@ -779,7 +780,7 @@ function ExerciseDialog({
     try {
       let exerciseId = editing?.id;
       let clonedFromGlobal = false;
-      if (isEdit && !isEditingGlobal) {
+      if (isEdit) {
         const { error } = await supabase
           .from("exercises")
           .update({
@@ -809,7 +810,6 @@ function ExerciseDialog({
           .single();
         if (error) throw error;
         exerciseId = data.id;
-        clonedFromGlobal = isEditingGlobal;
       }
 
       // Persistir mídias
@@ -833,11 +833,9 @@ function ExerciseDialog({
 
 
       toast.success(
-        clonedFromGlobal
-          ? "Cópia personalizada criada no seu catálogo"
-          : isEdit
-            ? "Exercício atualizado"
-            : "Exercício criado"
+        isEdit
+          ? "Exercício atualizado com sucesso"
+          : "Exercício criado com sucesso"
       );
       qc.invalidateQueries({ queryKey: ["exercises"] });
       onOpenChange(false);
@@ -848,7 +846,7 @@ function ExerciseDialog({
         e?.code === "42501" ||
         /row-level security|row level security/i.test(raw);
       const friendly = isRls
-        ? "Este nome bate com um exercício existente que você não pode sobrescrever. Ajuste o nome e tente de novo."
+        ? "Erro de permissão ao salvar. Verifique se o nome não está em conflito."
         : raw;
       // Se o dialog de duplicados NÃO está aberto, cai no toast padrão.
       if (!duplicates) toast.error(friendly);
@@ -875,17 +873,6 @@ function ExerciseDialog({
           <DialogTitle>{isEdit ? "Editar exercício" : "Novo exercício"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
-          {isEditingGlobal && (
-            <div
-              role="note"
-              className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/40 px-3 py-2.5 transition-colors duration-200"
-            >
-              <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                editar responde com mensagem de criação de copia, e apagar exercicio na apaga. O vínculo com o github é apenas de extração de informação e adequação, não pode ser uma limitação ao que o git apresenta
-              </p>
-            </div>
-          )}
           <div>
             <Label>Nome (PT)</Label>
             <Input value={nome} onChange={(e) => setNome(e.target.value)} />
@@ -1200,19 +1187,13 @@ function DuplicateResolverDialog({
                         size="sm"
                         className="h-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={async () => {
-                          if (isGlobal) {
-                            // Se for global, apenas fecha esse fluxo (o usuário já sabe que não pode deletar o original)
-                            // ou poderíamos dar a opção de "Esconder" (soft delete) no futuro.
-                            // Por ora, se ele clicou aqui num global, apenas orientamos.
-                            toast.info("Exercícios globais não podem ser excluídos, mas você pode renomear sua nova versão.");
-                          } else if (confirm(`Deseja excluir permanentemente "${ex.nome_pt}"?`)) {
+                          if (confirm(`Deseja excluir permanentemente "${ex.nome_pt}"?`)) {
                             setBusyId(ex.id);
                             try {
                               const { error } = await supabase.from("exercises").delete().eq("id", ex.id);
                               if (error) throw error;
                               toast.success("Exercício excluído");
-                              // Remove da lista de candidatos local para não precisar re-fetch imediato no dialog
-                              onMerged(); // Reutilizamos o callback de merge para fechar e atualizar
+                              onMerged(); 
                             } catch (e: any) {
                               toast.error(e.message);
                             } finally {
@@ -1641,23 +1622,6 @@ function BulkEditDialog({
         </div>
 
         <div className="max-h-[52vh] space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
-          {globalCount > 0 && (
-            <div
-              role="note"
-              className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/40 px-3.5 py-2.5 transition-colors duration-200"
-            >
-              <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                <span className="font-medium text-foreground">
-                  {globalCount} exercício{globalCount === 1 ? "" : "s"}
-                </span>{" "}
-                da seleção {globalCount === 1 ? "é" : "são"} do{" "}
-                <span className="font-medium text-foreground">catálogo compartilhado</span>.{" "}
-                <span className="font-medium text-foreground">Cópias personalizadas</span> serão
-                criadas no seu catálogo com as alterações — os originais não são alterados.
-              </p>
-            </div>
-          )}
           <section className="space-y-3">
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="text-sm font-semibold text-foreground">
