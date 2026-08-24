@@ -42,6 +42,7 @@ import {
   Loader2,
   Sparkles,
   Pencil,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
