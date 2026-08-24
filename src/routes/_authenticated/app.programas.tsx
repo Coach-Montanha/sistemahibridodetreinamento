@@ -132,7 +132,7 @@ export function ProgramasPanel({
   const [toDelete, setToDelete] = useState<{ id: string; titulo: string } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmBulk, setConfirmBulk] = useState(false);
-  const [bulkImg, setBulkImg] = useState<"png" | "jpg" | null>(null);
+  const [bulkImg, setBulkImg] = useState<"png" | "jpg" | "pdf" | "txt" | null>(null);
   const [bulkPdf, setBulkPdf] = useState(false);
   const [geradas, setGeradas] = useState<{ png?: number; jpg?: number }>({});
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
