@@ -42,11 +42,12 @@ import {
   Loader2,
   Sparkles,
   Pencil,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
-import { exportarSessoesPdfTabela } from "@/lib/pdf-treino";
+import { exportarSessoesPdfTabela, prepararTreinoPdf } from "@/lib/pdf-treino";
 import { exportarSessoesImagemA4 } from "@/lib/a4-image-export";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import {
@@ -132,7 +133,7 @@ export function ProgramasPanel({
   const [toDelete, setToDelete] = useState<{ id: string; titulo: string } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmBulk, setConfirmBulk] = useState(false);
-  const [bulkImg, setBulkImg] = useState<"png" | "jpg" | null>(null);
+  const [bulkImg, setBulkImg] = useState<"png" | "jpg" | "pdf" | "txt" | null>(null);
   const [bulkPdf, setBulkPdf] = useState(false);
   const [geradas, setGeradas] = useState<{ png?: number; jpg?: number }>({});
   const [bulkImgLoading, setBulkImgLoading] = useState(false);
@@ -317,6 +318,63 @@ export function ProgramasPanel({
       setBulkPdf(false);
     }
   }
+
+  async function exportarTxtBulk() {
+    if (selected.size === 0) return;
+    setBulkImgLoading(true);
+    setBulkImg("txt");
+    try {
+      const ids = Array.from(selected);
+      const treino = await prepararTreinoPdf(ids);
+      
+      let txt = `PROGRAMA DE TREINAMENTO: ${treino.titulo}\n`;
+      if (treino.aluno) txt += `ALUNO: ${treino.aluno}\n`;
+      txt += `CATEGORIA: ${treino.categoria}\n`;
+      txt += `PERÍODO: ${treino.periodo}\n`;
+      txt += `EXPORTADO EM: ${new Date().toLocaleDateString("pt-BR")}\n`;
+      txt += `================================================================================\n\n`;
+
+      for (const s of treino.sessoes) {
+        txt += `${s.titulo.toUpperCase()}\n`;
+        if (s.subtitulo) txt += `${s.subtitulo}\n`;
+        txt += `--------------------------------------------------------------------------------\n`;
+
+        for (const l of s.linhas) {
+          if (l.observacoes === "BLOCO_HEADER") {
+            txt += `\n[${l.nome.toUpperCase()}]\n`;
+          } else {
+            txt += `- ${l.nome}`;
+            const specs = [];
+            if (l.seriesReps) specs.push(l.seriesReps);
+            if (l.carga) specs.push(l.carga);
+            if (l.descanso) specs.push(l.descanso);
+            if (specs.length > 0) txt += ` (${specs.join(" | ")})`;
+            if (l.observacoes) txt += ` · OBS: ${l.observacoes}`;
+            txt += `\n`;
+          }
+        }
+        txt += `\n\n`;
+      }
+
+      const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `treinos-selecionados.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success("Arquivo .txt gerado com sucesso");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao exportar TXT");
+    } finally {
+      setBulkImgLoading(false);
+      setBulkImg(null);
+    }
+  }
+
 
   return (
     <div className={showHeader ? "mx-auto max-w-6xl px-6 py-8" : "mx-auto max-w-6xl"}>
@@ -545,6 +603,21 @@ export function ProgramasPanel({
               )}
               PDF (A4)
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={exportarTxtBulk}
+              disabled={bulkImgLoading}
+              className="h-8 gap-1.5"
+            >
+              {bulkImgLoading && bulkImg === "txt" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              TXT
+            </Button>
+
             <Button
               size="sm"
               variant="destructive"

@@ -1321,14 +1321,34 @@ export type Database = {
       auth_coach_id_for_user: { Args: { _user_id: string }; Returns: string }
       auth_student_id: { Args: never; Returns: string }
       find_duplicate_exercises: {
-        Args: { _coach_id: string }
+        Args: { _coach_id?: string }
         Returns: {
-          coach_id: string
-          equipamento: string[]
+          atualizado_em: string
+          coach_id: string | null
+          criado_em: string
+          criado_por_ia: boolean
+          equipamento: string[] | null
+          grupos_musculares: string[] | null
           id: string
+          instrucoes: string | null
           metodologias: Database["public"]["Enums"]["methodology_key"][]
+          nivel: string | null
+          nome_en: string | null
           nome_pt: string
+          observacoes_tecnicas: string | null
+          padrao_movimento: string | null
+          source: string | null
+          source_commit: string | null
+          source_id: string | null
+          unilateral: boolean
+          variante_lado: string | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "exercises"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_exercises_pending_translation: {
         Args: { _limit?: number }
