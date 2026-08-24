@@ -837,7 +837,6 @@ function ExerciseDialog({
           ? "Exercício atualizado com sucesso"
           : "Exercício criado com sucesso"
       );
-      );
       qc.invalidateQueries({ queryKey: ["exercises"] });
       onOpenChange(false);
       return null;
