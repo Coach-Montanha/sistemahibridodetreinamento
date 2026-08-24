@@ -168,7 +168,11 @@ function DuplicadosPage() {
                 {group.items.map((ex: any) => {
                   const isGlobal = !ex.coach_id;
                   const coachDuplicates = group.items.filter((i: any) => i.coach_id === coach?.id);
-                  const canMergeThis = isGlobal ? coachDuplicates.length > 0 : coachDuplicates.length > 1;
+                  // Habilitamos a fusão em itens globais se houver cópias do coach, 
+                  // ou em itens do coach se houver outras cópias do coach.
+                  const canMergeHere = isGlobal 
+                    ? coachDuplicates.length > 0 
+                    : coachDuplicates.some((i: any) => i.id !== ex.id);
                   const isBusy = busyId === ex.id;
                   
                   return (
