@@ -604,6 +604,21 @@ export function ProgramasPanel({
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              onClick={exportarTxtBulk}
+              disabled={bulkImgLoading}
+              className="h-8 gap-1.5"
+            >
+              {bulkImgLoading && bulkImg === "txt" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              TXT
+            </Button>
+
+            <Button
+              size="sm"
               variant="destructive"
               onClick={() => setConfirmBulk(true)}
               disabled={bulkImgLoading}
