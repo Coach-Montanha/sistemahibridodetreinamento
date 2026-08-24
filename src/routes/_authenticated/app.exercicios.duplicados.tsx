@@ -95,8 +95,49 @@ function DuplicadosPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Limpeza de Duplicados</h1>
           <p className="text-sm text-muted-foreground">
-            quero poder fundir os exercícios marcados com "Global", são eles que estão duplicados
+            Encontramos exercícios com nomes idênticos. Você pode fundir suas cópias pessoais em um exercício principal (incluindo os "Globais") ou excluí-las.
           </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-4 border-orange-500/50 text-orange-500 hover:bg-orange-500/10"
+            onClick={async () => {
+              if (!coach?.id || duplicates.length === 0) return;
+              
+              if (confirm("Isso irá processar todos os grupos de duplicados, fundindo seus exercícios pessoais nas versões Globais (ou no primeiro item do grupo se não houver Global). Deseja continuar?")) {
+                setBusyId("cleaning-all");
+                let successCount = 0;
+                
+                for (const group of duplicates) {
+                  const globalItem = group.items.find((i: any) => !i.coach_id);
+                  const keeper = globalItem || group.items[0];
+                  const duplicateIds = group.items
+                    .filter((i: any) => i.id !== keeper.id && i.coach_id === coach.id)
+                    .map((i: any) => i.id);
+                  
+                  if (duplicateIds.length > 0) {
+                    try {
+                      await mergeMutation.mutateAsync({ keeperId: keeper.id, duplicateIds });
+                      successCount++;
+                    } catch (e) {
+                      console.error(`Erro ao fundir grupo ${group.name}:`, e);
+                    }
+                  }
+                }
+                
+                setBusyId(null);
+                toast.success(`Limpeza concluída! ${successCount} grupos processados.`);
+              }
+            }}
+            disabled={!!busyId}
+          >
+            {busyId === "cleaning-all" ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <GitMerge className="mr-2 h-4 w-4" />
+            )}
+            Limpeza Automática de Todos
+          </Button>
         </div>
       </div>
 
