@@ -1323,7 +1323,10 @@ export type Database = {
       find_duplicate_exercises: {
         Args: { _coach_id: string }
         Returns: {
+          coach_id: string
+          equipamento: string[]
           id: string
+          metodologias: Database["public"]["Enums"]["methodology_key"][]
           nome_pt: string
         }[]
       }

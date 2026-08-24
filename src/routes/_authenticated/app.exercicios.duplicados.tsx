@@ -95,7 +95,7 @@ function DuplicadosPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Limpeza de Duplicados</h1>
           <p className="text-sm text-muted-foreground">
-            Encontramos exercícios com nomes idênticos. Você pode fundir suas cópias pessoais em um exercício principal (incluindo os "Globais") ou excluí-las.
+            Encontramos exercícios com nomes idênticos em nosso repositório. Como todos são iguais, você pode fundir qualquer duplicata sem restrições.
           </p>
           <Button 
             variant="outline" 
@@ -104,15 +104,15 @@ function DuplicadosPage() {
             onClick={async () => {
               if (!coach?.id || duplicates.length === 0) return;
               
-              if (confirm("Isso irá processar todos os grupos de duplicados, fundindo seus exercícios pessoais nas versões Globais (ou no primeiro item do grupo se não houver Global). Deseja continuar?")) {
+              if (confirm("Isso irá processar todos os grupos de duplicados, fundindo os exercícios excedentes na primeira versão encontrada. Deseja continuar?")) {
                 setBusyId("cleaning-all");
                 let successCount = 0;
                 
                 for (const group of duplicates) {
-                  const globalItem = group.items.find((i: any) => !i.coach_id);
-                  const keeper = globalItem || group.items[0];
+                  // Sem distinção de global/pessoal - apenas mantém o primeiro do grupo
+                  const keeper = group.items[0];
                   const duplicateIds = group.items
-                    .filter((i: any) => i.id !== keeper.id && i.coach_id === coach.id)
+                    .filter((i: any) => i.id !== keeper.id)
                     .map((i: any) => i.id);
                   
                   if (duplicateIds.length > 0) {
@@ -167,12 +167,7 @@ function DuplicadosPage() {
               <div className="divide-y divide-border/40">
                 {group.items.map((ex: any) => {
                   const isGlobal = !ex.coach_id;
-                  const coachDuplicates = group.items.filter((i: any) => i.coach_id === coach?.id);
-                  // Habilitamos a fusão em itens globais se houver cópias do coach, 
-                  // ou em itens do coach se houver outras cópias do coach.
-                  const canMergeHere = isGlobal 
-                    ? coachDuplicates.length > 0 
-                    : coachDuplicates.some((i: any) => i.id !== ex.id);
+                  const canMergeHere = group.items.length > 1;
                   const isBusy = busyId === ex.id;
                   
                   return (
@@ -203,15 +198,15 @@ function DuplicadosPage() {
                           className="h-8 gap-1.5"
                           onClick={async () => {
                             const duplicateIds = group.items
-                              .filter((i: any) => i.id !== ex.id && i.coach_id === coach?.id)
+                              .filter((i: any) => i.id !== ex.id)
                               .map((i: any) => i.id);
                             
                             if (duplicateIds.length === 0) {
-                              toast.info("Não há exercícios pessoais neste grupo para fundir neste item.");
+                              toast.info("Não há outros exercícios neste grupo para fundir.");
                               return;
                             }
 
-                            if (confirm(`Deseja fundir os ${duplicateIds.length} exercícios pessoais deste grupo em "${ex.nome_pt}"?`)) {
+                            if (confirm(`Deseja fundir os ${duplicateIds.length} exercícios duplicados deste grupo em "${ex.nome_pt}"?`)) {
                               setBusyId(ex.id);
                               await mergeMutation.mutateAsync({ keeperId: ex.id, duplicateIds });
                               setBusyId(null);
@@ -223,23 +218,21 @@ function DuplicadosPage() {
                           Manter e Fundir
                         </Button>
                         
-                        {!isGlobal && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 text-destructive hover:bg-destructive/10"
-                            onClick={async () => {
-                              if (confirm(`Excluir permanentemente seu exercício "${ex.nome_pt}"?`)) {
-                                setBusyId(ex.id);
-                                await deleteMutation.mutateAsync(ex.id);
-                                setBusyId(null);
-                              }
-                            }}
-                            disabled={!!busyId}
-                          >
-                            {isBusy && busyId === ex.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-destructive hover:bg-destructive/10"
+                          onClick={async () => {
+                            if (confirm(`Excluir permanentemente o exercício "${ex.nome_pt}"?`)) {
+                              setBusyId(ex.id);
+                              await deleteMutation.mutateAsync(ex.id);
+                              setBusyId(null);
+                            }
+                          }}
+                          disabled={!!busyId}
+                        >
+                          {isBusy && busyId === ex.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                        </Button>
                       </div>
                     </div>
                   );
