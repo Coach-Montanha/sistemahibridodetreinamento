@@ -167,6 +167,8 @@ function DuplicadosPage() {
               <div className="divide-y divide-border/40">
                 {group.items.map((ex: any) => {
                   const isGlobal = !ex.coach_id;
+                  const coachDuplicates = group.items.filter((i: any) => i.coach_id === coach?.id);
+                  const canMergeThis = isGlobal ? coachDuplicates.length > 0 : coachDuplicates.length > 1;
                   const isBusy = busyId === ex.id;
                   
                   return (
