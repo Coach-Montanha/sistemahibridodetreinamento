@@ -46,7 +46,7 @@ import {
 import { toast } from "sonner";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
 import { useCoach } from "@/hooks/use-coach";
-import { exportarSessoesPdfTabela } from "@/lib/pdf-treino";
+import { exportarSessoesPdfTabela, prepararTreinoPdf } from "@/lib/pdf-treino";
 import { exportarSessoesImagemA4 } from "@/lib/a4-image-export";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import {
