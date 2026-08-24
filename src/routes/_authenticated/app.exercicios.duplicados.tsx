@@ -198,11 +198,11 @@ function DuplicadosPage() {
                           className="h-8 gap-1.5"
                           onClick={async () => {
                             const duplicateIds = group.items
-                              .filter((i: any) => i.id !== ex.id && i.coach_id === coach?.id)
+                              .filter((i: any) => i.id !== ex.id)
                               .map((i: any) => i.id);
                             
                             if (duplicateIds.length === 0) {
-                              toast.info("Não há exercícios pessoais neste grupo para fundir neste item.");
+                              toast.info("Não há outros exercícios neste grupo para fundir.");
                               return;
                             }
 
