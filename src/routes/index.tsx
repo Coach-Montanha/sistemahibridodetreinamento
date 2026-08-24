@@ -28,7 +28,11 @@ function AuthPage() {
   async function routeAfterLogin() {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return navigate({ to: "/auth" });
-    const { data: coach } = await supabase.from("coaches").select("id").eq("auth_user_id", u.user.id).maybeSingle();
+    const { data: coach } = await supabase
+      .from("coaches")
+      .select("id")
+      .eq("auth_user_id", u.user.id)
+      .maybeSingle();
     if (coach) navigate({ to: "/app" });
     else navigate({ to: "/aluno" });
   }
@@ -43,7 +47,6 @@ function AuthPage() {
           <span className="text-xl font-bold">Coach Montanha</span>
         </Link>
         <Card className="p-6">
-          <p className="mb-4 text-sm text-muted-foreground whitespace-pre-wrap"></p>
           <Tabs value={tab} onValueChange={(v) => setTab(v === "cadastro" ? "cadastro" : "login")}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login" id="home-tab-login">
@@ -91,11 +94,23 @@ function LoginForm({ onDone }: { onDone: () => void }) {
     <form onSubmit={handle} className="mt-4 space-y-4">
       <div>
         <Label htmlFor="li-email">E-mail</Label>
-        <Input id="li-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input
+          id="li-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
       </div>
       <div>
         <Label htmlFor="li-pw">Senha</Label>
-        <Input id="li-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Input
+          id="li-pw"
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
       </div>
       <label className="flex items-center gap-2 text-sm text-muted-foreground">
         <Checkbox defaultChecked disabled /> Lembrar de mim (sessão persistente)
@@ -134,7 +149,9 @@ function SignupForm({ onDone }: { onDone: () => void }) {
       });
       if (cErr) {
         setLoading(false);
-        return toast.error("Cadastro criado, mas falhou ao criar perfil de treinador: " + cErr.message);
+        return toast.error(
+          "Cadastro criado, mas falhou ao criar perfil de treinador: " + cErr.message,
+        );
       }
     }
     setLoading(false);
@@ -150,7 +167,13 @@ function SignupForm({ onDone }: { onDone: () => void }) {
       </div>
       <div>
         <Label htmlFor="su-email">E-mail</Label>
-        <Input id="su-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input
+          id="su-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
       </div>
       <div>
         <Label htmlFor="su-pw">Senha</Label>

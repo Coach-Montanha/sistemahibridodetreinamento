@@ -95,7 +95,7 @@ function DuplicadosPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Limpeza de Duplicados</h1>
           <p className="text-sm text-muted-foreground">
-            não consigo selecionar os duplicados, nem apagar
+            Encontramos exercícios com nomes idênticos. Escolha um para manter ou exclua os desnecessários.
           </p>
         </div>
       </div>
