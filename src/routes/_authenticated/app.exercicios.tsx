@@ -142,11 +142,12 @@ function ExerciciosPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
+      // Remover referências primeiro se necessário (opcional, dependendo do ON DELETE)
       const { error } = await supabase.from("exercises").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Exercício removido");
+      toast.success("Exercício removido definitivamente");
       qc.invalidateQueries({ queryKey: ["exercises"] });
       qc.invalidateQueries({ queryKey: ["exercises", "tag-stats"] });
     },
