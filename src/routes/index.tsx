@@ -48,7 +48,27 @@ function AuthPage() {
         </Link>
         <Card className="p-6">
           <p className="mb-4 text-sm text-muted-foreground whitespace-pre-wrap">
-            limpe completamente esse texto desnecessário da tela de login
+            Corrija esse erro de buid:
+build failed with exit status 1: Build failed with 1 error:
+
+[builtin:vite-transform] Unexpected token
+     ╭─[ src/components/programa-ia/PrescreverIaDialog.js:105:13 ]
+     │
+ 105 │    \x1b[...[truncated]
+
+stderr:
+ts (file:///dev-server/node_modules/@tanstack/start-plugin-core/dist/esm/vite/planning.js:95:23)
+    at async Object.buildApp (file:///dev-server/node_modules/@tanstack/start-plugin-core/dist/esm/vite/plugin.js:113:8)
+    at async Object.buildApp (file:///dev-server/node_modules/vite/dist/node/chunks/node.js:33667:6)
+    at async CAC.{"<"}anonymous{">"}(file:///dev-server/node_modules/vite/dist/node/cli.js:777:3) {"{{"}
+  errors: [Getter/Setter]
+{"}}"}
+error: script "build:dev" exited with code 1
+
+stdout:
+vite v8.0.16 building client environment for development...
+\x1b[2K
+transforming...✓ 2432 modules transformed.
           </p>
           <Tabs value={tab} onValueChange={(v) => setTab(v === "cadastro" ? "cadastro" : "login")}>
             <TabsList className="grid w-full grid-cols-2">
