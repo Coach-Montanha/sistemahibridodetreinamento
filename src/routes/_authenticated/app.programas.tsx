@@ -318,6 +318,63 @@ export function ProgramasPanel({
     }
   }
 
+  async function exportarTxtBulk() {
+    if (selected.size === 0) return;
+    setBulkImgLoading(true);
+    setBulkImg("txt");
+    try {
+      const ids = Array.from(selected);
+      const treino = await prepararTreinoPdf(ids);
+      
+      let txt = `PROGRAMA DE TREINAMENTO: ${treino.titulo}\n`;
+      if (treino.aluno) txt += `ALUNO: ${treino.aluno}\n`;
+      txt += `CATEGORIA: ${treino.categoria}\n`;
+      txt += `PERÍODO: ${treino.periodo}\n`;
+      txt += `EXPORTADO EM: ${new Date().toLocaleDateString("pt-BR")}\n`;
+      txt += `================================================================================\n\n`;
+
+      for (const s of treino.sessoes) {
+        txt += `${s.titulo.toUpperCase()}\n`;
+        if (s.subtitulo) txt += `${s.subtitulo}\n`;
+        txt += `--------------------------------------------------------------------------------\n`;
+
+        for (const l of s.linhas) {
+          if (l.observacoes === "BLOCO_HEADER") {
+            txt += `\n[${l.nome.toUpperCase()}]\n`;
+          } else {
+            txt += `- ${l.nome}`;
+            const specs = [];
+            if (l.seriesReps) specs.push(l.seriesReps);
+            if (l.carga) specs.push(l.carga);
+            if (l.descanso) specs.push(l.descanso);
+            if (specs.length > 0) txt += ` (${specs.join(" | ")})`;
+            if (l.observacoes) txt += ` · OBS: ${l.observacoes}`;
+            txt += `\n`;
+          }
+        }
+        txt += `\n\n`;
+      }
+
+      const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `treinos-selecionados.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success("Arquivo .txt gerado com sucesso");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao exportar TXT");
+    } finally {
+      setBulkImgLoading(false);
+      setBulkImg(null);
+    }
+  }
+
+
   return (
     <div className={showHeader ? "mx-auto max-w-6xl px-6 py-8" : "mx-auto max-w-6xl"}>
       {showHeader && (
