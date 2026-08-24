@@ -873,17 +873,6 @@ function ExerciseDialog({
           <DialogTitle>{isEdit ? "Editar exercício" : "Novo exercício"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
-          {isEditingGlobal && (
-            <div
-              role="note"
-              className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/40 px-3 py-2.5 transition-colors duration-200"
-            >
-              <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                editar responde com mensagem de criação de copia, e apagar exercicio na apaga. O vínculo com o github é apenas de extração de informação e adequação, não pode ser uma limitação ao que o git apresenta
-              </p>
-            </div>
-          )}
           <div>
             <Label>Nome (PT)</Label>
             <Input value={nome} onChange={(e) => setNome(e.target.value)} />
