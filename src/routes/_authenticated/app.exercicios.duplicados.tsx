@@ -218,23 +218,21 @@ function DuplicadosPage() {
                           Manter e Fundir
                         </Button>
                         
-                        {!isGlobal && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 text-destructive hover:bg-destructive/10"
-                            onClick={async () => {
-                              if (confirm(`Excluir permanentemente seu exercício "${ex.nome_pt}"?`)) {
-                                setBusyId(ex.id);
-                                await deleteMutation.mutateAsync(ex.id);
-                                setBusyId(null);
-                              }
-                            }}
-                            disabled={!!busyId}
-                          >
-                            {isBusy && busyId === ex.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-destructive hover:bg-destructive/10"
+                          onClick={async () => {
+                            if (confirm(`Excluir permanentemente o exercício "${ex.nome_pt}"?`)) {
+                              setBusyId(ex.id);
+                              await deleteMutation.mutateAsync(ex.id);
+                              setBusyId(null);
+                            }
+                          }}
+                          disabled={!!busyId}
+                        >
+                          {isBusy && busyId === ex.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                        </Button>
                       </div>
                     </div>
                   );
