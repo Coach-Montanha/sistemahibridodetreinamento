@@ -95,7 +95,7 @@ function DuplicadosPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Limpeza de Duplicados</h1>
           <p className="text-sm text-muted-foreground">
-            Encontramos exercícios com nomes idênticos. Escolha um para manter ou exclua os desnecessários.
+            não é possível selecionar nem mesclar ou excluir. Quero que o botão faça uma limpeza, ajuste, exclusão e mescla automaticamente de todos os duplicados
           </p>
         </div>
       </div>
