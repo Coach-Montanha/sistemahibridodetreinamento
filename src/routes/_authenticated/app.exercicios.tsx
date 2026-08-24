@@ -833,11 +833,10 @@ function ExerciseDialog({
 
 
       toast.success(
-        clonedFromGlobal
-          ? "Cópia personalizada criada no seu catálogo"
-          : isEdit
-            ? "Exercício atualizado"
-            : "Exercício criado"
+        isEdit
+          ? "Exercício atualizado com sucesso"
+          : "Exercício criado com sucesso"
+      );
       );
       qc.invalidateQueries({ queryKey: ["exercises"] });
       onOpenChange(false);
