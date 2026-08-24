@@ -95,7 +95,7 @@ function DuplicadosPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Limpeza de Duplicados</h1>
           <p className="text-sm text-muted-foreground">
-            Encontramos exercícios com nomes idênticos. Você pode fundir suas cópias pessoais em um exercício principal (incluindo os "Globais") ou excluí-las.
+            Encontramos exercícios com nomes idênticos em nosso repositório. Como todos são iguais, você pode fundir qualquer duplicata sem restrições.
           </p>
           <Button 
             variant="outline" 
@@ -104,15 +104,15 @@ function DuplicadosPage() {
             onClick={async () => {
               if (!coach?.id || duplicates.length === 0) return;
               
-              if (confirm("Isso irá processar todos os grupos de duplicados, fundindo seus exercícios pessoais nas versões Globais (ou no primeiro item do grupo se não houver Global). Deseja continuar?")) {
+              if (confirm("Isso irá processar todos os grupos de duplicados, fundindo os exercícios excedentes na primeira versão encontrada. Deseja continuar?")) {
                 setBusyId("cleaning-all");
                 let successCount = 0;
                 
                 for (const group of duplicates) {
-                  const globalItem = group.items.find((i: any) => !i.coach_id);
-                  const keeper = globalItem || group.items[0];
+                  // Sem distinção de global/pessoal - apenas mantém o primeiro do grupo
+                  const keeper = group.items[0];
                   const duplicateIds = group.items
-                    .filter((i: any) => i.id !== keeper.id && i.coach_id === coach.id)
+                    .filter((i: any) => i.id !== keeper.id)
                     .map((i: any) => i.id);
                   
                   if (duplicateIds.length > 0) {
