@@ -47,6 +47,22 @@ function AuthPage() {
           <span className="text-xl font-bold">Coach Montanha</span>
         </Link>
         <Card className="p-6">
+          <p className="mb-4 text-sm text-muted-foreground whitespace-pre-wrap">
+            Você informou:
+"Implementei a funcionalidade de exportação do programa gerado por IA para o formato .txt.
+
+Resolução de Conflitos: Corrigi um erro de build causado por arquivos de rota duplicados (.js vs .tsx), garantindo a integridade do sistema de roteamento.
+
+Exportação .txt: Adicionei o botão "Baixar .txt" no diálogo de prescrição com IA. O arquivo gerado inclui:
+
+Cabeçalho com título do programa, modalidade e data.
+
+Detalhamento de cada sessão, incluindo blocos, exercícios, séries/repetições, carga, tempo de descanso e observações estratégicas da IA.
+
+Suporte para os modos Musculação, Kettlebell, Levantamento de Peso, Funcional e Híbrido.
+
+O botão aparece automaticamente assim que a IA finaliza a geração do plano, permitindo o download imediato antes mesmo de salvar no banco de dados."
+          </p>
           <Tabs value={tab} onValueChange={(v) => setTab(v === "cadastro" ? "cadastro" : "login")}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login" id="home-tab-login">
