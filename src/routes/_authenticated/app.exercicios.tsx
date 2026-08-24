@@ -780,7 +780,7 @@ function ExerciseDialog({
     try {
       let exerciseId = editing?.id;
       let clonedFromGlobal = false;
-      if (isEdit && !isEditingGlobal) {
+      if (isEdit) {
         const { error } = await supabase
           .from("exercises")
           .update({
@@ -810,7 +810,6 @@ function ExerciseDialog({
           .single();
         if (error) throw error;
         exerciseId = data.id;
-        clonedFromGlobal = isEditingGlobal;
       }
 
       // Persistir mídias
