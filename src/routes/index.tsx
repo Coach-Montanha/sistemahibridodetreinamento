@@ -63,26 +63,6 @@ Suporte para os modos Musculação, Kettlebell, Levantamento de Peso, Funcional 
 
 O botão aparece automaticamente assim que a IA finaliza a geração do plano, permitindo o download imediato antes mesmo de salvar no banco de dados."
           </p>
-          <p className="mb-4 text-sm text-muted-foreground whitespace-pre-wrap">
-            Você também informou:
-"Para tornar a geração de treinos assertiva e garantir que suas edições sejam respeitadas, implementei as seguintes melhorias:
-
-Sincronização Total com o Banco: O schema de preferências foi expandido para incluir campos técnicos como presetId, modoExecucao (Circuito vs Séries Fixas) e selecaoExercicios (IA vs Manual). Isso garante que o que você configura na tela de Ajustes seja salvo exatamente como desejado.
-
-Motor de IA Prioritário: Ajustei a lógica do motor "Híbrido" e "Kettlebell Fitness" para que ele consulte primeiro as suas configurações persistidas. Agora, se você definir uma estrutura de blocos nas configurações, a IA usará essa base como verdade absoluta, recorrendo ao histórico ou padrões genéricos apenas se não houver preferências definidas.
-
-Correção da Interface de Edição:
-
-Presets Dinâmicos: Alterar o formato do bloco agora atualiza corretamente o presetId interno, permitindo que a IA identifique a mecânica correta.
-
-Persistência de Séries/Reps: Ajustes em Séries e Repetições Base agora sincronizam automaticamente com os campos de metadados (seriesMin/Max e repsPorExercicio), eliminando discrepâncias no banco de dados.
-
-Novos Controles: Adicionei campos para "Descanso entre Blocos", "Modo de Execução" e "Tipo de Seleção" diretamente na aba de Geração Automática.
-
-Agora, ao atualizar a página ou gerar um novo treino, o sistema utilizará a estrutura exata que você configurou nos ajustes."
-
-também deu erro de build
-          </p>
           <Tabs value={tab} onValueChange={(v) => setTab(v === "cadastro" ? "cadastro" : "login")}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login" id="home-tab-login">
