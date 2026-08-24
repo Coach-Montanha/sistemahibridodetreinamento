@@ -167,6 +167,12 @@ function DuplicadosPage() {
               <div className="divide-y divide-border/40">
                 {group.items.map((ex: any) => {
                   const isGlobal = !ex.coach_id;
+                  const coachDuplicates = group.items.filter((i: any) => i.coach_id === coach?.id);
+                  // Habilitamos a fusão em itens globais se houver cópias do coach, 
+                  // ou em itens do coach se houver outras cópias do coach.
+                  const canMergeHere = isGlobal 
+                    ? coachDuplicates.length > 0 
+                    : coachDuplicates.some((i: any) => i.id !== ex.id);
                   const isBusy = busyId === ex.id;
                   
                   return (
@@ -211,7 +217,7 @@ function DuplicadosPage() {
                               setBusyId(null);
                             }
                           }}
-                          disabled={!!busyId}
+                          disabled={!!busyId || !canMergeHere}
                         >
                           {isBusy && busyId === ex.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitMerge className="h-3.5 w-3.5" />}
                           Manter e Fundir
