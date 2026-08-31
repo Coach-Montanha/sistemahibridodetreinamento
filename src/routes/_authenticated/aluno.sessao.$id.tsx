@@ -1,8 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Mountain, Wind, Flame } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ArrowLeft, Mountain, Wind, Flame, Play, Eye } from "lucide-react";
 import { BLOCK_FORMAT_LABEL, type BlockFormat } from "@/lib/methodology";
 
 export const Route = createFileRoute("/_authenticated/aluno/sessao/$id")({
@@ -11,6 +19,12 @@ export const Route = createFileRoute("/_authenticated/aluno/sessao/$id")({
 
 function SessaoAluno() {
   const { id } = Route.useParams();
+  const [activeMedia, setActiveMedia] = useState<{
+    nome: string;
+    media: any[];
+    videoUrl?: string;
+  } | null>(null);
+
   const { data: session } = useQuery({
     queryKey: ["aluno-sessao", id],
     queryFn: async () => {
@@ -32,7 +46,7 @@ function SessaoAluno() {
       const { data, error } = await supabase
         .from("session_blocks")
         .select(
-          "id, ordem, formato, titulo, duracao_min, config, session_block_exercises(id, ordem, reps, series, pct_1rm, carga_kg, descanso_seg, lado, observacoes, nome_livre, exercises(nome_pt))",
+          "id, ordem, formato, titulo, duracao_min, config, session_block_exercises(id, ordem, reps, series, pct_1rm, carga_kg, descanso_seg, lado, observacoes, nome_livre, exercises(nome_pt, video_url, exercise_media(*)))",
         )
         .eq("session_id", id)
         .order("ordem");
@@ -99,19 +113,78 @@ function SessaoAluno() {
                           </span>
                           <div className="text-xs font-semibold uppercase tracking-wide">{label}</div>
                         </div>
-                        <ExerciseList items={items} />
+                        <ExerciseList items={items} onOpenMedia={(m) => setActiveMedia(m)} />
                       </div>
                     )
                   ))}
                 </div>
               ) : (
-                <ExerciseList items={exs} />
+                <ExerciseList items={exs} onOpenMedia={(m) => setActiveMedia(m)} />
               )}
             </Card>
           );
           })
         )}
       </main>
+
+      {/* Dialog para visualização de mídias de demonstração do exercício */}
+      {activeMedia && (
+        <Dialog open={!!activeMedia} onOpenChange={(open) => !open && setActiveMedia(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{activeMedia.nome}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              {activeMedia.media && activeMedia.media.length > 0 ? (
+                <div className="grid gap-3">
+                  {activeMedia.media.map((item: any, idx: number) => {
+                    if (item.tipo === "video") {
+                      return (
+                        <video
+                          key={idx}
+                          src={item.url_publica}
+                          controls
+                          className="w-full rounded-lg bg-black"
+                        />
+                      );
+                    }
+                    if (item.tipo === "youtube" || (item.url_publica && item.url_publica.includes("youtube.com"))) {
+                      return (
+                        <iframe
+                          key={idx}
+                          src={item.url_publica.replace("watch?v=", "embed/")}
+                          title={activeMedia.nome}
+                          className="aspect-video w-full rounded-lg"
+                          allowFullScreen
+                        />
+                      );
+                    }
+                    return (
+                      <img
+                        key={idx}
+                        src={item.url_publica}
+                        alt={activeMedia.nome}
+                        className="max-h-80 w-full rounded-lg object-contain bg-black/5 dark:bg-white/5"
+                      />
+                    );
+                  })}
+                </div>
+              ) : activeMedia.videoUrl ? (
+                <div className="aspect-video w-full overflow-hidden rounded-lg">
+                  <iframe
+                    src={activeMedia.videoUrl.replace("watch?v=", "embed/")}
+                    title={activeMedia.nome}
+                    className="h-full w-full"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                <p className="text-center text-sm text-muted-foreground">Nenhuma mídia disponível.</p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -122,10 +195,20 @@ function formatMetric(v: any, tpl: (x: string) => string): string | null {
   return tpl(String(v));
 }
 
-function ExerciseList({ items }: { items: any[] }) {
+function ExerciseList({
+  items,
+  onOpenMedia,
+}: {
+  items: any[];
+  onOpenMedia: (data: { nome: string; media: any[]; videoUrl?: string }) => void;
+}) {
   return (
     <div className="space-y-2">
       {items.map((ex) => {
+        const exerciseName = ex.exercises?.nome_pt ?? ex.nome_livre ?? "Exercício";
+        const mediaList = ex.exercises?.exercise_media ?? [];
+        const hasMedia = mediaList.length > 0 || !!ex.exercises?.video_url;
+
         const parts = [
           formatMetric(ex.series, (x) => (x === "sem limite" ? "séries livres" : `${x} séries`)),
           formatMetric(ex.reps, (x) => (x === "sem limite" ? "reps livres" : `${x} reps`)),
@@ -133,11 +216,12 @@ function ExerciseList({ items }: { items: any[] }) {
           ex.carga_kg ? `${ex.carga_kg} kg` : null,
           ex.descanso_seg ? `descanso ${ex.descanso_seg}s` : null,
         ].filter(Boolean);
+
         return (
-          <div key={ex.id} className="rounded-md border border-border/60 p-3">
-            <div className="min-w-0">
+          <div key={ex.id} className="flex items-center justify-between rounded-md border border-border/60 p-3">
+            <div className="min-w-0 flex-1">
               <div className="font-medium text-foreground">
-                {ex.exercises?.nome_pt ?? ex.nome_livre ?? "Exercício"}
+                {exerciseName}
                 {ex.lado ? ` · ${ex.lado}` : ""}
               </div>
               {parts.length > 0 && (
@@ -147,6 +231,23 @@ function ExerciseList({ items }: { items: any[] }) {
                 <div className="mt-1 text-xs text-muted-foreground">{ex.observacoes}</div>
               )}
             </div>
+            {hasMedia && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-3 shrink-0 gap-1.5 text-xs text-primary hover:bg-primary/10"
+                onClick={() =>
+                  onOpenMedia({
+                    nome: exerciseName,
+                    media: mediaList,
+                    videoUrl: ex.exercises?.video_url,
+                  })
+                }
+              >
+                <Play className="h-3.5 w-3.5 fill-primary" />
+                <span className="hidden sm:inline">Ver execução</span>
+              </Button>
+            )}
           </div>
         );
       })}

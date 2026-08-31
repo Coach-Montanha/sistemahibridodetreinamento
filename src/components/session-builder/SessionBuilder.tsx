@@ -85,6 +85,12 @@ function legacyToSets(e: {
   ];
 }
 
+const PrescreverIaDialog = lazy(() =>
+  import("@/components/programa-ia/PrescreverIaDialog").then((m) => ({
+    default: m.PrescreverIaDialog,
+  })),
+);
+
 export function SessionBuilder({
   sessionId,
   programWeekId,
@@ -99,11 +105,6 @@ export function SessionBuilder({
   const [imgOpen, setImgOpen] = useState(false);
   const [iaPrograma, setIaPrograma] = useState<{ p: any; isContinuation: boolean } | null>(null);
 
-  const PrescreverIaDialog = lazy(() =>
-    import("@/components/programa-ia/PrescreverIaDialog").then((m) => ({
-      default: m.PrescreverIaDialog,
-    })),
-  );
   useEffect(() => {
     if (!sessionId) {
       state.reset();

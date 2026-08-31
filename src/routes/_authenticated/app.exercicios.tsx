@@ -80,6 +80,14 @@ function ExerciciosPage() {
   const { data: coach } = useCoach();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQ(q);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [q]);
 
   const [metFilter, setMetFilter] = useState<Methodology | "todos">("todos");
   const [equipFilter, setEquipFilter] = useState<Equipamento | "todos">("todos");
@@ -92,14 +100,15 @@ function ExerciciosPage() {
   const [selectingAll, setSelectingAll] = useState(false);
   const qc = useQueryClient();
 
-  const { data: exercises = [] } = useQuery({
-    queryKey: ["exercises", q, metFilter, equipFilter, untaggedOnly],
+  const { data: exercises = [], isFetching } = useQuery({
+    queryKey: ["exercises", debouncedQ, metFilter, equipFilter, untaggedOnly],
+    placeholderData: (previousData) => previousData,
     queryFn: async () => {
       let query = supabase
         .from("exercises")
         .select("*, exercise_media(*)")
         .order("nome_pt");
-      if (q) query = query.ilike("nome_pt", `%${q}%`);
+      if (debouncedQ.trim()) query = query.ilike("nome_pt", `%${debouncedQ.trim()}%`);
       if (metFilter !== "todos") query = query.contains("metodologias", [metFilter]);
       if (equipFilter !== "todos") query = query.contains("equipamento", [equipFilter]);
       if (untaggedOnly) {

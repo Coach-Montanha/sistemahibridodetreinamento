@@ -91,14 +91,14 @@ function Dashboard() {
           </Button>
         </Card>
 
-        <Card className="flex flex-col p-6 opacity-80 grayscale-[0.5]">
+        <Card className="flex flex-col p-6">
           <Users className="h-6 w-6 text-primary" />
           <h3 className="mt-4 text-lg font-semibold leading-none">Alunos</h3>
           <p className="mt-2 text-sm text-muted-foreground flex-grow">
             Gestão de alunos e atribuição de programas.
           </p>
-          <Button asChild variant="ghost" className="mt-6 w-full cursor-not-allowed bg-muted/50 hover:bg-muted/50">
-            <Link to="/app/alunos">Em breve</Link>
+          <Button asChild variant="outline" className="mt-6 w-full border-primary/20 hover:bg-primary/5">
+            <Link to="/app/alunos">Gerenciar alunos</Link>
           </Button>
         </Card>
       </div>

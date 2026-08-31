@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { DndContext, useDraggable, useSensor, useSensors, PointerSensor, KeyboardSensor, type DragEndEvent } from '@dnd-kit/core';
 import { restrictToParentElement } from '@dnd-kit/modifiers';
 import { type BlocoImagem, type LayoutImagem } from '@/lib/image-export';
@@ -20,6 +20,7 @@ export function UnifiedCanvasEditor({
   metodologiaLabel, 
   coachLabel 
 }: UnifiedCanvasEditorProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor)
@@ -33,7 +34,7 @@ export function UnifiedCanvasEditor({
     const blockId = active.id as string;
     
     // Calcula nova posição em %
-    const container = document.getElementById('canvas-container');
+    const container = containerRef.current;
     if (!container) return;
     
     const rect = container.getBoundingClientRect();
@@ -60,7 +61,7 @@ export function UnifiedCanvasEditor({
   return (
     <div className="space-y-4">
       <div 
-        id="canvas-container"
+        ref={containerRef}
         className={cn(
           "relative w-full overflow-hidden border border-border shadow-inner rounded-lg transition-colors duration-300",
           fundo === 'escuro' ? "bg-[#0F1115] text-[#F5F5F4]" : "bg-white text-[#0F1115]"

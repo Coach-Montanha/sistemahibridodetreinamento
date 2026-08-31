@@ -1,11 +1,22 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { Dumbbell, FolderKanban, PlusSquare, Wand2 } from "lucide-react";
+import { lazy, Suspense } from "react";
+import { Dumbbell, FolderKanban, PlusSquare, Wand2, Loader2 } from "lucide-react";
 import { ProgramasPanel } from "./app.programas";
-import { GerarPanel } from "./app.gerar";
-import { SessionBuilder } from "@/components/session-builder/SessionBuilder";
 import { Button } from "@/components/ui/button";
+
+const SessionBuilder = lazy(() =>
+  import("@/components/session-builder/SessionBuilder").then((m) => ({
+    default: m.SessionBuilder,
+  })),
+);
+
+const GerarPanel = lazy(() =>
+  import("./app.gerar").then((m) => ({
+    default: m.GerarPanel,
+  })),
+);
 
 const searchSchema = z.object({
   aba: fallback(z.string(), "programas").default("programas"),
@@ -92,8 +103,28 @@ function TreinosHub() {
         {active === "programas" && (
           <ProgramasPanel key={ia ? "ia" : "todos"} showHeader={false} destacarIa={ia} />
         )}
-        {active === "nova" && <SessionBuilder />}
-        {active === "gerar" && <GerarPanel showHeader={false} />}
+        {active === "nova" && (
+          <Suspense
+            fallback={
+              <div className="flex h-64 items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            }
+          >
+            <SessionBuilder />
+          </Suspense>
+        )}
+        {active === "gerar" && (
+          <Suspense
+            fallback={
+              <div className="flex h-64 items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            }
+          >
+            <GerarPanel showHeader={false} />
+          </Suspense>
+        )}
       </div>
     </div>
   );

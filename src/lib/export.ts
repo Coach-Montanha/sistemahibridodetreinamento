@@ -6,10 +6,6 @@
 //
 // npm: jspdf, jspdf-autotable, xlsx
 
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
-
 export interface CoachBranding {
   nome: string;
   logoUrl?: string;      // URL pública do bucket coach-branding
@@ -33,6 +29,11 @@ export interface SemanaExport {
 // PDF
 // ---------------------------------------------------------------------------
 export async function exportarSemanaPDF(semana: SemanaExport, branding: CoachBranding) {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
+
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
@@ -104,7 +105,8 @@ export async function exportarSemanaPDF(semana: SemanaExport, branding: CoachBra
 // ---------------------------------------------------------------------------
 // EXCEL
 // ---------------------------------------------------------------------------
-export function exportarSemanaExcel(semana: SemanaExport, branding: CoachBranding) {
+export async function exportarSemanaExcel(semana: SemanaExport, branding: CoachBranding) {
+  const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
   const aoa: (string)[][] = [
     [semana.titulo],

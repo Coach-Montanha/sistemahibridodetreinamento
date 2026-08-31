@@ -95,5 +95,5 @@ export async function exportarSessaoExcel(sessionId: string) {
     loadSessaoExport(sessionId),
     fetchCoachBranding(),
   ]);
-  exportarSemanaExcel(semana, branding);
+  await exportarSemanaExcel(semana, branding);
 }

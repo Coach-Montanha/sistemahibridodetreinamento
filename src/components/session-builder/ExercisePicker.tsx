@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -15,7 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 
 export function ExercisePicker({
   onPick,
@@ -24,18 +24,26 @@ export function ExercisePicker({
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
-  const { data = [] } = useQuery({
-    queryKey: ["exercise-picker", q],
+  const [debouncedQ, setDebouncedQ] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQ(q);
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [q]);
+
+  const { data = [], isFetching } = useQuery({
+    queryKey: ["exercise-picker", debouncedQ],
     queryFn: async () => {
       let query = supabase
         .from("exercises")
-        .select("*, exercise_media(*)")
+        .select("id, nome_pt, nome_en, grupo_muscular, equipamento, exercise_media(*)")
         .order("nome_pt")
-        .limit(200);
+        .limit(150);
 
-      if (q) {
-        // Busca flexível por nome em PT ou EN
-        query = query.or(`nome_pt.ilike.%${q}%,nome_en.ilike.%${q}%`);
+      if (debouncedQ.trim()) {
+        query = query.or(`nome_pt.ilike.%${debouncedQ.trim()}%,nome_en.ilike.%${debouncedQ.trim()}%`);
       }
 
       const { data, error } = await query;
@@ -43,6 +51,7 @@ export function ExercisePicker({
       return data;
     },
     enabled: open,
+    staleTime: 1000 * 60 * 5,
   });
 
   return (

@@ -52,9 +52,21 @@ import {
   RotateCcw,
   Database,
   ShieldAlert,
+  Copy,
+  Wand2,
+  Palette,
+  FolderArchive,
+  KeyRound,
+  Link,
+  Search,
+  ListChecks,
+  Check,
+  Dumbbell,
+  Activity,
+  Wrench,
+  Wind,
+  Flame,
 } from "lucide-react";
-import { Copy, Wand2 } from "lucide-react";
-import { Palette, FolderArchive, KeyRound, Link } from "lucide-react";
 import { ApiPanel } from "@/components/settings/api-panel";
 import { MarcaPanel } from "@/components/settings/marca-panel";
 import { AparenciaPanel } from "@/components/settings/aparencia-panel";
@@ -112,11 +124,8 @@ import {
 } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, ListChecks, Check } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Dumbbell, Activity, Wrench, Wind } from "lucide-react";
-import { Flame } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/configuracoes")({
   validateSearch: (search: Record<string, unknown>) => ({
