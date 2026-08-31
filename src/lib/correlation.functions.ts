@@ -177,6 +177,19 @@ export const applyAutoCorrelation = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ jobId: z.string().uuid() }).parse(data))
   .handler(async ({ data: { jobId }, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Verifica que o job pertence ao coach autenticado
+    const { data: callerCoachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
+    if (!callerCoachId) throw new Error("Coach ID não resolvido.");
+
+    const { data: ownerJob } = await supabaseAdmin
+      .from("media_correlation_jobs")
+      .select("id, coach_id")
+      .eq("id", jobId)
+      .maybeSingle();
+
+    if (!ownerJob || ownerJob.coach_id !== callerCoachId) throw new Error("Job não encontrado.");
+
     
     // 1. Buscar itens pendentes que são determinísticos ou exatos
     const { data: items } = await supabaseAdmin
