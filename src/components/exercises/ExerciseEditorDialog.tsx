@@ -184,9 +184,11 @@ export function ExerciseEditorDialog({
       }
 
       toast.success(
-        isEdit
-          ? "Exercício atualizado com sucesso"
-          : "Exercício criado com sucesso"
+        clonedFromShared
+          ? "Cópia personalizada criada com suas alterações"
+          : isEdit
+            ? "Exercício atualizado com sucesso"
+            : "Exercício criado com sucesso"
       );
       qc.invalidateQueries({ queryKey: ["exercises"] });
       onOpenChange(false);
