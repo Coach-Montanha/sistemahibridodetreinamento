@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, UserPlus, Copy, X } from "lucide-react";
+import { Plus, Trash2, UserPlus, Users, Copy, X } from "lucide-react";
 import {
   inviteStudent,
   deleteStudent,
@@ -66,10 +67,36 @@ function AlunosPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-muted-foreground">Carregando…</div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+          <div className="space-y-2">
+            {[1, 2, 3, 4].map((n) => (
+              <Card key={n} className="p-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1.5 flex-1">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                </div>
+              </Card>
+            ))}
+          </div>
+          <Card className="h-64 animate-pulse border-border/60 bg-muted/20" />
+        </div>
       ) : students.length === 0 ? (
-        <Card className="p-12 text-center text-muted-foreground">
-          Nenhum aluno ainda. Convide o primeiro.
+        <Card className="flex flex-col items-center justify-center gap-3 border-dashed p-14 text-center">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
+            <Users className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold">Nenhum aluno cadastrado ainda</h3>
+            <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+              Convide seus atletas para que eles acessem os treinos e acompanhem a execução pelo portal do aluno.
+            </p>
+          </div>
+          <div className="mt-2">
+            <InviteButton onDone={() => qc.invalidateQueries({ queryKey: ["students"] })} />
+          </div>
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
@@ -98,7 +125,7 @@ function AlunosPage() {
             <StudentPanel key={selected.id} student={selected} onDeleted={() => setSelectedId(null)} />
           ) : (
             <Card className="flex items-center justify-center p-12 text-muted-foreground">
-              Selecione um aluno
+              Selecione um aluno para gerenciar programas e sessões atribuídas.
             </Card>
           )}
         </div>

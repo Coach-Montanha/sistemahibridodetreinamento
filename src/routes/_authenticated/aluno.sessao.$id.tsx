@@ -10,8 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Mountain, Wind, Flame, Play, Eye } from "lucide-react";
+import { ArrowLeft, Mountain, Wind, Flame, Play, Eye, Share2 } from "lucide-react";
 import { BLOCK_FORMAT_LABEL, type BlockFormat } from "@/lib/methodology";
+import { formatSessionForWhatsApp, openWhatsAppShare } from "@/lib/whatsapp-share";
 
 export const Route = createFileRoute("/_authenticated/aluno/sessao/$id")({
   component: SessaoAluno,
@@ -55,6 +56,28 @@ function SessaoAluno() {
     },
   });
 
+  function handleShareWhatsApp() {
+    if (!session) return;
+    const shareData = {
+      titulo: session.titulo ?? "Treino",
+      data: session.data,
+      metodologia: session.program_weeks?.programs?.metodologia,
+      blocos: blocks.map((b) => ({
+        titulo: b.titulo ?? "Bloco",
+        formato: b.formato,
+        exercicios: (b.session_block_exercises ?? []).map((e: any) => ({
+          nome: e.exercises?.nome_pt ?? e.nome_livre ?? "Exercício",
+          series: e.series,
+          reps: e.reps,
+          carga: e.carga_kg,
+          descanso: e.descanso_seg,
+        })),
+      })),
+    };
+    const text = formatSessionForWhatsApp(shareData, window.location.href);
+    openWhatsAppShare(text);
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
@@ -63,17 +86,27 @@ function SessaoAluno() {
             <ArrowLeft className="h-4 w-4" /> Meus treinos
           </Link>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 hover:border-emerald-500/50"
+              onClick={handleShareWhatsApp}
+            >
+              <Share2 className="h-3.5 w-3.5" /> WhatsApp
+            </Button>
             <Mountain className="h-5 w-5 text-primary" />
           </div>
         </div>
       </header>
       <main className="mx-auto max-w-3xl space-y-4 p-6">
         {session && (
-          <div>
-            <div className="text-xs text-muted-foreground">
-              {session.program_weeks?.programs?.titulo} · Semana {session.program_weeks?.numero_semana} · Dia {session.numero_dia} · {session.data ?? ""}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-xs text-muted-foreground">
+                {session.program_weeks?.programs?.titulo} · Semana {session.program_weeks?.numero_semana} · Dia {session.numero_dia} · {session.data ?? ""}
+              </div>
+              <h1 className="text-2xl font-bold">{session.titulo ?? "Treino"}</h1>
             </div>
-            <h1 className="text-2xl font-bold">{session.titulo ?? "Treino"}</h1>
           </div>
         )}
 
