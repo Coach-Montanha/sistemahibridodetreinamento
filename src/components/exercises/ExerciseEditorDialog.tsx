@@ -112,8 +112,9 @@ export function ExerciseEditorDialog({
     setSaving(true);
     try {
       let exerciseId = editing?.id;
+      let clonedFromShared = false;
       if (isEdit) {
-        const { error } = await supabase
+        const { data: updated, error } = await supabase
           .from("exercises")
           .update({
             nome_pt: nome,
@@ -124,8 +125,29 @@ export function ExerciseEditorDialog({
             instrucoes: instr || null,
             atualizado_em: new Date().toISOString(),
           })
-          .eq("id", editing.id);
+          .eq("id", editing.id)
+          .select("id");
         if (error) throw error;
+        if (!updated || updated.length === 0) {
+          // Linha do catálogo compartilhado: RLS impede a edição direta.
+          // Criamos uma cópia pessoal do treinador com as alterações.
+          const { data: clone, error: cloneError } = await supabase
+            .from("exercises")
+            .insert({
+              coach_id: coachId,
+              nome_pt: nome,
+              padrao_movimento: padrao || null,
+              metodologias: metods,
+              equipamento: equip ? [equip] : [],
+              unilateral,
+              instrucoes: instr || null,
+            })
+            .select("id")
+            .single();
+          if (cloneError) throw cloneError;
+          exerciseId = clone.id;
+          clonedFromShared = true;
+        }
       } else {
         const { data, error } = await supabase
           .from("exercises")
@@ -162,9 +184,11 @@ export function ExerciseEditorDialog({
       }
 
       toast.success(
-        isEdit
-          ? "Exercício atualizado com sucesso"
-          : "Exercício criado com sucesso"
+        clonedFromShared
+          ? "Cópia personalizada criada com suas alterações"
+          : isEdit
+            ? "Exercício atualizado com sucesso"
+            : "Exercício criado com sucesso"
       );
       qc.invalidateQueries({ queryKey: ["exercises"] });
       onOpenChange(false);
