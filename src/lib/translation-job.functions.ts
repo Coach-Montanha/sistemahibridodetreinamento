@@ -60,9 +60,22 @@ export const startCatalogTranslationJob = createServerFn({ method: "POST" })
 export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ jobId: z.string().uuid(), batchSize: z.number().default(10) }).parse(data))
-  .handler(async ({ data: { jobId, batchSize } }) => {
+  .handler(async ({ data: { jobId, batchSize }, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { translateCatalogCore } = await import("@/lib/catalog-translate-core.server");
+
+    // Verifica que o job pertence ao coach autenticado
+    const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
+    if (!coachId) throw new Error("Coach ID não resolvido.");
+
+    const { data: ownerJob } = await supabaseAdmin
+      .from("exercise_translation_jobs")
+      .select("id, coach_id")
+      .eq("id", jobId)
+      .maybeSingle();
+
+    if (!ownerJob || ownerJob.coach_id !== coachId) throw new Error("Job não encontrado.");
+
 
     const { data: items } = await supabaseAdmin
       .from("exercise_translation_items")
