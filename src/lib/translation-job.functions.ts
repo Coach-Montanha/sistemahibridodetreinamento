@@ -68,13 +68,13 @@ export const processCatalogTranslationBatch = createServerFn({ method: "POST" })
     const { data: coachId } = await (supabaseAdmin.rpc as any)("auth_coach_id_for_user", { _user_id: context.userId });
     if (!coachId) throw new Error("Coach ID não resolvido.");
 
-    const { data: job } = await supabaseAdmin
+    const { data: ownerJob } = await supabaseAdmin
       .from("exercise_translation_jobs")
       .select("id, coach_id")
       .eq("id", jobId)
       .maybeSingle();
 
-    if (!job || job.coach_id !== coachId) throw new Error("Job não encontrado.");
+    if (!ownerJob || ownerJob.coach_id !== coachId) throw new Error("Job não encontrado.");
 
 
     const { data: items } = await supabaseAdmin
