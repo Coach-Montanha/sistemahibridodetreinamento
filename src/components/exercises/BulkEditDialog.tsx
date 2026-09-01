@@ -179,11 +179,27 @@ export function BulkEditDialog({
     let failed = 0;
     let firstError: string | null = null;
     try {
+      // Seleções feitas em "todo o banco" incluem IDs fora da lista carregada.
+      // Buscamos esses registros antes de aplicar as alterações.
+      const resolved = new Map<string, any>(byId);
+      const missing = selectedIds.filter((id) => !resolved.has(id));
+      for (let i = 0; i < missing.length; i += 500) {
+        const chunk = missing.slice(i, i + 500);
+        const { data, error } = await supabase
+          .from("exercises")
+          .select(
+            "id, coach_id, nome_pt, metodologias, equipamento, padrao_movimento, unilateral, instrucoes"
+          )
+          .in("id", chunk);
+        if (error) throw error;
+        for (const row of data ?? []) resolved.set(row.id, row);
+      }
+
       for (let i = 0; i < selectedIds.length; i += batchSize) {
         const batch = selectedIds.slice(i, i + batchSize);
         const results = await Promise.all(
           batch.map(async (id) => {
-            const ex = byId.get(id);
+            const ex = resolved.get(id);
             if (!ex) return { kind: "fail" as const };
             
             const nextMet =
