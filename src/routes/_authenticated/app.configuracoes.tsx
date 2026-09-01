@@ -180,7 +180,11 @@ function ConfiguracoesPage() {
       })
     : "—";
 
-  const activeVisualTheme = getStoredTheme();
+  const [activeVisualTheme, setActiveVisualTheme] = useState<ReturnType<typeof getStoredTheme>>("padrao");
+  useEffect(() => {
+    setActiveVisualTheme(getStoredTheme());
+  }, [section]);
+
   const kpis: Kpi[] =
     section === "aparencia"
       ? [
