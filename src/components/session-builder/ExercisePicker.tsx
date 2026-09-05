@@ -38,7 +38,7 @@ export function ExercisePicker({
     queryFn: async () => {
       let query = supabase
         .from("exercises")
-        .select("id, nome_pt, nome_en, grupo_muscular, equipamento, exercise_media(*)")
+        .select("id, nome_pt, nome_en, grupos_musculares, equipamento, exercise_media(*)")
         .order("nome_pt")
         .limit(150);
 

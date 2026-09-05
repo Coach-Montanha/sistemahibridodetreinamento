@@ -41,10 +41,14 @@ export function setStoredTheme(theme: VisualTheme) {
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<'light' | 'dark' | 'system'>(() => {
-    if (typeof window === 'undefined') return 'system';
-    return (localStorage.getItem('theme') as any) || 'system';
-  });
+  // Estado inicial determinístico: evita divergência de hidratação (SSR não
+  // conhece o localStorage). O valor real é sincronizado após a montagem.
+  const [theme, setThemeState] = useState<'light' | 'dark' | 'system'>('system');
+
+  useEffect(() => {
+    const stored = (localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null) || 'system';
+    setThemeState(stored);
+  }, []);
 
   const setTheme = (t: 'light' | 'dark' | 'system') => {
     setThemeState(t);
@@ -61,4 +65,5 @@ export function useTheme() {
 
   return { theme, setTheme };
 }
+
 

@@ -7,6 +7,16 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  vite: {
+    build: {
+      // Vite 8/Rolldown can drop declarations from large, highly re-exported
+      // dependency graphs, producing a blank screen only in production.
+      // Keep declarations intact until the upstream optimizer fix lands.
+      rollupOptions: {
+        treeshake: false,
+      },
+    },
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
