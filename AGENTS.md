@@ -17,3 +17,7 @@
   3. Realizar `git push origin main` imediatamente ao concluir a tarefa.
 - **Histórico Lovable**: Nunca utilizar force-push (`--force`) ou rebase destrutivo em commits já publicados.
 
+## Regras Mandatórias para o Agente Lovable (Publicação Automática)
+- **Auto-Publish Obrigatório**: Sempre que concluir qualquer instrução, alteração de código, correção ou melhoria executada dentro do Lovable, o agente do Lovable DEVE invocar a ferramenta de publicação (`publish` / `deploy`) imediatamente para atualizar o app em produção (`https://sistemahibridodetreinamento.lovable.app`) sem aguardar confirmações manuais do usuário.
+- **Auto-Approve da Ferramenta Publish**: A ferramenta de publicação deve ser configurada como "Always allow" (Sempre permitir) nas permissões de ferramentas do projeto para que a publicação ocorra de forma fluida e instantânea.
+
