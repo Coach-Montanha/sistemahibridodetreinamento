@@ -1,13 +1,4 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
+# Diretrizes de Desenvolvimento — Coach Montanha
 
 ## Regras Mandatórias de Automação do Git (Auto-Push Automático)
 - **Envio Automático ao GitHub**: Todas as alterações, adições de código, correções ou melhorias solicitadas devem ser automaticamente commitadas e enviadas (`git push origin main`) para o repositório remoto sem requerer aprovações prévias ou confirmações posteriores do usuário.
@@ -15,5 +6,4 @@
   1. Integrar eventuais alterações remotas com `git pull --no-rebase`.
   2. Executar `git add .` e criar o commit com mensagem clara e semântica.
   3. Realizar `git push origin main` imediatamente ao concluir a tarefa.
-- **Histórico Lovable**: Nunca utilizar force-push (`--force`) ou rebase destrutivo em commits já publicados.
-
+- **Histórico Lovable**: O projeto está sincronizado com o Lovable. Nunca utilizar force-push (`--force`) ou rebase destrutivo em commits já publicados.
