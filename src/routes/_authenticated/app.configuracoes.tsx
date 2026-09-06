@@ -190,13 +190,13 @@ function ConfiguracoesPage() {
       ? [
           {
             label: "Tema ativo",
-            value: activeVisualTheme === "pulse" ? "Pulse" : "Padrão",
+            value: activeVisualTheme === "pulse" ? "Pulse" : activeVisualTheme === "midnight" ? "Midnight" : "Padrão",
             icon: Palette,
           },
           {
             label: "Estilo visual",
-            value: activeVisualTheme === "pulse" ? "Moderno" : "Clássico",
-            hint: "Afeta bordas e cores",
+            value: activeVisualTheme === "pulse" ? "Moderno" : activeVisualTheme === "midnight" ? "Fintech Glow" : "Clássico",
+            hint: "Afeta bordas, gradientes e cores",
           },
         ]
       : section === "marca"

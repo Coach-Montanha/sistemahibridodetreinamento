@@ -236,6 +236,202 @@
   }
 }
 
+/* ================= Theme: Midnight (Fintech Glow) ================= */
+[data-tema="midnight"] {
+  /* Design Tokens from Spec */
+  --color-dark: #050a14;
+  --color-lite-white: #eaeaea;
+  --color-grey: #9ea6b6;
+  --color-stroke: #171e2c;
+  --color-accent-blue: #3898ec;
+  --color-accent-purple: #6958e2;
+  --color-accent-magenta: #7317d5;
+  --color-purple-glow: #53497e;
+  --color-bright-gray-4: rgba(234, 234, 234, 0.04);
+  --color-dropdown-bg: #0d1424;
+
+  /* Gradients */
+  --gradient-cta: linear-gradient(90deg, #6958e2 20%, #7317d5);
+  --gradient-stat-text: linear-gradient(90deg, rgb(105, 88, 226) 20%, rgb(255, 255, 255));
+  --gradient-page-glow:
+    radial-gradient(ellipse 60% 50% at 70% 20%, rgba(83, 73, 126, 0.35), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 30% 10%, rgba(56, 152, 236, 0.15), transparent 55%);
+  --gradient-inset-highlight: inset 0 -4px 6.9px rgba(255, 255, 255, 0.15);
+  --gradient-tab-active-highlight: inset 0 1px 3px rgba(255, 255, 255, 0.4);
+
+  /* Semantic UI Tokens mapped to oklch */
+  --radius: 1.125rem; /* 18px card radius */
+  --background: oklch(0.11 0.025 260); /* #050a14 ink-navy canvas */
+  --foreground: oklch(0.93 0.005 260); /* #eaeaea lite-white */
+  --card: oklch(0.14 0.025 260); /* #0d1424 surface */
+  --card-foreground: oklch(0.93 0.005 260);
+  --popover: oklch(0.13 0.025 260);
+  --popover-foreground: oklch(0.93 0.005 260);
+  --primary: oklch(0.58 0.22 285); /* #6958e2 violet */
+  --primary-foreground: oklch(0.98 0.005 100);
+  --secondary: oklch(0.17 0.025 260); /* #101726 */
+  --secondary-foreground: oklch(0.80 0.015 250); /* #9ea6b6 */
+  --muted: oklch(0.15 0.02 260);
+  --muted-foreground: oklch(0.72 0.02 250); /* #9ea6b6 */
+  --accent: oklch(0.66 0.16 240); /* #3898ec cool blue */
+  --accent-foreground: oklch(0.98 0.005 100);
+  --border: oklch(0.19 0.025 260); /* #171e2c stroke */
+  --input: oklch(0.18 0.02 260);
+  --ring: oklch(0.58 0.22 285);
+  --sidebar: oklch(0.10 0.025 260);
+  --sidebar-foreground: oklch(0.93 0.005 260);
+  --sidebar-primary: oklch(0.58 0.22 285);
+  --sidebar-primary-foreground: oklch(0.98 0.005 100);
+  --sidebar-accent: oklch(0.15 0.025 260);
+  --sidebar-accent-foreground: oklch(0.93 0.005 260);
+  --sidebar-border: oklch(0.19 0.025 260);
+  --sidebar-ring: oklch(0.58 0.22 285);
+}
+
+/* Midnight Page Atmosphere: layered radial glows on ink-navy canvas */
+[data-tema="midnight"] body {
+  background-color: #050a14 !important;
+  background-image: 
+    radial-gradient(ellipse 65% 50% at 75% 15%, rgba(83, 73, 126, 0.32), transparent 60%),
+    radial-gradient(ellipse 50% 45% at 25% 10%, rgba(56, 152, 236, 0.14), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 50% 85%, rgba(115, 23, 213, 0.10), transparent 60%) !important;
+  background-attachment: fixed !important;
+  color: #eaeaea !important;
+}
+
+/* Midnight Component Overrides */
+[data-tema="midnight"] {
+  /* Hard Anti-Slop: Sentence case by default */
+  nav a,
+  .btn,
+  button,
+  label,
+  h1, h2, h3, h4, p {
+    text-transform: none;
+  }
+
+  /* Typography: editorial confident tracking */
+  h1, h2, h3, .text-xl, .text-2xl, .text-3xl, .text-4xl, .text-5xl {
+    letter-spacing: -0.02em !important;
+    font-weight: 700 !important;
+    color: #eaeaea;
+  }
+
+  /* Cards & Panels: 18px radius, dark glass 4% wash, 1px stroke */
+  .rounded-xl, .rounded-2xl, section.card {
+    border-radius: 18px !important;
+  }
+
+  .border {
+    border-color: #171e2c !important;
+  }
+
+  .bg-card {
+    background-color: rgba(13, 20, 36, 0.75) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid #171e2c !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .bg-card:hover {
+    border-color: rgba(105, 88, 226, 0.35) !important;
+  }
+
+  /* Primary Buttons: violet-to-magenta gradient */
+  button.bg-primary,
+  a.bg-primary {
+    background: linear-gradient(90deg, #6958e2 20%, #7317d5) !important;
+    color: #eaeaea !important;
+    border-radius: 12px !important;
+    border: none !important;
+    font-weight: 500 !important;
+    box-shadow: 0 4px 14px rgba(115, 23, 213, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  button.bg-primary:hover,
+  a.bg-primary:hover {
+    opacity: 0.94 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(115, 23, 213, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  }
+
+  /* Secondary & Ghost Buttons: Inset highlight effect, 12px radius */
+  button.bg-secondary,
+  button.border-border {
+    border-radius: 12px !important;
+    background-color: rgba(234, 234, 234, 0.04) !important;
+    border: 1px solid #171e2c !important;
+    color: #eaeaea !important;
+    box-shadow: inset 0 -1px 2px rgba(255, 255, 255, 0.12) !important;
+    transition: all 0.2s ease !important;
+  }
+
+  button.bg-secondary:hover,
+  button.border-border:hover {
+    background-color: rgba(234, 234, 234, 0.08) !important;
+    border-color: rgba(105, 88, 226, 0.4) !important;
+    color: #ffffff !important;
+  }
+
+  /* Pill Tabs & Segmented Controls */
+  [role="tablist"], .tabs-list {
+    background-color: rgba(13, 20, 36, 0.8) !important;
+    border: 1px solid #171e2c !important;
+    border-radius: 999px !important;
+    padding: 4px !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  [role="tab"] {
+    border-radius: 999px !important;
+    transition: all 0.2s ease !important;
+  }
+
+  [role="tab"][data-state="active"], [role="tab"][aria-selected="true"] {
+    background: #6958e2 !important;
+    color: #eaeaea !important;
+    box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.5), 0 2px 8px rgba(105, 88, 226, 0.4) !important;
+  }
+
+  /* Badges & Pills */
+  .badge {
+    border-radius: 999px !important;
+    border: 1px solid #171e2c !important;
+    background-color: rgba(234, 234, 234, 0.04) !important;
+    color: #9ea6b6 !important;
+  }
+
+  .badge.bg-primary {
+    background: linear-gradient(90deg, #6958e2 20%, #7317d5) !important;
+    color: #ffffff !important;
+    border: none !important;
+  }
+
+  /* Form Inputs: Translucent dark field */
+  input, textarea, select {
+    border-radius: 12px !important;
+    background-color: rgba(234, 234, 234, 0.04) !important;
+    border: 1px solid #171e2c !important;
+    color: #eaeaea !important;
+  }
+
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    border-color: #6958e2 !important;
+    box-shadow: 0 0 0 2px rgba(105, 88, 226, 0.25) !important;
+    outline: none !important;
+  }
+
+  /* Popover and dropdowns */
+  [data-slot="popover-content"], [role="menu"], [role="listbox"] {
+    background-color: #0d1424 !important;
+    border: 1px solid #171e2c !important;
+    border-radius: 14px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  }
+}
+
 #lovable-badge {
   display: none !important;
 }

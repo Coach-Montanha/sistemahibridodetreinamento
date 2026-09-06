@@ -9,7 +9,7 @@ export const themeInitScript = `
       var theme = localStorage.getItem('theme') || 'system';
       var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
       
-      if (visualTheme === 'pulse' || isDark) {
+      if (visualTheme === 'pulse' || visualTheme === 'midnight' || isDark) {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
@@ -18,7 +18,7 @@ export const themeInitScript = `
   })();
 `;
 
-export type VisualTheme = "padrao" | "pulse";
+export type VisualTheme = "padrao" | "pulse" | "midnight";
 
 export function getStoredTheme(): VisualTheme {
   if (typeof window === 'undefined') return 'padrao';
@@ -33,7 +33,7 @@ export function setStoredTheme(theme: VisualTheme) {
   const uiTheme = localStorage.getItem('theme') || 'system';
   const isDark = uiTheme === 'dark' || (uiTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-  if (theme === 'pulse' || isDark) {
+  if (theme === 'pulse' || theme === 'midnight' || isDark) {
     document.documentElement.classList.add('dark');
   } else {
     document.documentElement.classList.remove('dark');
@@ -56,7 +56,7 @@ export function useTheme() {
     const visualTheme = getStoredTheme();
     const isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     
-    if (visualTheme === 'pulse' || isDark) {
+    if (visualTheme === 'pulse' || visualTheme === 'midnight' || isDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');

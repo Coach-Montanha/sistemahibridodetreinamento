@@ -14,13 +14,14 @@ export function AparenciaPanel() {
   const handleThemeChange = (theme: VisualTheme) => {
     setActiveTheme(theme);
     setStoredTheme(theme);
-    toast.success(`Tema ${theme === 'pulse' ? 'Pulse' : 'Padrão'} aplicado`);
+    const themeName = theme === 'pulse' ? 'Pulse' : theme === 'midnight' ? 'Midnight' : 'Padrão';
+    toast.success(`Tema ${themeName} aplicado`);
     // Reload to ensure all CSS variables and classes are correctly applied across the app
     window.location.reload();
   };
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <ThemeCard
         label="Padrão"
         description="O visual clássico do Coach Montanha."
@@ -34,6 +35,13 @@ export function AparenciaPanel() {
         isActive={activeTheme === "pulse"}
         onClick={() => handleThemeChange("pulse")}
         colors={["#FF6B00", "#0A0A0C", "#18181C"]}
+      />
+      <ThemeCard
+        label="Midnight"
+        description="Atmosfera dark fintech com canvas ink-navy, brilho violeta/magenta e controle de alta precisão."
+        isActive={activeTheme === "midnight"}
+        onClick={() => handleThemeChange("midnight")}
+        colors={["#6958E2", "#7317D5", "#050A14", "#3898EC"]}
       />
     </div>
   );

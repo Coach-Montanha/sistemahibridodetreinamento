@@ -11,7 +11,7 @@ export const getVisualTheme = createServerFn({ method: "GET" })
   });
 
 export const updateVisualTheme = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({ theme: z.enum(["padrao", "pulse"]) }).parse(data))
+  .inputValidator((data) => z.object({ theme: z.enum(["padrao", "pulse", "midnight"]) }).parse(data))
   .handler(async ({ data }) => {
     // Placeholder for database update
     return { success: true, theme: data.theme };
