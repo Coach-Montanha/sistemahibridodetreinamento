@@ -65,7 +65,7 @@ function TreinosHub() {
             variant="ghost"
             size="sm"
             onClick={() => setTab("programas")}
-            className="text-muted-foreground hover:text-foreground"
+            className="cursor-pointer text-muted-foreground hover:text-foreground"
           >
             Voltar
           </Button>
@@ -86,9 +86,9 @@ function TreinosHub() {
               role="tab"
               aria-selected={isActive}
               onClick={() => setTab(t.key)}
-              className={`inline-flex flex-1 min-w-max items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+              className={`inline-flex flex-1 min-w-max cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 min-h-[44px] text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                 isActive
-                  ? "bg-card text-primary shadow-sm"
+                  ? "bg-card text-primary shadow-sm font-semibold border border-border/50"
                   : "text-muted-foreground hover:bg-card/60 hover:text-foreground"
               }`}
             >

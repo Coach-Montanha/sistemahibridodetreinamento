@@ -3,7 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Dumbbell, PlusSquare, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Activity,
+  ArrowRight,
+  ChevronRight,
+  Dumbbell,
+  Flame,
+  FolderKanban,
+  PlusSquare,
+  Settings,
+  Sparkles,
+  Users,
+  Wand2,
+} from "lucide-react";
 import { useCoach } from "@/hooks/use-coach";
 
 export const Route = createFileRoute("/_authenticated/app/")({
@@ -33,75 +46,259 @@ function Dashboard() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Olá, {coach?.nome ?? "treinador"}
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Bem-vindo ao seu sistema híbrido de programação.
-        </p>
+    <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-6 sm:py-8">
+      {/* Header do Treinador */}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+            </span>
+            Sistema Híbrido Ativo
+          </div>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            Olá, {coach?.nome ?? "Treinador"}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+            Prescrição atlética, periodização contínua e gestão de atletas.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="cursor-pointer border-border/80 hover:bg-muted/80"
+          >
+            <Link to="/app/configuracoes">
+              <Settings className="mr-2 h-4 w-4 text-muted-foreground" />
+              Configurações
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        {[
-          { label: "Exercícios", value: stats.data?.exercises ?? "…" },
-          { label: "Programas", value: stats.data?.programs ?? "…" },
-          { label: "Sessões", value: stats.data?.sessions ?? "…" },
-          { label: "Alunos", value: stats.data?.students ?? "…" },
-        ].map((s) => (
-          <Card key={s.label} className="p-5">
-            <div className="text-sm text-muted-foreground">{s.label}</div>
-            <div className="mt-1 text-3xl font-bold">{s.value}</div>
-          </Card>
-        ))}
+      {/* Hero Bento: Ações de Alto Impacto */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Card 1: Motor IA */}
+        <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 p-6 shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md hover:shadow-primary/5">
+          <div className="flex items-center justify-between">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <Badge variant="secondary" className="font-semibold text-xs text-primary bg-primary/15 border-none">
+              IA Prescritiva
+            </Badge>
+          </div>
+
+          <h2 className="mt-5 text-xl font-bold tracking-tight">Gerador de Treinos com IA</h2>
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+            Prescreva sessões em blocos mecânicos com progressão ondulatória e consulta automática ao seu banco de dados.
+          </p>
+
+          <Button
+            asChild
+            className="mt-6 w-full cursor-pointer min-h-[44px] font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-200"
+          >
+            <Link to="/app/treinos" search={{ aba: "gerar", ia: true }}>
+              <Wand2 className="mr-2 h-4 w-4" />
+              Gerar Sessão com IA
+            </Link>
+          </Button>
+        </Card>
+
+        {/* Card 2: Construtor Manual */}
+        <Card className="relative overflow-hidden border-border/80 bg-card p-6 shadow-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-muted text-foreground">
+              <PlusSquare className="h-5 w-5 text-primary" />
+            </div>
+            <Badge variant="outline" className="text-xs text-muted-foreground">
+              Manual & Modular
+            </Badge>
+          </div>
+
+          <h2 className="mt-5 text-xl font-bold tracking-tight">Montar Sessão por Blocos</h2>
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+            Arraste e solte exercícios com formatos EMOM, AMRAP, Circuitos e RFT personalizados para cada nível.
+          </p>
+
+          <Button
+            asChild
+            variant="outline"
+            className="mt-6 w-full cursor-pointer min-h-[44px] font-semibold border-border/80 hover:border-primary/40 hover:bg-card/80 transition-all duration-200"
+          >
+            <Link to="/app/sessoes/nova">
+              <ArrowRight className="mr-2 h-4 w-4 text-primary" />
+              Abrir Construtor de Sessão
+            </Link>
+          </Button>
+        </Card>
       </div>
 
-      <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="flex flex-col p-6">
-          <PlusSquare className="h-6 w-6 text-primary" />
-          <h3 className="mt-4 text-lg font-semibold leading-none">Nova sessão</h3>
-          <p className="mt-2 text-sm text-muted-foreground flex-grow">
-            Monte um treino por blocos com drag-and-drop.
-          </p>
-          <Button asChild className="mt-6 w-full shadow-lg shadow-primary/20">
-            <Link to="/app/sessoes/nova">Abrir construtor</Link>
-          </Button>
-        </Card>
+      {/* Bento Grid: Métricas Atléticas (KPIs) */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Visão Geral do Sistema
+          </h2>
+        </div>
 
-        <Card className="flex flex-col p-6">
-          <ClipboardList className="h-6 w-6 text-primary" />
-          <h3 className="mt-4 text-lg font-semibold leading-none">Hub de Treinos</h3>
-          <p className="mt-2 text-sm text-muted-foreground flex-grow">
-            Visualize e organize suas sessões e programas.
-          </p>
-          <Button asChild variant="outline" className="mt-6 w-full border-primary/20 hover:bg-primary/5">
-            <Link to="/app/treinos">Gerenciar treinos</Link>
-          </Button>
-        </Card>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Exercícios */}
+          <Link to="/app/exercicios" className="group cursor-pointer">
+            <Card className="p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Exercícios</span>
+                <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <Dumbbell className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 text-3xl font-extrabold tracking-tight tabular-nums">
+                {stats.data?.exercises ?? "…"}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">Vídeos e mecânicas cadastradas</p>
+            </Card>
+          </Link>
 
-        <Card className="flex flex-col p-6">
-          <Dumbbell className="h-6 w-6 text-primary" />
-          <h3 className="mt-4 text-lg font-semibold leading-none text-balance">Banco de exercícios</h3>
-          <p className="mt-2 text-sm text-muted-foreground flex-grow">
-            Cadastre exercícios com vídeo, imagem ou gif.
-          </p>
-          <Button asChild variant="outline" className="mt-6 w-full border-primary/20 hover:bg-primary/5">
-            <Link to="/app/exercicios">Abrir banco</Link>
-          </Button>
-        </Card>
+          {/* Programas */}
+          <Link to="/app/treinos" search={{ aba: "programas", ia: false }} className="group cursor-pointer">
+            <Card className="p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Programas</span>
+                <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-500/10 text-blue-500 transition-colors group-hover:bg-blue-500 group-hover:text-white">
+                  <FolderKanban className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 text-3xl font-extrabold tracking-tight tabular-nums">
+                {stats.data?.programs ?? "…"}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">Planilhas e periodizações</p>
+            </Card>
+          </Link>
 
-        <Card className="flex flex-col p-6">
-          <Users className="h-6 w-6 text-primary" />
-          <h3 className="mt-4 text-lg font-semibold leading-none">Alunos</h3>
-          <p className="mt-2 text-sm text-muted-foreground flex-grow">
-            Gestão de alunos e atribuição de programas.
-          </p>
-          <Button asChild variant="outline" className="mt-6 w-full border-primary/20 hover:bg-primary/5">
-            <Link to="/app/alunos">Gerenciar alunos</Link>
+          {/* Sessões */}
+          <Link to="/app/treinos" className="group cursor-pointer">
+            <Card className="p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Sessões</span>
+                <div className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/10 text-amber-500 transition-colors group-hover:bg-amber-500 group-hover:text-white">
+                  <Flame className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 text-3xl font-extrabold tracking-tight tabular-nums">
+                {stats.data?.sessions ?? "…"}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">Treinos estruturados registrados</p>
+            </Card>
+          </Link>
+
+          {/* Alunos */}
+          <Link to="/app/alunos" className="group cursor-pointer">
+            <Card className="p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Atletas & Alunos</span>
+                <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-500 transition-colors group-hover:bg-emerald-500 group-hover:text-white">
+                  <Users className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-2 text-3xl font-extrabold tracking-tight tabular-nums">
+                {stats.data?.students ?? "…"}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">Alunos em acompanhamento</p>
+            </Card>
+          </Link>
+        </div>
+      </div>
+
+      {/* Seção de Navegação Rápida */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Acesso Rápido
+          </h2>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Button
+            asChild
+            variant="outline"
+            className="h-auto cursor-pointer justify-between p-4 border-border/70 hover:border-primary/30 hover:bg-card/80 transition-all duration-200 min-h-[44px]"
+          >
+            <Link to="/app/treinos">
+              <div className="flex items-center gap-3 text-left">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-muted text-primary">
+                  <Activity className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">Hub de Treinos</div>
+                  <div className="text-xs text-muted-foreground">Gerenciar sessões</div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </Link>
           </Button>
-        </Card>
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-auto cursor-pointer justify-between p-4 border-border/70 hover:border-primary/30 hover:bg-card/80 transition-all duration-200 min-h-[44px]"
+          >
+            <Link to="/app/exercicios">
+              <div className="flex items-center gap-3 text-left">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-muted text-primary">
+                  <Dumbbell className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">Banco de Exercícios</div>
+                  <div className="text-xs text-muted-foreground">Consultar mídias</div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </Link>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-auto cursor-pointer justify-between p-4 border-border/70 hover:border-primary/30 hover:bg-card/80 transition-all duration-200 min-h-[44px]"
+          >
+            <Link to="/app/alunos">
+              <div className="flex items-center gap-3 text-left">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-muted text-primary">
+                  <Users className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">Gestão de Alunos</div>
+                  <div className="text-xs text-muted-foreground">Vincular programas</div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </Link>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-auto cursor-pointer justify-between p-4 border-border/70 hover:border-primary/30 hover:bg-card/80 transition-all duration-200 min-h-[44px]"
+          >
+            <Link to="/app/configuracoes">
+              <div className="flex items-center gap-3 text-left">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-muted text-primary">
+                  <Settings className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">Aparência & Temas</div>
+                  <div className="text-xs text-muted-foreground">Personalizar UI</div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
-}
+}
