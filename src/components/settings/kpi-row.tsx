@@ -27,14 +27,14 @@ export function KpiRow({ items, loading }: { items: Kpi[]; loading?: boolean }) 
             ) : k.icon ? (
               <k.icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors duration-200 group-hover:text-primary" />
             ) : null}
-            <span className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground leading-tight break-words line-clamp-2 min-w-0">
               {k.label}
             </span>
           </div>
           <div
             title={k.value}
             className={cn(
-              "mt-2 truncate font-semibold leading-tight tabular-nums",
+              "mt-2 break-words font-semibold leading-tight tabular-nums",
               k.value.length > 13 ? "text-base md:text-lg" : "text-xl md:text-2xl",
               loading && "animate-pulse text-muted-foreground/60",
             )}
@@ -42,7 +42,7 @@ export function KpiRow({ items, loading }: { items: Kpi[]; loading?: boolean }) 
             {loading ? "—" : k.value}
           </div>
           {k.hint ? (
-            <p className="mt-1 truncate text-xs leading-snug text-muted-foreground">{k.hint}</p>
+            <p className="mt-1 text-xs leading-snug text-muted-foreground break-words line-clamp-2">{k.hint}</p>
           ) : null}
         </div>
       ))}

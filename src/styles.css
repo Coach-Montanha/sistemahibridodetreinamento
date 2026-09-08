@@ -145,6 +145,22 @@
     border-color: var(--color-border);
   }
 
+  html {
+    color-scheme: light;
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    max-width: 100vw;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
+    position: relative;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -153,15 +169,42 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     transition: background-color 200ms ease, color 200ms ease;
+    max-width: 100vw;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
+    position: relative;
   }
 
-  html {
-    color-scheme: light;
+  #root {
+    max-width: 100vw;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
   }
 
-  html.dark {
-    color-scheme: dark;
+  /* Impede que inputs no iOS/Safari disparem zoom automático indesejado (fontes < 16px) */
+  input, select, textarea {
+    font-size: max(16px, 1rem);
   }
+
+  img, video, canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .recharts-responsive-container {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* ================= Theme: Pulse ================= */

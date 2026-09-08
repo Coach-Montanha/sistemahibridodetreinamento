@@ -244,7 +244,7 @@ function ConfiguracoesPage() {
           ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
+    <div className="mx-auto max-w-6xl min-w-0 px-3 py-4 sm:px-6 sm:py-8 md:py-10">
       <SettingsHeader
         icon={Settings}
         eyebrow="Conta"
@@ -255,7 +255,7 @@ function ConfiguracoesPage() {
       <nav
         role="tablist"
         aria-label="Seções de configurações"
-        className="-mx-4 mb-8 flex snap-x gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:inline-flex md:snap-none md:gap-1 md:rounded-xl md:border md:border-border/60 md:bg-muted/40 md:p-1 md:px-1"
+        className="-mx-3 mb-6 sm:mb-8 flex snap-x gap-1.5 overflow-x-auto px-3 pb-1.5 md:mx-0 md:inline-flex md:snap-none md:gap-1 md:rounded-xl md:border md:border-border/60 md:bg-muted/40 md:p-1 md:px-1 no-scrollbar"
       >
         {SECTIONS.map((s) => {
           const active = section === s.key;

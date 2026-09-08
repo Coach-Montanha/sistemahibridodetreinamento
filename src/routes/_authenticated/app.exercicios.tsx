@@ -199,22 +199,22 @@ function ExerciciosPage() {
   const isDuplicados = location.pathname.includes("/duplicados");
 
   return (
-    <div className="mx-auto max-w-6xl p-6">
-      <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight">Banco de Exercícios</h1>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+    <div className="mx-auto max-w-6xl min-w-0 px-3 py-4 sm:p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl break-words">Banco de Exercícios</h1>
+          <p className="mt-1 text-xs sm:text-sm leading-relaxed text-muted-foreground">
             Acesso completo ao banco de dados pessoal de exercícios. Gerencie, edite e organize todos os movimentos utilizados na prescrição de treinos de forma independente.
           </p>
         </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+        <div className="flex w-full sm:w-auto flex-wrap sm:flex-nowrap gap-2 justify-stretch sm:justify-end">
           <Button
             variant={selectionMode ? "secondary" : "ghost"}
             onClick={() => {
               if (selectionMode) exitSelectionMode();
               else setSelectionMode(true);
             }}
-            className="gap-2"
+            className="flex-1 sm:flex-initial min-h-[40px] gap-2 cursor-pointer"
           >
             <CheckSquare className="h-4 w-4" />
             {selectionMode ? "Cancelar seleção" : "Selecionar"}
@@ -224,7 +224,7 @@ function ExerciciosPage() {
             onClick={() => {
               navigate({ to: "/app/exercicios/duplicados" as any });
             }}
-            className="gap-2"
+            className="flex-1 sm:flex-initial min-h-[40px] gap-2 cursor-pointer"
           >
             <GitMerge className="h-4 w-4" />
             Limpar duplicados
@@ -235,6 +235,7 @@ function ExerciciosPage() {
               setEditing(null);
               setOpen(true);
             }}
+            className="w-full sm:w-auto min-h-[40px] cursor-pointer"
           >
             <Plus className="mr-2 h-4 w-4" /> Novo exercício
           </Button>
@@ -252,7 +253,7 @@ function ExerciciosPage() {
             />
           )}
 
-          <div className="mb-3 flex flex-col gap-3 sm:flex-row">
+          <div className="mb-3 flex flex-col gap-2.5 sm:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -263,7 +264,7 @@ function ExerciciosPage() {
               />
             </div>
             <Select value={metFilter} onValueChange={(v) => setMetFilter(v as any)}>
-              <SelectTrigger className="sm:w-64">
+              <SelectTrigger className="w-full sm:w-64">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -280,7 +281,7 @@ function ExerciciosPage() {
           <div
             role="group"
             aria-label="Filtrar por equipamento"
-            className="mb-6 -mx-2 flex flex-nowrap gap-2 overflow-x-auto px-2 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+            className="mb-6 -mx-3 flex flex-nowrap gap-1.5 overflow-x-auto px-3 pb-1.5 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 no-scrollbar"
           >
             <EquipChip
               label="Todos"

@@ -46,9 +46,9 @@ function Dashboard() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto max-w-6xl min-w-0 space-y-6 px-3 py-4 sm:space-y-8 sm:px-6 sm:py-8">
       {/* Header do Treinador */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <span className="relative flex h-2 w-2">
@@ -57,7 +57,7 @@ function Dashboard() {
             </span>
             Sistema Híbrido Ativo
           </div>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <h1 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-4xl break-words">
             Olá, {coach?.nome ?? "Treinador"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground sm:text-base">
@@ -65,12 +65,12 @@ function Dashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <Button
             asChild
             variant="outline"
             size="sm"
-            className="cursor-pointer border-border/80 hover:bg-muted/80"
+            className="cursor-pointer border-border/80 hover:bg-muted/80 min-h-[36px]"
           >
             <Link to="/app/configuracoes">
               <Settings className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -81,9 +81,9 @@ function Dashboard() {
       </div>
 
       {/* Hero Bento: Ações de Alto Impacto */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         {/* Card 1: Motor IA */}
-        <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 p-6 shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md hover:shadow-primary/5">
+        <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 p-4 sm:p-6 shadow-sm transition-all duration-200 hover:border-primary/50 hover:shadow-md hover:shadow-primary/5">
           <div className="flex items-center justify-between">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
               <Sparkles className="h-5 w-5" />
@@ -93,14 +93,14 @@ function Dashboard() {
             </Badge>
           </div>
 
-          <h2 className="mt-5 text-xl font-bold tracking-tight">Gerador de Treinos com IA</h2>
+          <h2 className="mt-4 sm:mt-5 text-lg sm:text-xl font-bold tracking-tight">Gerador de Treinos com IA</h2>
           <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
             Prescreva sessões em blocos mecânicos com progressão ondulatória e consulta automática ao seu banco de dados.
           </p>
 
           <Button
             asChild
-            className="mt-6 w-full cursor-pointer min-h-[44px] font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-200"
+            className="mt-5 sm:mt-6 w-full cursor-pointer min-h-[44px] font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-200"
           >
             <Link to="/app/treinos" search={{ aba: "gerar", ia: true }}>
               <Wand2 className="mr-2 h-4 w-4" />
@@ -110,7 +110,7 @@ function Dashboard() {
         </Card>
 
         {/* Card 2: Construtor Manual */}
-        <Card className="relative overflow-hidden border-border/80 bg-card p-6 shadow-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md">
+        <Card className="relative overflow-hidden border-border/80 bg-card p-4 sm:p-6 shadow-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-muted text-foreground">
               <PlusSquare className="h-5 w-5 text-primary" />
@@ -120,7 +120,7 @@ function Dashboard() {
             </Badge>
           </div>
 
-          <h2 className="mt-5 text-xl font-bold tracking-tight">Montar Sessão por Blocos</h2>
+          <h2 className="mt-4 sm:mt-5 text-lg sm:text-xl font-bold tracking-tight">Montar Sessão por Blocos</h2>
           <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
             Arraste e solte exercícios com formatos EMOM, AMRAP, Circuitos e RFT personalizados para cada nível.
           </p>
@@ -128,7 +128,7 @@ function Dashboard() {
           <Button
             asChild
             variant="outline"
-            className="mt-6 w-full cursor-pointer min-h-[44px] font-semibold border-border/80 hover:border-primary/40 hover:bg-card/80 transition-all duration-200"
+            className="mt-5 sm:mt-6 w-full cursor-pointer min-h-[44px] font-semibold border-border/80 hover:border-primary/40 hover:bg-card/80 transition-all duration-200"
           >
             <Link to="/app/sessoes/nova">
               <ArrowRight className="mr-2 h-4 w-4 text-primary" />
@@ -141,73 +141,81 @@ function Dashboard() {
       {/* Bento Grid: Métricas Atléticas (KPIs) */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Visão Geral do Sistema
           </h2>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
           {/* Exercícios */}
           <Link to="/app/exercicios" className="group cursor-pointer">
-            <Card className="p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Exercícios</span>
-                <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Dumbbell className="h-4 w-4" />
+            <Card className="p-3.5 sm:p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+              <div className="flex items-start justify-between gap-1.5">
+                <span className="text-xs sm:text-sm font-medium text-muted-foreground break-words line-clamp-2 min-w-0 leading-tight">
+                  Exercícios
+                </span>
+                <div className="grid h-7 w-7 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <Dumbbell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </div>
               </div>
-              <div className="mt-2 text-3xl font-extrabold tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums truncate">
                 {stats.data?.exercises ?? "…"}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">Vídeos e mecânicas cadastradas</p>
+              <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground truncate">Vídeos e mecânicas cadastradas</p>
             </Card>
           </Link>
 
           {/* Programas */}
           <Link to="/app/treinos" search={{ aba: "programas", ia: false }} className="group cursor-pointer">
-            <Card className="p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Programas</span>
-                <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-500/10 text-blue-500 transition-colors group-hover:bg-blue-500 group-hover:text-white">
-                  <FolderKanban className="h-4 w-4" />
+            <Card className="p-3.5 sm:p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+              <div className="flex items-start justify-between gap-1.5">
+                <span className="text-xs sm:text-sm font-medium text-muted-foreground break-words line-clamp-2 min-w-0 leading-tight">
+                  Programas
+                </span>
+                <div className="grid h-7 w-7 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-lg bg-blue-500/10 text-blue-500 transition-colors group-hover:bg-blue-500 group-hover:text-white">
+                  <FolderKanban className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </div>
               </div>
-              <div className="mt-2 text-3xl font-extrabold tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums truncate">
                 {stats.data?.programs ?? "…"}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">Planilhas e periodizações</p>
+              <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground truncate">Planilhas e periodizações</p>
             </Card>
           </Link>
 
           {/* Sessões */}
           <Link to="/app/treinos" className="group cursor-pointer">
-            <Card className="p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Sessões</span>
-                <div className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/10 text-amber-500 transition-colors group-hover:bg-amber-500 group-hover:text-white">
-                  <Flame className="h-4 w-4" />
+            <Card className="p-3.5 sm:p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+              <div className="flex items-start justify-between gap-1.5">
+                <span className="text-xs sm:text-sm font-medium text-muted-foreground break-words line-clamp-2 min-w-0 leading-tight">
+                  Sessões
+                </span>
+                <div className="grid h-7 w-7 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-lg bg-amber-500/10 text-amber-500 transition-colors group-hover:bg-amber-500 group-hover:text-white">
+                  <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </div>
               </div>
-              <div className="mt-2 text-3xl font-extrabold tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums truncate">
                 {stats.data?.sessions ?? "…"}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">Treinos estruturados registrados</p>
+              <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground truncate">Treinos registrados</p>
             </Card>
           </Link>
 
           {/* Alunos */}
           <Link to="/app/alunos" className="group cursor-pointer">
-            <Card className="p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Atletas & Alunos</span>
-                <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-500 transition-colors group-hover:bg-emerald-500 group-hover:text-white">
-                  <Users className="h-4 w-4" />
+            <Card className="p-3.5 sm:p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+              <div className="flex items-start justify-between gap-1.5">
+                <span className="text-xs sm:text-sm font-medium text-muted-foreground break-words line-clamp-2 min-w-0 leading-tight">
+                  Atletas & Alunos
+                </span>
+                <div className="grid h-7 w-7 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-500 transition-colors group-hover:bg-emerald-500 group-hover:text-white">
+                  <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </div>
               </div>
-              <div className="mt-2 text-3xl font-extrabold tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums truncate">
                 {stats.data?.students ?? "…"}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">Alunos em acompanhamento</p>
+              <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground truncate">Alunos ativos</p>
             </Card>
           </Link>
         </div>

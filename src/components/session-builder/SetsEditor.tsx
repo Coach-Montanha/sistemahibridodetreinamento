@@ -238,7 +238,7 @@ function SetRow({
           <div key={f.key} className={f.wide ? "col-span-2 sm:col-span-3" : ""}>
             <FieldLabel>{f.label}</FieldLabel>
             <Input
-              className="h-9 text-center text-sm tabular-nums transition-colors focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="h-9 text-center text-base sm:text-sm tabular-nums transition-colors focus-visible:ring-2 focus-visible:ring-ring/60"
               placeholder={f.placeholder}
               value={(set[f.key as keyof BuilderSet] as string | undefined) ?? ""}
               aria-label={`${f.label} da série ${index + 1}`}
@@ -252,7 +252,7 @@ function SetRow({
         size="icon"
         onClick={onRemove}
         aria-label={`Remover série ${index + 1}`}
-        className="h-9 w-9 self-end text-muted-foreground opacity-60 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+        className="h-9 w-9 min-h-[36px] min-w-[36px] self-end text-muted-foreground opacity-80 sm:opacity-60 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 cursor-pointer"
       >
         <Trash2 className="h-4 w-4" />
       </Button>

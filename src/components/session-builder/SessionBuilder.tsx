@@ -303,27 +303,27 @@ export function SessionBuilder({
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
+    <div className="mx-auto max-w-4xl min-w-0 px-3 py-4 sm:p-6">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold tracking-tight">
+        <div className="flex items-center justify-between gap-3 min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl break-words">
             {sessionId ? "Editar sessão" : "Nova sessão"}
           </h1>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate({ to: "/app/treinos", search: { aba: "programas" } })}
-            className="text-muted-foreground hover:text-foreground sm:hidden"
+            className="text-muted-foreground hover:text-foreground sm:hidden min-h-[36px]"
           >
             Voltar
           </Button>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate({ to: "/app/treinos", search: { aba: "programas" } })}
-            className="hidden text-muted-foreground hover:text-foreground sm:flex"
+            className="hidden text-muted-foreground hover:text-foreground sm:flex min-h-[36px]"
           >
             Voltar
           </Button>

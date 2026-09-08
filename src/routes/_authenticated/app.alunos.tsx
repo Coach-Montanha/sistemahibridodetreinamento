@@ -55,15 +55,17 @@ function AlunosPage() {
   const selected = students.find((s) => s.id === selectedId) ?? null;
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Alunos</h1>
-          <p className="text-sm text-muted-foreground">
+    <div className="mx-auto max-w-6xl min-w-0 px-3 py-4 sm:p-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl break-words">Alunos</h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Convide alunos e libere programas/sessões para eles.
           </p>
         </div>
-        <InviteButton onDone={() => qc.invalidateQueries({ queryKey: ["students"] })} />
+        <div className="self-start sm:self-auto">
+          <InviteButton onDone={() => qc.invalidateQueries({ queryKey: ["students"] })} />
+        </div>
       </div>
 
       {isLoading ? (
@@ -292,9 +294,9 @@ function StudentPanel({ student, onDeleted }: { student: any; onDeleted: () => v
       <div className="space-y-4">
         <div>
           <Label className="mb-2 block">Liberar programa inteiro</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Select value={pickProgram} onValueChange={setPickProgram}>
-              <SelectTrigger><SelectValue placeholder="Escolha um programa" /></SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Escolha um programa" /></SelectTrigger>
               <SelectContent>
                 {programs.map((p) => (
                   <SelectItem key={p.id} value={p.id}>{p.titulo}</SelectItem>
@@ -303,6 +305,7 @@ function StudentPanel({ student, onDeleted }: { student: any; onDeleted: () => v
             </Select>
             <Button
               disabled={!pickProgram}
+              className="w-full sm:w-auto min-h-[40px] shrink-0 cursor-pointer"
               onClick={async () => {
                 try {
                   await assignP({ data: { student_id: student.id, program_id: pickProgram } });
@@ -319,9 +322,9 @@ function StudentPanel({ student, onDeleted }: { student: any; onDeleted: () => v
 
         <div>
           <Label className="mb-2 block">Liberar sessão avulsa</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Select value={pickSession} onValueChange={setPickSession}>
-              <SelectTrigger><SelectValue placeholder="Escolha uma sessão" /></SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Escolha uma sessão" /></SelectTrigger>
               <SelectContent>
                 {sessions.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
@@ -332,6 +335,7 @@ function StudentPanel({ student, onDeleted }: { student: any; onDeleted: () => v
             </Select>
             <Button
               disabled={!pickSession}
+              className="w-full sm:w-auto min-h-[40px] shrink-0 cursor-pointer"
               onClick={async () => {
                 try {
                   await assignS({ data: { student_id: student.id, session_id: pickSession } });

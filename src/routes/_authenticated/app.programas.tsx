@@ -378,19 +378,19 @@ export function ProgramasPanel({
 
 
   return (
-    <div className={showHeader ? "mx-auto max-w-6xl px-6 py-8" : "mx-auto max-w-6xl"}>
+    <div className={showHeader ? "mx-auto max-w-6xl px-3 py-4 sm:px-6 sm:py-8 min-w-0" : "mx-auto max-w-6xl min-w-0"}>
       {showHeader && (
-      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mb-6 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight">Programas</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl break-words">Programas</h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Todos os treinos gerados e criados por você, organizados por semana.
           </p>
         </div>
       </header>
       )}
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_16rem]">
+      <div className="mb-5 sm:mb-6 grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -579,9 +579,9 @@ export function ProgramasPanel({
       </AlertDialog>
 
       {selected.size > 0 && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-6 duration-200 animate-in slide-in-from-bottom-4">
-          <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-full border border-border/70 bg-card/95 px-4 py-2 shadow-lg backdrop-blur">
-            <span className="text-sm font-medium">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-2 sm:px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-6 duration-200 animate-in slide-in-from-bottom-4">
+          <div className="pointer-events-auto flex flex-wrap items-center justify-between sm:justify-start gap-1.5 sm:gap-2 rounded-2xl sm:rounded-full border border-border/70 bg-card/95 p-2.5 sm:px-4 sm:py-2 shadow-lg backdrop-blur max-w-[96vw]">
+            <span className="text-xs sm:text-sm font-medium">
               {selected.size} sessão(ões) selecionada(s)
             </span>
             <Button
@@ -718,13 +718,13 @@ function ProgramaCard({
   return (
     <Collapsible open={open} onOpenChange={setOpen} asChild>
       <Card className="overflow-hidden border-border/70 transition-colors duration-200 hover:border-primary/40">
-        <CollapsibleTrigger className="group flex w-full items-start gap-4 p-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-            <FolderKanban className="h-5 w-5" />
+        <CollapsibleTrigger className="group flex w-full items-start gap-3 p-3.5 sm:p-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+          <div className="grid h-9 w-9 sm:h-10 sm:w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+            <FolderKanban className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="truncate text-base font-semibold tracking-tight">
+              <h3 className="break-words line-clamp-2 text-base font-semibold tracking-tight">
                 {programa.titulo}
               </h3>
               <Badge
@@ -926,10 +926,10 @@ function ProgramaCard({
               </div>
               </SortableList>
             )}
-            <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <div className="mt-5 flex flex-col sm:flex-row sm:flex-wrap sm:justify-end gap-2 w-full">
               <Button
                 size="sm"
-                className="gap-2 bg-primary/90 hover:bg-primary"
+                className="w-full sm:w-auto min-h-[40px] gap-2 bg-primary/90 hover:bg-primary cursor-pointer"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -942,7 +942,7 @@ function ProgramaCard({
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-2"
+                className="w-full sm:w-auto min-h-[40px] gap-2 cursor-pointer"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -955,7 +955,7 @@ function ProgramaCard({
               <Button
                 size="sm"
                 variant="outline"
-                className="relative gap-2"
+                className="relative w-full sm:w-auto min-h-[40px] gap-2 cursor-pointer"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -974,7 +974,7 @@ function ProgramaCard({
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="w-full sm:w-auto min-h-[40px] text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();

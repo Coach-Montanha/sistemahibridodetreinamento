@@ -79,33 +79,33 @@ function SessaoAluno() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <Link to="/aluno" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Meus treinos
+    <div className="min-h-screen bg-background max-w-full overflow-x-hidden">
+      <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-20">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-3 py-3 sm:px-6 sm:py-4">
+          <Link to="/aluno" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4 shrink-0" /> Meus treinos
           </Link>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 hover:border-emerald-500/50"
+              className="gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 hover:border-emerald-500/50 min-h-[36px] cursor-pointer"
               onClick={handleShareWhatsApp}
             >
               <Share2 className="h-3.5 w-3.5" /> WhatsApp
             </Button>
-            <Mountain className="h-5 w-5 text-primary" />
+            <Mountain className="h-5 w-5 text-primary shrink-0" />
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl space-y-4 p-6">
+      <main className="mx-auto max-w-3xl space-y-4 px-3 py-4 sm:p-6 min-w-0">
         {session && (
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="text-xs text-muted-foreground">
+            <div className="min-w-0 flex-1">
+              <div className="text-xs text-muted-foreground break-words">
                 {session.program_weeks?.programs?.titulo} · Semana {session.program_weeks?.numero_semana} · Dia {session.numero_dia} · {session.data ?? ""}
               </div>
-              <h1 className="text-2xl font-bold">{session.titulo ?? "Treino"}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold break-words">{session.titulo ?? "Treino"}</h1>
             </div>
           </div>
         )}
@@ -124,7 +124,7 @@ function SessaoAluno() {
                 ]
               : null;
             return (
-            <Card key={b.id} className="p-5">
+            <Card key={b.id} className="p-3.5 sm:p-5">
               <div className="mb-3">
                 <div className="text-xs uppercase tracking-wide text-primary">
                   {BLOCK_FORMAT_LABEL[b.formato as BlockFormat] ?? b.formato}
@@ -268,7 +268,7 @@ function ExerciseList({
               <Button
                 variant="ghost"
                 size="sm"
-                className="ml-3 shrink-0 gap-1.5 text-xs text-primary hover:bg-primary/10"
+                className="ml-2 sm:ml-3 shrink-0 gap-1.5 text-xs text-primary hover:bg-primary/10 min-h-[36px] cursor-pointer"
                 onClick={() =>
                   onOpenMedia({
                     nome: exerciseName,
