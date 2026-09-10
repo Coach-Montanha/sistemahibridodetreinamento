@@ -21,6 +21,8 @@ import {
   Plus,
   X,
   Loader2,
+  Check,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -90,13 +92,14 @@ export function TargetingSection({
   const insuficiente = !alvo && !countQuery.isLoading && count < needed;
 
   return (
-    <div className="space-y-3 rounded-lg border border-border/50 bg-muted/20 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
+    <div className="space-y-4 rounded-xl border border-border/70 bg-card/60 p-3.5 sm:p-4 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/50 pb-3">
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-foreground">
+            <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
             Direcionamento do sorteio
           </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
             Restrinja de quais modalidades e equipamentos o motor sorteia neste bloco.
           </p>
         </div>
@@ -104,13 +107,13 @@ export function TargetingSection({
           <Badge
             variant="outline"
             className={cn(
-              "gap-1.5 border-border/60 font-medium tabular-nums",
+              "self-start sm:self-auto gap-1.5 border-border/70 font-medium tabular-nums shrink-0",
               countQuery.isLoading && "opacity-60",
               insuficiente && "border-warning/50 bg-warning/10 text-warning-foreground",
-              !insuficiente && count > 0 && "border-primary/40 bg-primary/5 text-primary",
+              !insuficiente && count > 0 && "border-primary/40 bg-primary/10 text-primary font-semibold",
             )}
           >
-            <span className="text-sm font-semibold">{count}</span>
+            <span className="text-xs sm:text-sm font-bold">{count}</span>
             <span className="text-[10px] uppercase tracking-wider">
               {count === 1 ? "exercício" : "exercícios"} · precisa {needed}
             </span>
@@ -118,18 +121,33 @@ export function TargetingSection({
         )}
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      {/* Seção Modalidades */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
             Modalidades
           </Label>
-          {modalidades.length === 0 && (
-            <span className="text-[10px] text-muted-foreground">
-              Vazio = usa a modalidade da geração
+          {modalidades.length === 0 ? (
+            <span className="text-[11px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/40">
+              Padrão: usa a modalidade do treino
             </span>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                {modalidades.length} selecionada{modalidades.length > 1 ? "s" : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => onChange({ ...bloco, modalidades_alvo: [] })}
+                className="text-[11px] text-muted-foreground hover:text-foreground underline cursor-pointer"
+              >
+                Limpar
+              </button>
+            </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-1.5">
+
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {(Object.keys(METHODOLOGY_LABEL) as Methodology[]).map((m) => {
             const active = modalidades.includes(m);
             return (
@@ -138,39 +156,65 @@ export function TargetingSection({
                 key={m}
                 onClick={() => toggleMod(m)}
                 className={cn(
-                  "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-medium transition-all duration-200",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-150 text-left min-h-[38px] cursor-pointer",
                   active
-                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                    : "border-border/60 bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                    ? "border-primary bg-primary/15 text-primary shadow-xs font-semibold ring-1 ring-primary/40"
+                    : "border-border/70 bg-background/80 text-muted-foreground hover:border-primary/40 hover:bg-accent/40 hover:text-foreground",
                 )}
               >
-                {METHODOLOGY_LABEL[m]}
+                <span className="truncate">{METHODOLOGY_LABEL[m]}</span>
+                <div
+                  className={cn(
+                    "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-muted-foreground/40 bg-background/50",
+                  )}
+                >
+                  {active && <Check className="h-3 w-3" />}
+                </div>
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      {/* Seção Equipamentos */}
+      <div className="space-y-2.5 pt-1">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
             Equipamentos
           </Label>
-          {equipamentos.length === 0 && (
-            <span className="text-[10px] text-muted-foreground">Vazio = qualquer equipamento</span>
+          {equipamentos.length === 0 ? (
+            <span className="text-[11px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/40">
+              Padrão: qualquer equipamento
+            </span>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                {equipamentos.length} selecionado{equipamentos.length > 1 ? "s" : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => onChange({ ...bloco, equipamentos_alvo: [] })}
+                className="text-[11px] text-muted-foreground hover:text-foreground underline cursor-pointer"
+              >
+                Limpar
+              </button>
+            </div>
           )}
         </div>
+
         {equipQuery.isLoading ? (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" /> Carregando equipamentos…
+          <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> Carregando lista de equipamentos…
           </div>
         ) : (equipQuery.data ?? []).length === 0 ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground py-2">
             Nenhum equipamento cadastrado no seu banco.
           </p>
         ) : (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {(equipQuery.data ?? []).map((eq) => {
               const active = equipamentos.includes(eq);
               return (
@@ -179,14 +223,23 @@ export function TargetingSection({
                   key={eq}
                   onClick={() => toggleEquip(eq)}
                   className={cn(
-                    "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs capitalize transition-all duration-200",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs capitalize transition-all duration-150 text-left min-h-[38px] cursor-pointer",
                     active
-                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                      : "border-border/60 bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                      ? "border-primary bg-primary/15 text-primary shadow-xs font-semibold ring-1 ring-primary/40"
+                      : "border-border/70 bg-background/80 text-muted-foreground hover:border-primary/40 hover:bg-accent/40 hover:text-foreground",
                   )}
                 >
-                  {eq}
+                  <span className="truncate">{eq}</span>
+                  <div
+                    className={cn(
+                      "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-muted-foreground/40 bg-background/50",
+                    )}
+                  >
+                    {active && <Check className="h-3 w-3" />}
+                  </div>
                 </button>
               );
             })}
@@ -195,9 +248,8 @@ export function TargetingSection({
       </div>
 
       {insuficiente && (
-        <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-          Só {count} exercício{count === 1 ? "" : "s"} casam com esses filtros. O motor vai
-          repetir ou usar fallback para completar os {needed} pedidos.
+        <div className="rounded-lg border border-warning/50 bg-warning/10 p-3 text-xs text-warning-foreground leading-relaxed">
+          Apenas {count} exercício{count === 1 ? "" : "s"} atende{count === 1 ? "" : "m"} a esses filtros. O motor precisará de {needed} e poderá repetir ou acionar fallback.
         </div>
       )}
     </div>

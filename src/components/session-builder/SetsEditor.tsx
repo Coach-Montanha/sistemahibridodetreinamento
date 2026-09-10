@@ -84,7 +84,7 @@ export function SetsEditor({
           <PopoverTrigger asChild>
             <Button
               size="sm"
-              className="h-9 flex-1 gap-1.5 sm:flex-none"
+              className="h-9.5 w-full sm:w-auto min-h-[38px] px-3.5 gap-1.5 font-medium cursor-pointer shrink-0 shadow-sm"
             >
               <Plus className="h-4 w-4" /> Adicionar série
             </Button>
@@ -103,7 +103,7 @@ export function SetsEditor({
         <Button
           size="sm"
           variant="outline"
-          className="h-9 flex-1 gap-1.5 sm:flex-none"
+          className="h-9.5 w-full sm:w-auto min-h-[38px] px-3.5 gap-1.5 font-medium cursor-pointer shrink-0 border-border/80 bg-background/80 hover:bg-accent"
           onClick={() => {
             if (!sets.length) return toast.error("Adicione uma série primeiro.");
             replicateLastSet(block.tempId, exercise.tempId);
@@ -118,7 +118,7 @@ export function SetsEditor({
             <Button
               size="sm"
               variant="outline"
-              className="h-9 flex-1 gap-1.5 sm:flex-none"
+              className="h-9.5 w-full sm:w-auto min-h-[38px] px-3.5 gap-1.5 font-medium cursor-pointer shrink-0 border-border/80 bg-background/80 hover:bg-accent"
             >
               <Bookmark className="h-4 w-4" /> Adicionar preset
             </Button>

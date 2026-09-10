@@ -66,7 +66,12 @@ export function InstallAppButton({
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary"></span>
           </span>
         </div>
-        {showLabel && <span className="text-xs sm:text-sm font-semibold">Instalar App</span>}
+        {showLabel && (
+          <span className="text-xs sm:text-sm font-semibold whitespace-nowrap">
+            <span className="inline sm:hidden">Instalar</span>
+            <span className="hidden sm:inline">Instalar App</span>
+          </span>
+        )}
       </Button>
 
       <Dialog open={showIosModal} onOpenChange={setShowIosModal}>

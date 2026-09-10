@@ -53,15 +53,32 @@ export const ENABLED_FORMATS: BlockFormat[] = [
   "livre",
 ];
 
-/** Lê o label efetivo de um formato (respeitando renomeações do coach). */
-export function useFormatLabel(base: string): string {
-  if (typeof window === "undefined") return BLOCK_FORMAT_LABEL[base] ?? base;
-  try {
-    const raw = window.localStorage.getItem("shdt.format-registry.v1");
-    if (!raw) return BLOCK_FORMAT_LABEL[base] ?? base;
-    const parsed = JSON.parse(raw);
-    return parsed.labels?.[base] ?? BLOCK_FORMAT_LABEL[base] ?? base;
-  } catch {
-    return BLOCK_FORMAT_LABEL[base] ?? base;
+/** Lê o label efetivo de um formato (respeitando renomeações do coach e ocultando chaves internas como custom:...). */
+export function useFormatLabel(base: string, fallbackTitle?: string | null): string {
+  if (!base) return fallbackTitle || "Bloco";
+  
+  if (base.startsWith("custom:")) {
+    return fallbackTitle?.trim() || "Personalizado";
   }
+
+  if (base.startsWith("builtin:")) {
+    const raw = base.replace("builtin:", "");
+    return BLOCK_FORMAT_LABEL[raw] ?? (fallbackTitle || raw);
+  }
+
+  if (BLOCK_FORMAT_LABEL[base]) {
+    return BLOCK_FORMAT_LABEL[base];
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      const raw = window.localStorage.getItem("shdt.format-registry.v1");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.labels?.[base]) return parsed.labels[base];
+      }
+    } catch {}
+  }
+
+  return fallbackTitle?.trim() || base;
 }

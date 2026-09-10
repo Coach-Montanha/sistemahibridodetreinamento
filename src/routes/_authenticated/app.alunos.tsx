@@ -146,31 +146,33 @@ function AlunosPage() {
             Convide alunos e libere programas/sessões para eles.
           </p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-          <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-8 px-2.5 gap-1.5 cursor-pointer"
-              onClick={() => setViewMode("list")}
-              title="Visualização em Lista"
-            >
-              <List className="h-4 w-4" />
-              <span className="text-xs">Lista</span>
-            </Button>
-            <Button
-              variant={viewMode === "kanban" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-8 px-2.5 gap-1.5 cursor-pointer"
-              onClick={() => setViewMode("kanban")}
-              title="Visualização em Pipeline Kanban"
-            >
-              <Columns3 className="h-4 w-4" />
-              <span className="text-xs">Kanban</span>
-            </Button>
+        {students.length > 0 && (
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
+              <Button
+                variant={viewMode === "list" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-8 px-2.5 gap-1.5 cursor-pointer"
+                onClick={() => setViewMode("list")}
+                title="Visualização em Lista"
+              >
+                <List className="h-4 w-4" />
+                <span className="text-xs">Lista</span>
+              </Button>
+              <Button
+                variant={viewMode === "kanban" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-8 px-2.5 gap-1.5 cursor-pointer"
+                onClick={() => setViewMode("kanban")}
+                title="Visualização em Pipeline Kanban"
+              >
+                <Columns3 className="h-4 w-4" />
+                <span className="text-xs">Kanban</span>
+              </Button>
+            </div>
+            <InviteButton onDone={() => qc.invalidateQueries({ queryKey: ["students"] })} />
           </div>
-          <InviteButton onDone={() => qc.invalidateQueries({ queryKey: ["students"] })} />
-        </div>
+        )}
       </div>
 
       {isLoading ? (

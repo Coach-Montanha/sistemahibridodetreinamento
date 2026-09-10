@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronDown, Plus, Trash2, Sparkles, Hand, Wand2, X } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Sparkles, Hand, Wand2, X, Check } from "lucide-react";
 import { SortableList, SortableRow } from "@/components/dnd/sortable-list";
 import { ExercisePicker } from "@/components/session-builder/ExercisePicker";
 import type {
@@ -31,7 +31,7 @@ import type {
   SessaoTemplate,
   SlotPreparacao,
 } from "@/lib/hibrido-ia.server";
-import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
+import { METHODOLOGY_LABEL, BLOCK_FORMAT_LABEL, type Methodology } from "@/lib/methodology";
 import { useFormatRegistry, type FormatPreset } from "@/lib/format-registry";
 import { useSetTypeRegistry } from "@/lib/set-type-registry";
 
@@ -494,10 +494,32 @@ function BlocoConfigForm({
         </ToggleGroup>
 
         {bloco.selecaoExercicios === "ia" ? (
-          <div className="grid gap-3 sm:grid-cols-1">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Metodologias de origem</Label>
-              <div className="flex flex-wrap gap-1.5">
+          <div className="space-y-3.5 pt-1">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Metodologias de origem
+                </Label>
+                {(bloco.fonteExercicios.metodologias ?? []).length === 0 ? (
+                  <span className="text-[11px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/40">
+                    Padrão: usa modalidade da geração
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                      {(bloco.fonteExercicios.metodologias ?? []).length} selecionada{((bloco.fonteExercicios.metodologias ?? []).length > 1) ? "s" : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onChange({ fonteExercicios: { ...bloco.fonteExercicios, metodologias: [] } })}
+                      className="text-[11px] text-muted-foreground hover:text-foreground underline cursor-pointer"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-1.5">
                 {(Object.keys(METHODOLOGY_LABEL) as Methodology[]).map((m) => {
                   const ativo = (bloco.fonteExercicios.metodologias ?? []).includes(m);
                   return (
@@ -509,22 +531,53 @@ function BlocoConfigForm({
                         const proximo = ativo ? atuais.filter((x) => x !== m) : [...atuais, m];
                         onChange({ fonteExercicios: { ...bloco.fonteExercicios, metodologias: proximo } });
                       }}
-                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-150 text-left min-h-[38px] cursor-pointer ${
                         ativo
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                          ? "border-primary bg-primary/15 text-primary shadow-xs font-semibold ring-1 ring-primary/40"
+                          : "border-border/70 bg-background/80 text-muted-foreground hover:border-primary/40 hover:bg-accent/40 hover:text-foreground"
                       }`}
                     >
-                      {METHODOLOGY_LABEL[m]}
+                      <span className="truncate">{METHODOLOGY_LABEL[m]}</span>
+                      <div
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                          ativo
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-muted-foreground/40 bg-background/50"
+                        }`}
+                      >
+                        {ativo && <Check className="h-3 w-3" />}
+                      </div>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Equipamento</Label>
-              <div className="flex flex-wrap gap-1.5">
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Equipamento
+                </Label>
+                {(bloco.fonteExercicios.equipamento ?? []).length === 0 ? (
+                  <span className="text-[11px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/40">
+                    Padrão: qualquer equipamento
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                      {(bloco.fonteExercicios.equipamento ?? []).length} selecionado{((bloco.fonteExercicios.equipamento ?? []).length > 1) ? "s" : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: [] } })}
+                      className="text-[11px] text-muted-foreground hover:text-foreground underline cursor-pointer"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-1.5">
                 {EQUIPAMENTO_VALORES.map((eq) => {
                   const ativo = (bloco.fonteExercicios.equipamento ?? []).includes(eq);
                   return (
@@ -536,13 +589,22 @@ function BlocoConfigForm({
                         const proximo = ativo ? atuais.filter((x) => x !== eq) : [...atuais, eq];
                         onChange({ fonteExercicios: { ...bloco.fonteExercicios, equipamento: proximo } });
                       }}
-                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs capitalize transition-all duration-150 text-left min-h-[38px] cursor-pointer ${
                         ativo
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border/60 text-muted-foreground hover:bg-muted/40"
+                          ? "border-primary bg-primary/15 text-primary shadow-xs font-semibold ring-1 ring-primary/40"
+                          : "border-border/70 bg-background/80 text-muted-foreground hover:border-primary/40 hover:bg-accent/40 hover:text-foreground"
                       }`}
                     >
-                      {eq}
+                      <span className="truncate">{eq}</span>
+                      <div
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                          ativo
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-muted-foreground/40 bg-background/50"
+                        }`}
+                      >
+                        {ativo && <Check className="h-3 w-3" />}
+                      </div>
                     </button>
                   );
                 })}
@@ -755,8 +817,17 @@ export function ConstrutorMoldeDialog({
   const formatosDisponiveis = presets;
 
   const getFormatLabel = (f: string) => {
-    const p = presets.find((p: any) => p.id === f);
-    return p?.label ?? f;
+    const p = presets.find((p: any) => p.id === f || p.base === f);
+    if (p?.label) return p.label;
+    if (typeof f === "string") {
+      if (f.startsWith("custom:")) return "Personalizado";
+      if (f.startsWith("builtin:")) {
+        const raw = f.replace("builtin:", "");
+        return BLOCK_FORMAT_LABEL[raw] ?? raw;
+      }
+      return BLOCK_FORMAT_LABEL[f] ?? f;
+    }
+    return f;
   };
 
   return (

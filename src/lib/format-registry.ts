@@ -223,11 +223,26 @@ export function useFormatRegistry() {
   };
 }
 
-/** Lê o label efetivo de um formato (respeitando renomeações do coach). */
-export function useFormatLabel(base: BlockFormat): string {
+/** Lê o label efetivo de um formato (respeitando renomeações do coach e ocultando chaves internas como custom:...). */
+export function useFormatLabel(base: BlockFormat | string, fallbackTitle?: string | null): string {
   const { presets } = useFormatRegistry();
-  const found = presets.find(p => p.id === `builtin:${base}` || p.id === base);
-  return found?.label ?? BLOCK_FORMAT_LABEL[base] ?? base;
+  const found = presets.find(
+    (p) => p.id === base || p.id === `builtin:${base}` || p.base === base
+  );
+  if (found?.label) return found.label;
+  if (BLOCK_FORMAT_LABEL[base]) return BLOCK_FORMAT_LABEL[base];
+
+  if (typeof base === "string") {
+    if (base.startsWith("custom:")) {
+      return fallbackTitle?.trim() || "Personalizado";
+    }
+    if (base.startsWith("builtin:")) {
+      const clean = base.replace("builtin:", "");
+      return BLOCK_FORMAT_LABEL[clean] ?? clean;
+    }
+  }
+
+  return fallbackTitle?.trim() || base;
 }
 
 function getDefaultSetTypeForFormat(format: BlockFormat): string {

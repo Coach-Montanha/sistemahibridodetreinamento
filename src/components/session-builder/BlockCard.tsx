@@ -36,6 +36,15 @@ export function BlockCard({ block }: { block: BuilderBlock }) {
   } = useSortable({ id: block.tempId });
   const update = useBuilder((s) => s.updateBlock);
   const remove = useBuilder((s) => s.removeBlock);
+  const { presets } = useFormatRegistry();
+
+  const preset = presets.find(
+    (p) => p.id === block.formato || p.id === `builtin:${block.formato}` || p.base === block.formato
+  );
+  const formatLabel =
+    preset?.label ??
+    BLOCK_FORMAT_LABEL[block.formato] ??
+    (block.formato.startsWith("custom:") ? "Personalizado" : block.formato);
 
   const style = {
     transform: CSS.Transform.toString(
@@ -49,7 +58,7 @@ export function BlockCard({ block }: { block: BuilderBlock }) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "p-4 transition-[border-color,box-shadow] duration-200",
+        "p-3 sm:p-4 transition-[border-color,box-shadow] duration-200",
         isDragging
           ? "z-20 scale-[1.01] border-primary/60 shadow-xl shadow-primary/10"
           : "border-border/70 hover:border-primary/40",
@@ -62,27 +71,44 @@ export function BlockCard({ block }: { block: BuilderBlock }) {
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
-          className={cn(dragHandleClass, "mt-0.5")}
+          className={cn(dragHandleClass, "mt-1 sm:mt-0.5")}
           aria-label={`Reordenar bloco ${block.titulo ?? ""}`.trim()}
         >
           <GripVertical className="h-4 w-4" />
         </button>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <Badge>{useFormatLabel(block.formato)}</Badge>
-            <Input
-              placeholder="Título do bloco (opcional)"
-              className="h-8 flex-1"
-              value={block.titulo ?? ""}
-              onChange={(e) => update(block.tempId, { titulo: e.target.value })}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => remove(block.tempId)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <Badge className="shrink-0 max-w-[220px] truncate text-xs font-semibold uppercase tracking-wider py-1 px-2.5">
+                {formatLabel}
+              </Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => remove(block.tempId)}
+                aria-label="Remover bloco"
+                className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive shrink-0 sm:hidden cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Input
+                placeholder="Título do bloco (opcional)"
+                className="h-9 flex-1 text-sm bg-background/80"
+                value={block.titulo ?? ""}
+                onChange={(e) => update(block.tempId, { titulo: e.target.value })}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => remove(block.tempId)}
+                aria-label="Remover bloco"
+                className="hidden sm:inline-flex h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive shrink-0 cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           <div className="mt-4">
             <BlockBody block={block} />
