@@ -28,42 +28,58 @@ import {
 import { toast } from "sonner";
 import { useCoach } from "@/hooks/use-coach";
 import { COACH_FILES_BUCKET as BUCKET, useCoachFiles, formatBytes } from "./use-coach-files";
+import { FileUpload, type FileUploadItem } from "@/components/ui/file-upload";
 
 export function ArquivosPanel() {
   const { data: coach } = useCoach();
   const qc = useQueryClient();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [dragOver, setDragOver] = useState(false);
-  const [uploading, setUploading] = useState<{ name: string; progress: number }[]>([]);
+  const [uploadItems, setUploadItems] = useState<FileUploadItem[]>([]);
   const [toDelete, setToDelete] = useState<{ name: string; path: string } | null>(null);
 
   const { data: files = [], isLoading } = useCoachFiles();
 
-  const upload = useCallback(
-    async (fileList: FileList | File[]) => {
+  const handleFilesSelected = useCallback(
+    async (fileList: File[]) => {
       if (!coach) return;
-      const arr = Array.from(fileList);
-      setUploading(arr.map((f) => ({ name: f.name, progress: 0 })));
+      const initialItems: FileUploadItem[] = fileList.map((f, i) => ({
+        id: `${f.name}-${Date.now()}-${i}`,
+        file: f,
+        progress: 0,
+        status: "uploading",
+      }));
+      setUploadItems(initialItems);
+
       try {
         await Promise.all(
-          arr.map(async (file, i) => {
+          fileList.map(async (file, i) => {
             const path = `${coach.id}/${Date.now()}-${file.name}`;
             const { error } = await supabase.storage
               .from(BUCKET)
               .upload(path, file, { upsert: false, contentType: file.type });
-            setUploading((prev) => prev.map((u, idx) => (idx === i ? { ...u, progress: 100 } : u)));
-            if (error) throw error;
-          }),
+            if (error) {
+              setUploadItems((prev) =>
+                prev.map((item, idx) =>
+                  idx === i ? { ...item, status: "error", errorMessage: error.message } : item
+                )
+              );
+              throw error;
+            }
+            setUploadItems((prev) =>
+              prev.map((item, idx) =>
+                idx === i ? { ...item, progress: 100, status: "success" } : item
+              )
+            );
+          })
         );
-        toast.success(arr.length === 1 ? "Arquivo enviado" : `${arr.length} arquivos enviados`);
+        toast.success(fileList.length === 1 ? "Arquivo enviado" : `${fileList.length} arquivos enviados`);
         qc.invalidateQueries({ queryKey: ["coach-files"] });
       } catch (e: any) {
-        toast.error(e.message);
+        toast.error(e.message || "Erro ao enviar arquivo");
       } finally {
-        setTimeout(() => setUploading([]), 600);
+        setTimeout(() => setUploadItems([]), 1500);
       }
     },
-    [coach, qc],
+    [coach, qc]
   );
 
   const del = useMutation({
@@ -93,60 +109,14 @@ export function ArquivosPanel() {
 
   return (
     <section>
-      <label
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          if (e.dataTransfer.files.length) upload(e.dataTransfer.files);
-        }}
-        className={`group relative mb-6 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 text-center transition-colors duration-200 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background md:p-10 ${
-          dragOver
-            ? "border-primary bg-primary/5"
-            : "border-border/70 hover:border-primary/50 hover:bg-accent/30"
-        }`}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          className="sr-only"
-          onChange={(e) => {
-            if (e.target.files?.length) upload(e.target.files);
-            e.target.value = "";
-          }}
+      <div className="mb-6">
+        <FileUpload
+          onFilesSelected={handleFilesSelected}
+          items={uploadItems}
+          title="Arraste seus arquivos aqui ou clique para selecionar"
+          description="Suporta PDFs, planilhas, fotos, vídeos de execução e documentos (múltiplos arquivos)"
         />
-        <div
-          className={`grid h-12 w-12 place-items-center rounded-full transition-colors duration-200 ${
-            dragOver
-              ? "bg-primary text-primary-foreground"
-              : "bg-primary/10 text-primary group-hover:bg-primary/20"
-          }`}
-        >
-          <UploadCloud className="h-6 w-6" />
-        </div>
-        <div className="mt-1 text-sm font-medium">Arraste arquivos aqui ou clique para selecionar</div>
-        <div className="text-xs text-muted-foreground">
-          Aceita qualquer formato · múltiplos arquivos por vez
-        </div>
-      </label>
-
-      {uploading.length > 0 && (
-        <div className="mb-6 space-y-2">
-          {uploading.map((u) => (
-            <Card key={u.name} className="flex items-center gap-3 p-3">
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{u.name}</div>
-                <Progress value={u.progress} className="mt-2 h-1.5" />
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
+      </div>
 
       {isLoading ? (
         <div className="grid gap-2">

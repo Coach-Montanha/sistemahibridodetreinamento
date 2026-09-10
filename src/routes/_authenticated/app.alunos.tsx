@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,8 +23,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  Timeline,
+  TimelineItem,
+  TimelinePoint,
+  TimelineContent,
+  TimelineTitle,
+  TimelineTime,
+  TimelineDescription,
+} from "@/components/ui/timeline";
+import { KanbanBoard, type KanbanColumn, type KanbanCardItem } from "@/components/ui/kanban";
 import { toast } from "sonner";
-import { Plus, Trash2, UserPlus, Users, Copy, X } from "lucide-react";
+import { Plus, Trash2, UserPlus, Users, Copy, X, History, Dumbbell, BookOpen, Calendar, CheckCircle2, Columns3, List } from "lucide-react";
 import {
   inviteStudent,
   deleteStudent,
@@ -53,6 +65,77 @@ function AlunosPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = students.find((s) => s.id === selectedId) ?? null;
+  const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
+  const [athletePhases, setAthletePhases] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem("athlete_kanban_phases");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const KANBAN_COLUMNS: KanbanColumn[] = [
+    {
+      id: "adaptacao",
+      title: "Adaptação & Base",
+      description: "Avaliação inicial e introdução",
+      color: "bg-blue-500",
+    },
+    {
+      id: "hipertrofia",
+      title: "Hipertrofia / Volume",
+      description: "Bloco acumulativo estrutural",
+      color: "bg-emerald-500",
+    },
+    {
+      id: "forca",
+      title: "Força & Pico",
+      description: "Intensificação e cargas máximas",
+      color: "bg-amber-500",
+    },
+    {
+      id: "deload",
+      title: "Deload & Renovação",
+      description: "Recuperação ativa e reteste",
+      color: "bg-purple-500",
+    },
+  ];
+
+  const kanbanItems = useMemo<KanbanCardItem[]>(() => {
+    return students.map((s, idx) => {
+      let colId = athletePhases[s.id];
+      if (!colId) {
+        if (s.status === "convidado") colId = "adaptacao";
+        else {
+          const defaultCols = ["adaptacao", "hipertrofia", "forca", "deload"];
+          colId = defaultCols[idx % defaultCols.length];
+        }
+      }
+      return {
+        id: s.id,
+        columnId: colId,
+        title: s.nome,
+        description: s.email || undefined,
+        badge: s.status,
+        badgeVariant: s.status === "ativo" ? "default" : "outline",
+        tags: s.telefone ? [s.telefone] : undefined,
+      };
+    });
+  }, [students, athletePhases]);
+
+  const handleMoveAthlete = (studentId: string, _fromCol: string, toCol: string) => {
+    setAthletePhases((prev) => {
+      const next = { ...prev, [studentId]: toCol };
+      try {
+        localStorage.setItem("athlete_kanban_phases", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    const colName = KANBAN_COLUMNS.find((c) => c.id === toCol)?.title || toCol;
+    const student = students.find((s) => s.id === studentId);
+    toast.success(`${student?.nome || "Aluno"} movido para "${colName}"`);
+  };
 
   return (
     <div className="mx-auto max-w-6xl min-w-0 px-3 py-4 sm:p-6">
@@ -63,7 +146,29 @@ function AlunosPage() {
             Convide alunos e libere programas/sessões para eles.
           </p>
         </div>
-        <div className="self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 px-2.5 gap-1.5 cursor-pointer"
+              onClick={() => setViewMode("list")}
+              title="Visualização em Lista"
+            >
+              <List className="h-4 w-4" />
+              <span className="text-xs">Lista</span>
+            </Button>
+            <Button
+              variant={viewMode === "kanban" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 px-2.5 gap-1.5 cursor-pointer"
+              onClick={() => setViewMode("kanban")}
+              title="Visualização em Pipeline Kanban"
+            >
+              <Columns3 className="h-4 w-4" />
+              <span className="text-xs">Kanban</span>
+            </Button>
+          </div>
           <InviteButton onDone={() => qc.invalidateQueries({ queryKey: ["students"] })} />
         </div>
       </div>
@@ -100,6 +205,31 @@ function AlunosPage() {
             <InviteButton onDone={() => qc.invalidateQueries({ queryKey: ["students"] })} />
           </div>
         </Card>
+      ) : viewMode === "kanban" ? (
+        <div className="space-y-6">
+          <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-xs text-muted-foreground flex items-center justify-between gap-2">
+            <span>
+              Arraste os cards para mover os atletas entre as fases de periodização. Clique em um aluno para abrir suas prescrições e evolução.
+            </span>
+          </div>
+          <KanbanBoard
+            columns={KANBAN_COLUMNS}
+            items={kanbanItems}
+            onItemMove={handleMoveAthlete}
+            onCardClick={(item) => setSelectedId(item.id)}
+          />
+          {selected && (
+            <div className="mt-8 pt-6 border-t">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold tracking-tight">Painel do Atleta: {selected.nome}</h2>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedId(null)}>
+                  Fechar painel
+                </Button>
+              </div>
+              <StudentPanel key={selected.id} student={selected} onDeleted={() => setSelectedId(null)} />
+            </div>
+          )}
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           <div className="space-y-2">
@@ -291,96 +421,176 @@ function StudentPanel({ student, onDeleted }: { student: any; onDeleted: () => v
         </Button>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <Label className="mb-2 block">Liberar programa inteiro</Label>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Select value={pickProgram} onValueChange={setPickProgram}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Escolha um programa" /></SelectTrigger>
-              <SelectContent>
-                {programs.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.titulo}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              disabled={!pickProgram}
-              className="w-full sm:w-auto min-h-[40px] shrink-0 cursor-pointer"
-              onClick={async () => {
-                try {
-                  await assignP({ data: { student_id: student.id, program_id: pickProgram } });
-                  toast.success("Programa liberado");
-                  setPickProgram("");
-                  qc.invalidateQueries({ queryKey: ["assignments", student.id] });
-                } catch (e: any) { toast.error(e.message); }
-              }}
-            >
-              <Plus className="mr-1 h-4 w-4" /> Liberar
-            </Button>
-          </div>
-        </div>
+      <Tabs defaultValue="prescricoes" className="w-full">
+        <TabsList className="mb-4 grid w-full grid-cols-2">
+          <TabsTrigger value="prescricoes">Prescrições & Treinos</TabsTrigger>
+          <TabsTrigger value="timeline" className="flex items-center gap-1.5">
+            <History className="h-3.5 w-3.5" /> Linha do Tempo
+          </TabsTrigger>
+        </TabsList>
 
-        <div>
-          <Label className="mb-2 block">Liberar sessão avulsa</Label>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Select value={pickSession} onValueChange={setPickSession}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Escolha uma sessão" /></SelectTrigger>
-              <SelectContent>
-                {sessions.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.program_weeks?.programs?.titulo ?? "Sessão"} · Dia {s.numero_dia} {s.titulo ? `— ${s.titulo}` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              disabled={!pickSession}
-              className="w-full sm:w-auto min-h-[40px] shrink-0 cursor-pointer"
-              onClick={async () => {
-                try {
-                  await assignS({ data: { student_id: student.id, session_id: pickSession } });
-                  toast.success("Sessão liberada");
-                  setPickSession("");
-                  qc.invalidateQueries({ queryKey: ["assignments", student.id] });
-                } catch (e: any) { toast.error(e.message); }
-              }}
-            >
-              <Plus className="mr-1 h-4 w-4" /> Liberar
-            </Button>
-          </div>
-        </div>
-
-        <div>
-          <div className="mb-2 text-sm font-medium">Liberado ({assignments.length})</div>
-          {assignments.length === 0 ? (
-            <div className="rounded-md border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-              Nada liberado ainda.
+        <TabsContent value="prescricoes" className="space-y-4 focus-visible:outline-none">
+          <div>
+            <Label className="mb-2 block">Liberar programa inteiro</Label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Select value={pickProgram} onValueChange={setPickProgram}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="Escolha um programa" /></SelectTrigger>
+                <SelectContent>
+                  {programs.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.titulo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                disabled={!pickProgram}
+                className="w-full sm:w-auto min-h-[40px] shrink-0 cursor-pointer"
+                onClick={async () => {
+                  try {
+                    await assignP({ data: { student_id: student.id, program_id: pickProgram } });
+                    toast.success("Programa liberado");
+                    setPickProgram("");
+                    qc.invalidateQueries({ queryKey: ["assignments", student.id] });
+                  } catch (e: any) { toast.error(e.message); }
+                }}
+              >
+                <Plus className="mr-1 h-4 w-4" /> Liberar
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {assignments.map((a) => (
-                <div key={a.id} className="flex items-center justify-between rounded-md border border-border p-2 text-sm">
-                  <div>
-                    {a.program_id ? `📚 Programa: ${a.programs?.titulo ?? "—"}` : null}
-                    {a.session_id ? `🏋️ Sessão: ${a.sessions?.titulo ?? "—"}` : null}
-                    {a.program_week_id ? `📅 Semana` : null}
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Liberar sessão avulsa</Label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Select value={pickSession} onValueChange={setPickSession}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="Escolha uma sessão" /></SelectTrigger>
+                <SelectContent>
+                  {sessions.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.program_weeks?.programs?.titulo ?? "Sessão"} · Dia {s.numero_dia} {s.titulo ? `— ${s.titulo}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                disabled={!pickSession}
+                className="w-full sm:w-auto min-h-[40px] shrink-0 cursor-pointer"
+                onClick={async () => {
+                  try {
+                    await assignS({ data: { student_id: student.id, session_id: pickSession } });
+                    toast.success("Sessão liberada");
+                    setPickSession("");
+                    qc.invalidateQueries({ queryKey: ["assignments", student.id] });
+                  } catch (e: any) { toast.error(e.message); }
+                }}
+              >
+                <Plus className="mr-1 h-4 w-4" /> Liberar
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 text-sm font-medium">Liberado ({assignments.length})</div>
+            {assignments.length === 0 ? (
+              <div className="rounded-md border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+                Nada liberado ainda.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {assignments.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between rounded-md border border-border p-2 text-sm">
+                    <div>
+                      {a.program_id ? `📚 Programa: ${a.programs?.titulo ?? "—"}` : null}
+                      {a.session_id ? `🏋️ Sessão: ${a.sessions?.titulo ?? "—"}` : null}
+                      {a.program_week_id ? `📅 Semana` : null}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        await unassignFn({ data: { id: a.id } });
+                        qc.invalidateQueries({ queryKey: ["assignments", student.id] });
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={async () => {
-                      await unassignFn({ data: { id: a.id } });
-                      qc.invalidateQueries({ queryKey: ["assignments", student.id] });
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="timeline" className="focus-visible:outline-none pt-2">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Jornada & Marcos do Atleta
+            </span>
+            <Badge variant="outline" className="text-[10px] font-mono">
+              {assignments.length + 1} evento(s)
+            </Badge>
+          </div>
+
+          <Timeline className="py-2">
+            {/* Evento 1: Atribuições mais recentes primeiro */}
+            {assignments.map((a) => (
+              <TimelineItem key={a.id}>
+                <TimelinePoint variant={a.program_id ? "primary" : "success"}>
+                  {a.program_id ? <BookOpen className="h-4 w-4" /> : <Dumbbell className="h-4 w-4" />}
+                </TimelinePoint>
+                <TimelineContent>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <TimelineTitle>
+                      {a.program_id ? "Programa Atribuído" : "Sessão Avulsa Prescrita"}
+                    </TimelineTitle>
+                    {a.liberado_em && (
+                      <TimelineTime>
+                        {new Date(a.liberado_em).toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </TimelineTime>
+                    )}
+                  </div>
+                  <TimelineDescription>
+                    {a.program_id ? (
+                      <span><strong>{a.programs?.titulo ?? "Programa"}</strong> disponibilizado com periodização completa.</span>
+                    ) : (
+                      <span><strong>{a.sessions?.titulo ?? "Sessão"}</strong> liberada para execução imediata no app.</span>
+                    )}
+                  </TimelineDescription>
+                </TimelineContent>
+              </TimelineItem>
+            ))}
+
+            {/* Evento Inicial: Cadastro do Aluno */}
+            <TimelineItem>
+              <TimelinePoint variant="default">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+              </TimelinePoint>
+              <TimelineContent>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <TimelineTitle>Entrada no Sistema Híbrido</TimelineTitle>
+                  {student.criado_em && (
+                    <TimelineTime>
+                      {new Date(student.criado_em).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </TimelineTime>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+                <TimelineDescription>
+                  Atleta cadastrado na assessoria do Coach Montanha com status{" "}
+                  <strong className="text-foreground">{student.status ?? "ativo"}</strong>.
+                </TimelineDescription>
+              </TimelineContent>
+            </TimelineItem>
+          </Timeline>
+        </TabsContent>
+      </Tabs>
     </Card>
   );
 }

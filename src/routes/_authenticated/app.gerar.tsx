@@ -15,7 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Wand2, Settings2, AlertTriangle, ListChecks, Sparkles } from "lucide-react";
+import { Wand2, Settings2, AlertTriangle, ListChecks, Sparkles, ArrowRight, ArrowLeft } from "lucide-react";
+import { Stepper, type StepItem } from "@/components/ui/stepper";
+import { Badge } from "@/components/ui/badge";
 import { getGeneratorPrefs } from "@/lib/generator-prefs.functions";
 import { gerarTreino } from "@/lib/gerador.functions";
 import { METHODOLOGY_LABEL, type Methodology } from "@/lib/methodology";
@@ -103,6 +105,22 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
   const isHibrido = metodologia === "hibrido";
   const isKbFitness = metodologia === "kettlebell_fitness";
   const [, setPosicionarAberto] = useState<{ programaId: string; modalidade: string } | null>(null);
+  const [activeStep, setActiveStep] = useState(0);
+
+  const steps: StepItem[] = [
+    {
+      title: "Modalidade",
+      description: "Tipo e identificação",
+    },
+    {
+      title: "Planejamento",
+      description: "Escopo e frequência",
+    },
+    {
+      title: "Parâmetros & IA",
+      description: "Diretrizes e geração",
+    },
+  ];
 
   const isKbFitnessMolde = isKbFitness;
   const usaModalIa = isKbSport || isWeightlifting || isFuncional || isCorrida;
@@ -289,173 +307,247 @@ export function GerarPanel({ showHeader = true }: { showHeader?: boolean } = {})
       )}
 
       <Card className="p-6">
-        {isMusculacao ? (
-          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p className="flex-1 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Musculação usa IA.</strong> Esta
-              modalidade não usa o banco de exercícios nem os templates de blocos: ao
-              gerar, criamos a rotina e abrimos o <strong className="text-foreground">Prescrever
-              com IA</strong>, onde você descreve a divisão desejada e revisa a prévia
-              antes de salvar.
-            </p>
-          </div>
-        ) : isHibrido ? (
-          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p className="flex-1 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Motor por molde estrutural.</strong>{" "}
-              Ao gerar, você monta a estrutura fixa de blocos da sessão (formato, duração,
-              séries, número de exercícios, descanso) e a IA só escolhe quais exercícios da
-              sua biblioteca preenchem cada bloco marcado como "IA escolhe".
-            </p>
-          </div>
-        ) : isKbFitness ? (
-          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p className="flex-1 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Motor dedicado por molde.</strong> Kettlebell Fitness segue uma estrutura técnica rigorosa (ex.: ao selecionar Mobilidade / Preparação, geramos Mobilidade e Aquecimento sequencialmente):
-              <br /><br />
-              1. <strong className="text-foreground">Bloco de Mobilidade:</strong> Seleção automática de 1 exercício de mobilidade (2 minutos total).
-              <br />
-              2. <strong className="text-foreground">Aquecimento:</strong> Circuito de 5 minutos com 2-3 movimentos (ginástico/kettlebell), 4 séries.
-              <br />
-              3. <strong className="text-foreground">Kettlebell Fitness:</strong> Bloco principal focado (90-100% kettlebell) em formatos de Circuito, Séries Fixas, Cluster ou EMOM-AMRAP.
-            </p>
-          </div>
-        ) : isCorrida ? (
-          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p className="flex-1 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Motor por linha metodológica.</strong>{" "}
-              Ao gerar, você informa distância-alvo, volume semanal, marca recente e
-              lesões, e escolhe a linha (Daniels/VDOT, Lydiard, Canova, Hansons,
-              Pfitzinger, Horwill, Koop) ou deixa o sistema decidir pela distância e base
-              aeróbica.
-            </p>
-          </div>
-        ) : isFuncional ? (
-          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p className="flex-1 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Motor por linha metodológica.</strong>{" "}
-              Ao gerar, você informa objetivo, equipamento e lesões/limitações, e escolhe
-              a linha (FMS/SFMA, Joint-by-Joint, EXOS, DNS, CrossFit, Original Strength)
-              ou deixa o sistema decidir — a segurança clínica tem prioridade.
-            </p>
-          </div>
-        ) : isWeightlifting ? (
-          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p className="flex-1 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Motor por escola metodológica.</strong>{" "}
-              Ao gerar, você escolhe a linha (Búlgara, Russa Clássica, Chinesa, Cubana,
-              Colombiana, Pendlay, Takano ou automática), nível, classificação, ponto
-              fraco e cargas — a IA monta o ciclo seguindo essa filosofia.
-            </p>
-          </div>
-        ) : isKbSport ? (
-          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p className="flex-1 leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Motor por escola metodológica.</strong>{" "}
-              Ao gerar, você escolhe a linha (Fedorenko, Rudnev, Vorotyntsev, Denisov,
-              Vasilev, Gomonov ou automática), nível, disciplina e cargas iniciais — a IA
-              monta o ciclo seguindo estritamente essa filosofia.
-            </p>
-          </div>
-        ) : (
-        <div className="mb-4 flex items-start gap-2 rounded-lg border border-border/60 bg-muted/30 p-3 text-xs">
-          <Settings2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          <div className="flex flex-1 flex-wrap items-center gap-x-2 gap-y-1 leading-relaxed text-muted-foreground">
-            <span>
-              {prefs.data?.origem === "custom"
-                ? <>Usando suas preferências de <strong className="text-foreground">{METHODOLOGY_LABEL[metodologia]}</strong>.</>
-                : <>Usando templates padrão de <strong className="text-foreground">{METHODOLOGY_LABEL[metodologia]}</strong>.</>}
-            </span>
-            {(() => {
-              const curados = (prefs.data?.blocos ?? []).filter(
-                (b: any) => Array.isArray(b.exercicios_permitidos) && b.exercicios_permitidos.length > 0,
-              ).length;
-              if (curados === 0) return null;
-              return (
-                <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                  <ListChecks className="h-3 w-3" />
-                  {curados} bloco{curados === 1 ? "" : "s"} com pool curado
-                </span>
-              );
-            })()}
-            <Link
-              to="/app/configuracoes"
-              search={{ section: "geracao" }}
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
-              Personalizar
-            </Link>
-          </div>
+        <div className="mb-6 pb-4 border-b">
+          <Stepper
+            steps={steps}
+            activeStep={activeStep}
+            onStepClick={(step) => setActiveStep(step)}
+          />
         </div>
-        )}
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <Label>Título do programa</Label>
-            <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
-          </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <Label>Modalidade</Label>
-              <Select value={metodologia} onValueChange={(v) => setMetodologia(v as Methodology)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(METHODOLOGY_LABEL) as Methodology[]).map((k) => (
-                    <SelectItem key={k} value={k}>{METHODOLOGY_LABEL[k]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Escopo</Label>
-              <Select value={escopo} onValueChange={(v) => setEscopo(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sessao">1 sessão</SelectItem>
-                  <SelectItem value="semana">1 semana</SelectItem>
-                  <SelectItem value="mes">1 mês (4 semanas)</SelectItem>
-                  <SelectItem value="ano">1 ano (52 semanas)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <form onSubmit={onSubmit} className="space-y-5">
+          {activeStep === 0 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <div>
+                <Label htmlFor="titulo-input" className="text-sm font-medium">Título do programa</Label>
+                <Input
+                  id="titulo-input"
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  placeholder="Ex.: Bloco de Força Inicial, Hipertrofia 12 Semanas..."
+                  required
+                  className="mt-1.5"
+                />
+              </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <Label>Data de início</Label>
-              <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} required />
-            </div>
-            <div>
-              <Label>Dias por semana</Label>
-              <Input
-                type="number"
-                min={1}
-                max={7}
-                value={dias}
-                onChange={(e) => setDias(Number(e.target.value))}
-                disabled={escopo === "sessao"}
-              />
-            </div>
-          </div>
+              <div>
+                <Label className="text-sm font-medium">Modalidade esportiva / metodologia</Label>
+                <Select value={metodologia} onValueChange={(v) => setMetodologia(v as Methodology)}>
+                  <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(METHODOLOGY_LABEL) as Methodology[]).map((k) => (
+                      <SelectItem key={k} value={k}>{METHODOLOGY_LABEL[k]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  O gerador adapta os templates e motores de IA para os princípios técnicos dessa modalidade.
+                </p>
+              </div>
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading
-              ? isMusculacao
-                ? "Criando rotina..."
-                : "Gerando..."
-              : isMusculacao
-                ? "Prescrever com IA"
-                : usaModalIa
-                  ? "Configurar e gerar"
-                  : "Gerar treino"}
-          </Button>
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  className="w-full gap-2 cursor-pointer"
+                  onClick={() => {
+                    if (!titulo.trim()) {
+                      toast.error("Por favor, preencha o título do programa antes de continuar.");
+                      return;
+                    }
+                    setActiveStep(1);
+                  }}
+                >
+                  Continuar: Planejamento <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {activeStep === 1 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label className="text-sm font-medium">Escopo do programa</Label>
+                  <Select value={escopo} onValueChange={(v) => setEscopo(v as any)}>
+                    <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sessao">1 sessão</SelectItem>
+                      <SelectItem value="semana">1 semana</SelectItem>
+                      <SelectItem value="mes">1 mês (4 semanas)</SelectItem>
+                      <SelectItem value="ano">1 ano (52 semanas)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Data de início</Label>
+                  <Input
+                    type="date"
+                    value={dataInicio}
+                    onChange={(e) => setDataInicio(e.target.value)}
+                    required
+                    className="mt-1.5"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Frequência semanal (dias)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={7}
+                  value={dias}
+                  onChange={(e) => setDias(Number(e.target.value))}
+                  disabled={escopo === "sessao"}
+                  className="mt-1.5"
+                />
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  {escopo === "sessao" ? "Fixado em 1 sessão avulsa." : "Quantidade de treinos distribuídos ao longo de cada semana."}
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 gap-2 cursor-pointer"
+                  onClick={() => setActiveStep(0)}
+                >
+                  <ArrowLeft className="h-4 w-4" /> Voltar
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1 gap-2 cursor-pointer"
+                  onClick={() => setActiveStep(2)}
+                >
+                  Avançar: Parâmetros & IA <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {activeStep === 2 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <div className="rounded-lg border bg-muted/20 p-3.5 text-xs space-y-2">
+                <span className="font-semibold text-foreground block text-sm">Resumo da Prescrição</span>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-muted-foreground font-medium">Programa:</span>
+                  <span className="font-semibold text-foreground">{titulo}</span>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center pt-1">
+                  <Badge variant="default" className="text-xs">{METHODOLOGY_LABEL[metodologia]}</Badge>
+                  <Badge variant="outline" className="text-xs">{ESCOPO_LABEL[escopo] ?? escopo}</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {escopo === "sessao" ? "1 sessão" : `${dias} dias / semana`}
+                  </Badge>
+                  <span className="text-muted-foreground ml-auto text-[11px]">Início: {dataInicio}</span>
+                </div>
+              </div>
+
+              {isMusculacao ? (
+                <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <p className="flex-1 leading-relaxed text-muted-foreground">
+                    <strong className="text-foreground">Musculação usa IA.</strong> Esta
+                    modalidade não usa o banco de exercícios nem os templates de blocos: ao
+                    gerar, criamos a rotina e abrimos o <strong className="text-foreground">Prescrever
+                    com IA</strong>, onde você descreve a divisão desejada e revisa a prévia
+                    antes de salvar.
+                  </p>
+                </div>
+              ) : isHibrido ? (
+                <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <p className="flex-1 leading-relaxed text-muted-foreground">
+                    <strong className="text-foreground">Motor por molde estrutural.</strong>{" "}
+                    Ao gerar, você monta a estrutura fixa de blocos da sessão (formato, duração,
+                    séries, número de exercícios, descanso) e a IA só escolhe quais exercícios da
+                    sua biblioteca preenchem cada bloco marcado como "IA escolhe".
+                  </p>
+                </div>
+              ) : isKbFitness ? (
+                <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <p className="flex-1 leading-relaxed text-muted-foreground">
+                    <strong className="text-foreground">Motor dedicado por molde.</strong> Kettlebell Fitness segue uma estrutura técnica rigorosa: Mobilidade (2 min), Aquecimento (5 min circuito) e bloco principal Kettlebell Fitness.
+                  </p>
+                </div>
+              ) : isCorrida ? (
+                <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <p className="flex-1 leading-relaxed text-muted-foreground">
+                    <strong className="text-foreground">Motor por linha metodológica.</strong>{" "}
+                    Ao gerar, você informa distância-alvo, volume semanal, marca recente e
+                    lesões, e escolhe a linha (Daniels/VDOT, Lydiard, Canova, Hansons, Pfitzinger, Horwill, Koop).
+                  </p>
+                </div>
+              ) : isFuncional ? (
+                <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <p className="flex-1 leading-relaxed text-muted-foreground">
+                    <strong className="text-foreground">Motor por linha metodológica.</strong>{" "}
+                    Ao gerar, você informa objetivo, equipamento e limitações, e escolhe a linha (FMS, EXOS, DNS, CrossFit, Original Strength).
+                  </p>
+                </div>
+              ) : isWeightlifting ? (
+                <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <p className="flex-1 leading-relaxed text-muted-foreground">
+                    <strong className="text-foreground">Motor por escola metodológica.</strong>{" "}
+                    Ao gerar, você escolhe a linha (Búlgara, Russa Clássica, Chinesa, Cubana, Colombiana, Pendlay, Takano).
+                  </p>
+                </div>
+              ) : isKbSport ? (
+                <div className="flex items-start gap-2.5 rounded-lg border border-primary/25 bg-primary/[0.06] p-3 text-xs">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <p className="flex-1 leading-relaxed text-muted-foreground">
+                    <strong className="text-foreground">Motor por escola metodológica.</strong>{" "}
+                    Ao gerar, você escolhe a linha (Fedorenko, Rudnev, Vorotyntsev, Denisov, Vasilev, Gomonov).
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 rounded-lg border border-border/60 bg-muted/30 p-3 text-xs">
+                  <Settings2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <div className="flex flex-1 flex-wrap items-center gap-x-2 gap-y-1 leading-relaxed text-muted-foreground">
+                    <span>
+                      {prefs.data?.origem === "custom"
+                        ? <>Usando suas preferências de <strong className="text-foreground">{METHODOLOGY_LABEL[metodologia]}</strong>.</>
+                        : <>Usando templates padrão de <strong className="text-foreground">{METHODOLOGY_LABEL[metodologia]}</strong>.</>}
+                    </span>
+                    <Link
+                      to="/app/configuracoes"
+                      search={{ section: "geracao" }}
+                      className="font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      Personalizar
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 gap-2 cursor-pointer"
+                  onClick={() => setActiveStep(1)}
+                >
+                  <ArrowLeft className="h-4 w-4" /> Voltar
+                </Button>
+                <Button type="submit" disabled={loading} className="flex-1 gap-2 cursor-pointer">
+                  {loading
+                    ? isMusculacao
+                      ? "Criando rotina..."
+                      : "Gerando..."
+                    : isMusculacao
+                      ? "Prescrever com IA"
+                      : usaModalIa
+                        ? "Configurar e gerar"
+                        : "Gerar treino"}
+                </Button>
+              </div>
+            </div>
+          )}
         </form>
 
         {avisos.length > 0 && (

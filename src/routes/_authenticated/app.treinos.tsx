@@ -1,8 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { lazy, Suspense } from "react";
-import { Dumbbell, FolderKanban, PlusSquare, Wand2, Loader2 } from "lucide-react";
+import { lazy, Suspense, useMemo } from "react";
+import { Dumbbell, FolderKanban, PlusSquare, Wand2, Loader2, Calendar as CalendarIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { EventCalendar, type CalendarEvent } from "@/components/ui/event-calendar";
 import { ProgramasPanel } from "./app.programas";
 import { Button } from "@/components/ui/button";
 
@@ -30,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/app/treinos")({
 
 const TABS = [
   { key: "programas", label: "Programas", icon: FolderKanban },
+  { key: "agenda", label: "Calendário", icon: CalendarIcon },
   { key: "nova", label: "Nova sessão", icon: PlusSquare },
   { key: "gerar", label: "Gerar treino", icon: Wand2 },
 ] as const;
@@ -103,6 +107,9 @@ function TreinosHub() {
         {active === "programas" && (
           <ProgramasPanel key={ia ? "ia" : "todos"} showHeader={false} destacarIa={ia} />
         )}
+        {active === "agenda" && (
+          <TreinosCalendarView />
+        )}
         {active === "nova" && (
           <Suspense
             fallback={
@@ -126,6 +133,47 @@ function TreinosHub() {
           </Suspense>
         )}
       </div>
+    </div>
+  );
+}
+
+function TreinosCalendarView() {
+  const { data: sessions = [], isLoading } = useQuery({
+    queryKey: ["treinos-calendar-sessions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sessions")
+        .select("id, titulo, data, numero_dia, criado_em, program_weeks(program_id, programs(titulo))")
+        .order("criado_em", { ascending: false })
+        .limit(150);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const events: CalendarEvent[] = useMemo(() => {
+    return sessions.map((s: any) => ({
+      id: s.id,
+      title: s.titulo || `Treino Dia ${s.numero_dia}`,
+      date: s.data || s.criado_em,
+      type: "workout",
+      status: s.data ? "scheduled" : "completed",
+      subtitle: s.program_weeks?.programs?.titulo ? `Programa: ${s.program_weeks.programs.titulo}` : undefined,
+      durationMinutes: 60,
+    }));
+  }, [sessions]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <EventCalendar events={events} />
     </div>
   );
 }

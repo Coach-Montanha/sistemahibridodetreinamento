@@ -28,7 +28,10 @@ import {
   X,
   ChevronDown,
   Tag,
+  Table as TableIcon,
+  LayoutGrid,
 } from "lucide-react";
+import { DataGrid, type DataGridColumn, type DataGridFacetedFilter } from "@/components/ui/data-grid";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,6 +81,7 @@ function ExerciciosPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
   const [selectingAll, setSelectingAll] = useState(false);
+  const [viewMode, setViewMode] = useState<"cards" | "grid">("cards");
   const qc = useQueryClient();
 
   const { data: exercises = [], isPending, isFetching } = useQuery({
@@ -195,6 +199,105 @@ function ExerciciosPage() {
     clearSelection();
   }
 
+  const gridColumns = useMemo<DataGridColumn<any>[]>(() => [
+    {
+      id: "nome",
+      header: "Exercício",
+      accessorKey: "nome_pt",
+      sortable: true,
+      cell: (ex) => (
+        <div className="flex flex-col min-w-[200px]">
+          <span
+            className="font-medium text-foreground hover:text-primary transition-colors cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing(ex);
+              setOpen(true);
+            }}
+          >
+            {ex.nome_pt}
+          </span>
+          {ex.nome_en && (
+            <span className="text-xs text-muted-foreground italic">
+              {ex.nome_en}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "metodologias",
+      header: "Modalidades",
+      cell: (ex) => {
+        const mets: Methodology[] = ex.metodologias ?? [];
+        if (mets.length === 0) return <span className="text-xs text-muted-foreground/50">—</span>;
+        return (
+          <div className="flex flex-wrap gap-1 max-w-[220px]">
+            {mets.map((m) => (
+              <Badge key={m} variant="secondary" className="text-[10px] px-1.5 py-0">
+                {METHODOLOGY_LABEL[m] ?? m}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
+      id: "equipamento",
+      header: "Equipamento",
+      cell: (ex) => {
+        const equips: string[] = ex.equipamento ?? [];
+        if (equips.length === 0) return <span className="text-xs text-muted-foreground/50">—</span>;
+        return (
+          <div className="flex flex-wrap gap-1 max-w-[200px]">
+            {equips.map((eq) => (
+              <Badge key={eq} variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                {eq}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
+      id: "acoes",
+      header: "Ações",
+      className: "text-right w-[90px]",
+      cell: (ex) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing(ex);
+              setOpen(true);
+            }}
+            title="Editar exercício"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+            disabled={del.isPending}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.confirm(`Tem certeza que deseja excluir "${ex.nome_pt}"?`)) {
+                del.mutate(ex.id);
+              }
+            }}
+            title="Excluir exercício"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ),
+    },
+  ], [del.isPending]);
+
   const location = useLocation();
   const isDuplicados = location.pathname.includes("/duplicados");
 
@@ -207,7 +310,30 @@ function ExerciciosPage() {
             Acesso completo ao banco de dados pessoal de exercícios. Gerencie, edite e organize todos os movimentos utilizados na prescrição de treinos de forma independente.
           </p>
         </div>
-        <div className="flex w-full sm:w-auto flex-wrap sm:flex-nowrap gap-2 justify-stretch sm:justify-end">
+        <div className="flex w-full sm:w-auto flex-wrap sm:flex-nowrap gap-2 items-center justify-stretch sm:justify-end">
+          <div className="flex items-center border rounded-lg p-0.5 bg-muted/40 shrink-0">
+            <Button
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-9 px-2.5 gap-1.5 cursor-pointer"
+              onClick={() => setViewMode("cards")}
+              title="Visualização em Cards"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden md:inline text-xs">Cards</span>
+            </Button>
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-9 px-2.5 gap-1.5 cursor-pointer"
+              onClick={() => setViewMode("grid")}
+              title="Visualização em Tabela (Data Grid)"
+            >
+              <TableIcon className="h-4 w-4" />
+              <span className="hidden md:inline text-xs">Tabela</span>
+            </Button>
+          </div>
+
           <Button
             variant={selectionMode ? "secondary" : "ghost"}
             onClick={() => {
@@ -353,6 +479,27 @@ function ExerciciosPage() {
                 )}
               </div>
             </Card>
+          ) : viewMode === "grid" ? (
+            <div className={selectionMode && selected.size > 0 ? "pb-28 sm:pb-24" : ""}>
+              <DataGrid
+                data={exercises as any[]}
+                columns={gridColumns}
+                keyExtractor={(ex) => ex.id}
+                searchPlaceholder="Buscar na tabela de exercícios..."
+                searchableKeys={["nome_pt", "nome_en"]}
+                selectable={selectionMode}
+                selectedIds={selected}
+                onSelectionChange={setSelected}
+                onRowClick={(ex) => {
+                  if (selectionMode) {
+                    toggleSelected(ex.id);
+                  } else {
+                    setEditing(ex);
+                    setOpen(true);
+                  }
+                }}
+              />
+            </div>
           ) : (
             <>
               {selectionMode && (
