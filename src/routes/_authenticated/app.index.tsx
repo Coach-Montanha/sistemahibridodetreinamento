@@ -25,6 +25,7 @@ import {
 import { useCoach } from "@/hooks/use-coach";
 import { OneRepMaxDialog } from "@/components/calculators/OneRepMaxDialog";
 import { WorkoutTimerDialog } from "@/components/timers/WorkoutTimerDialog";
+import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: Dashboard,
@@ -88,6 +89,7 @@ function Dashboard() {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <InstallAppButton size="sm" className="min-h-[36px]" />
           <Button
             type="button"
             variant="outline"

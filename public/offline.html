@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+  <title>Sem Conexão — Coach Montanha</title>
+  <meta name="theme-color" content="#0F1115" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #0F1115;
+      color: #F3F4F6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .card {
+      background: #181A20;
+      border: 1px solid #272A34;
+      border-radius: 1rem;
+      padding: 2.5rem 2rem;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    }
+    .icon-wrap {
+      width: 4rem;
+      height: 4rem;
+      margin: 0 auto 1.5rem;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #EF4444;
+    }
+    .icon-wrap svg {
+      width: 2rem;
+      height: 2rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.75rem;
+      color: #FFFFFF;
+    }
+    p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #9CA3AF;
+      margin-bottom: 1.75rem;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      background: #232732;
+      color: #D1D5DB;
+      margin-bottom: 1rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0.85rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #0F1115;
+      background-color: #10B981;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background-color: #059669;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .footer-note {
+      margin-top: 1.25rem;
+      font-size: 0.8rem;
+      color: #6B7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-wrap">
+      <!-- Wifi Off SVG -->
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+        <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        <line x1="12" y1="20" x2="12.01" y2="20"></line>
+      </svg>
+    </div>
+
+    <div class="badge">Modo Offline</div>
+    <h1>Você está offline</h1>
+    <p>
+      Não foi possível conectar à internet no momento. Verifique sua conexão Wi-Fi ou dados móveis e tente novamente.
+    </p>
+
+    <button class="btn" onclick="window.location.reload()">
+      Tentar Conectar Novamente
+    </button>
+
+    <div class="footer-note">
+      Coach Montanha — Sistema Híbrido de Treinamento
+    </div>
+  </div>
+</body>
+</html>

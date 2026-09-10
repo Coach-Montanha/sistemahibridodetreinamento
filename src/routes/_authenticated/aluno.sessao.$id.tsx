@@ -35,6 +35,7 @@ import { formatSessionForWhatsApp, openWhatsAppShare } from "@/lib/whatsapp-shar
 import { exportarSessoesPdfTabela } from "@/lib/pdf-treino";
 import { OneRepMaxDialog } from "@/components/calculators/OneRepMaxDialog";
 import { WorkoutTimerDialog } from "@/components/timers/WorkoutTimerDialog";
+import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import { soundEffects } from "@/lib/audio-beeps";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -244,6 +245,8 @@ function SessaoAluno() {
           </Link>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            <InstallAppButton size="sm" className="h-8 px-2.5 text-xs" />
+
             <Button
               variant="outline"
               size="sm"
