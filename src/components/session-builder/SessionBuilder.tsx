@@ -29,6 +29,7 @@ import { BLOCK_FORMAT_LABEL, type BlockFormat } from "@/lib/methodology";
 import { useFormatRegistry } from "@/lib/format-registry";
 import { BlockCard } from "./BlockCard";
 import { exportarSessaoPDF, exportarSessaoExcel } from "@/lib/session-export";
+import { exportarSessoesPdfTabela } from "@/lib/pdf-treino";
 import { ExportImageDialog } from "@/components/session/ExportImageDialog";
 import type { BuilderSet } from "@/lib/session-builder-store";
 
@@ -370,6 +371,13 @@ export function SessionBuilder({
                     }
                   >
                     PDF com marca
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      exportarSessoesPdfTabela([sessionId]).catch((e) => toast.error(e.message))
+                    }
+                  >
+                    Ficha A4 (Tabela Completa)
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() =>
