@@ -43,6 +43,7 @@ import {
   type SessaoTemplate,
 } from "@/lib/hibrido-ia.server";
 import { BUILTIN_SET_TYPES, type SetTypePreset } from "@/lib/set-type-registry";
+import { parseAthleteMemory, formatMemoryForPrompt } from "@/lib/athlete-memory";
 
 const CARGA = z
   .object({
@@ -205,6 +206,7 @@ const CO = z
 
 const INPUT = z.object({
   programId: z.string().uuid(),
+  studentId: z.string().uuid().nullable().optional(),
   prompt: z.string().max(4000).default(""),
   diasPorSemana: z.number().int().min(1).max(7).nullable().optional(),
   escopoLabel: z.string().max(80).nullable().optional(),
@@ -307,6 +309,38 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       cooldown
     );
 
+    // Recuperação de Memória Persistente do Atleta (V3-Context Engine)
+    let targetStudentId = data.studentId;
+    if (!targetStudentId) {
+      const { data: asg } = await supabase
+        .from("assignments")
+        .select("student_id")
+        .eq("program_id", data.programId)
+        .limit(1)
+        .maybeSingle();
+      if (asg?.student_id) {
+        targetStudentId = asg.student_id;
+      }
+    }
+
+    let memoriaAtletaPrompt: string | null = null;
+    if (targetStudentId) {
+      const { data: student } = await supabase
+        .from("students")
+        .select("id, nome, observacoes")
+        .eq("id", targetStudentId)
+        .maybeSingle();
+      if (student) {
+        const parsedMemory = parseAthleteMemory(student.observacoes);
+        memoriaAtletaPrompt = formatMemoryForPrompt(student.nome, parsedMemory);
+      }
+    }
+
+    const alunoInfoCombinado = [
+      memoriaAtletaPrompt,
+      programa.descricao ? `Objetivos declarados no programa: ${programa.descricao}` : null,
+    ].filter(Boolean).join("\n\n") || null;
+
     const ctx: RotinaContexto = {
       titulo: programa.titulo ?? "Programa",
       metodologia: metodologiaEfetiva as string,
@@ -319,8 +353,10 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
       dias_por_semana: data.diasPorSemana ?? null,
       escopo_label: data.escopoLabel ?? `${data.semanasNovas} semana(s)`,
       continuation: continuation,
-      aluno_info: programa.descricao ?? null,
+      aluno_info: alunoInfoCombinado,
     };
+
+    const instrucoesCompletas = [data.prompt, memoriaAtletaPrompt].filter(Boolean).join("\n\n");
 
     // Fallback de histórico legível para prompts que ainda não usam o objeto estruturado
     const resumoAnterior = ctx.continuation 
@@ -395,7 +431,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             diasPorSemana: ctx.dias_por_semana,
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
-            instrucoes: data.prompt,
+            instrucoes: instrucoesCompletas,
             resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isTf && tf && linhaTf
@@ -406,7 +442,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             diasPorSemana: ctx.dias_por_semana,
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
-            instrucoes: data.prompt,
+            instrucoes: instrucoesCompletas,
             resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isWl && wl && linhaWl
@@ -417,7 +453,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             diasPorSemana: ctx.dias_por_semana,
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
-            instrucoes: data.prompt,
+            instrucoes: instrucoesCompletas,
             resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isKbSport && kb && linha
@@ -428,10 +464,11 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             diasPorSemana: ctx.dias_por_semana,
             dataInicio: ctx.data_inicio,
             escopoLabel: ctx.escopo_label,
-            instrucoes: data.prompt,
+            instrucoes: instrucoesCompletas,
             resumoAnterior: resumoAnterior, // Adicionado histórico
           })
         : isHibrido
+
         ? await (async () => {
             let template = data.hibrido.sessaoTemplate;
             const methodologyForQuery = metodologiaEfetiva === "kettlebell_fitness" ? "kettlebell_fitness" : "hibrido";
@@ -485,7 +522,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
             return montarHibridoPrompt({
               payload: { ...data.hibrido, sessaoTemplate: template },
               candidatos: await buscarCandidatosDoMolde(supabase, template),
-              instrucoes: data.prompt,
+              instrucoes: instrucoesCompletas,
               resumoAnterior: resumoAnterior,
               continuation: continuation,
               setTypeRegistry: data.setTypes || BUILTIN_SET_TYPES,

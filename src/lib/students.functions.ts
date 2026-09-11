@@ -155,3 +155,16 @@ export const unassign = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+export const updateStudentMemory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { student_id: string; memory: any }) => data)
+  .handler(async ({ data, context }) => {
+    const serialized = typeof data.memory === "string" ? data.memory : JSON.stringify(data.memory);
+    const { error } = await context.supabase
+      .from("students")
+      .update({ observacoes: serialized })
+      .eq("id", data.student_id);
+    if (error) throw error;
+    return { ok: true };
+  });

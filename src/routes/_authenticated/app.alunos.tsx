@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/timeline";
 import { KanbanBoard, type KanbanColumn, type KanbanCardItem } from "@/components/ui/kanban";
 import { toast } from "sonner";
-import { Plus, Trash2, UserPlus, Users, Copy, X, History, Dumbbell, BookOpen, Calendar, CheckCircle2, Columns3, List } from "lucide-react";
+import { Plus, Trash2, UserPlus, Users, Copy, X, History, Dumbbell, BookOpen, Calendar, CheckCircle2, Columns3, List, Brain, Sparkles } from "lucide-react";
 import {
   inviteStudent,
   deleteStudent,
@@ -44,6 +44,7 @@ import {
   assignProgramToStudent,
   unassign,
 } from "@/lib/students.functions";
+import { AthleteMemoryPanel } from "@/components/alunos/AthleteMemoryPanel";
 
 export const Route = createFileRoute("/_authenticated/app/alunos")({
   component: AlunosPage,
@@ -56,7 +57,7 @@ function AlunosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("students")
-        .select("id, nome, email, telefone, status, auth_user_id, criado_em")
+        .select("id, nome, email, telefone, status, auth_user_id, observacoes, criado_em")
         .order("nome");
       if (error) throw error;
       return data;
@@ -424,10 +425,13 @@ function StudentPanel({ student, onDeleted }: { student: any; onDeleted: () => v
       </div>
 
       <Tabs defaultValue="prescricoes" className="w-full">
-        <TabsList className="mb-4 grid w-full grid-cols-2">
+        <TabsList className="mb-4 grid w-full grid-cols-3">
           <TabsTrigger value="prescricoes">Prescrições & Treinos</TabsTrigger>
           <TabsTrigger value="timeline" className="flex items-center gap-1.5">
             <History className="h-3.5 w-3.5" /> Linha do Tempo
+          </TabsTrigger>
+          <TabsTrigger value="memoria_ia" className="flex items-center gap-1.5">
+            <Brain className="h-3.5 w-3.5 text-primary" /> Memória IA
           </TabsTrigger>
         </TabsList>
 
@@ -591,6 +595,10 @@ function StudentPanel({ student, onDeleted }: { student: any; onDeleted: () => v
               </TimelineContent>
             </TimelineItem>
           </Timeline>
+        </TabsContent>
+
+        <TabsContent value="memoria_ia" className="focus-visible:outline-none pt-2">
+          <AthleteMemoryPanel student={student} />
         </TabsContent>
       </Tabs>
     </Card>

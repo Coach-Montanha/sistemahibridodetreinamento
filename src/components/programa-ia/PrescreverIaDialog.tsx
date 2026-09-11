@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ChevronDown,
@@ -12,6 +12,7 @@ import {
   Plus,
   Minus,
   Download,
+  Brain,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +51,8 @@ import type {
   HibridoPayload,
   PrescricaoHibrido,
 } from "@/lib/hibrido-ia.server";
+import { parseAthleteMemory } from "@/lib/athlete-memory";
+
 
 const PLACEHOLDER = `Ex.: Próxima fase focada em força máxima, mantendo a divisão A/B anterior mas reduzindo as repetições para 4-6 e aumentando o descanso.
 Priorizar exercícios básicos; manter o agachamento e o supino como primeiros movimentos da sessão.`;
@@ -390,6 +393,7 @@ export function PrescreverIaDialog({
   wl: wlInicial,
   tf: tfInicial,
   co: coInicial,
+  studentId,
   onOpenChange,
 }: {
   programa: { id: string; titulo?: string | null; metodologia?: string | null } | null;
@@ -408,10 +412,42 @@ export function PrescreverIaDialog({
   tf?: TfPayload | null;
   /** Configuração da Corrida (quando a rotina é dessa modalidade). */
   co?: import("@/lib/corrida-ia.server").CorridaPayload | null;
+  studentId?: string | null;
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
   const gerar = useServerFn(prescribeTrainingWithAi);
+  const [selectedStudentId] = useState<string | null>(studentId || null);
+
+  // Consulta automática da memória persistente do aluno vinculado
+  const { data: assignedStudent } = useQuery({
+    queryKey: ["dialog-athlete-memory", programa?.id, selectedStudentId],
+    queryFn: async () => {
+      const targetId = selectedStudentId;
+      if (targetId) {
+        const { data } = await supabase
+          .from("students")
+          .select("id, nome, email, observacoes")
+          .eq("id", targetId)
+          .maybeSingle();
+        return data ?? null;
+      }
+      if (!programa?.id) return null;
+      const { data: asg } = await supabase
+        .from("assignments")
+        .select("student_id, students(id, nome, email, observacoes)")
+        .eq("program_id", programa.id)
+        .limit(1)
+        .maybeSingle();
+      return (asg as any)?.students ?? null;
+    },
+    enabled: !!programa?.id || !!selectedStudentId,
+  });
+
+  const athleteMemory = useMemo(() => {
+    return assignedStudent?.observacoes ? parseAthleteMemory(assignedStudent.observacoes) : null;
+  }, [assignedStudent?.observacoes]);
+
   const [prompt, setPrompt] = useState("");
   const [metodologia, setMetodologia] = useState<Methodology | string>(programa?.metodologia || "musculacao");
   const [escola, setEscola] = useState<string>("auto");
@@ -600,6 +636,7 @@ export function PrescreverIaDialog({
         const res = await gerar({
           data: {
             programId: programa.id,
+            studentId: selectedStudentId || assignedStudent?.id || null,
             prompt: prompt.trim(),
             diasPorSemana: diasPorSemana,
             escopoLabel: `${semanas} semanas`,
@@ -1035,6 +1072,36 @@ export function PrescreverIaDialog({
               </div>
             ))}
           </div>
+
+          {/* Memória Persistente do Atleta (Context Engine) */}
+          {assignedStudent && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3.5 space-y-1.5">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-semibold text-foreground">
+                    Memória IA Ativa: <span className="text-primary">{assignedStudent.nome}</span>
+                  </span>
+                </div>
+                <Badge variant="outline" className="border-primary/40 text-primary text-[10px] font-mono">
+                  Context Engine V3
+                </Badge>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                {athleteMemory?.lesoes && athleteMemory.lesoes.length > 0 ? (
+                  <span className="text-amber-500 font-medium">
+                    ⚠️ {athleteMemory.lesoes.length} restrições protegidas ({athleteMemory.lesoes.slice(0, 2).join(", ")}{athleteMemory.lesoes.length > 2 ? "..." : ""})
+                  </span>
+                ) : (
+                  <span>Nenhuma restrição articular</span>
+                )}
+                <span>•</span>
+                <span>{athleteMemory?.equipamentos?.length || 0} equipamentos disponíveis</span>
+                <span>•</span>
+                <span>Nível: <strong className="text-foreground capitalize">{athleteMemory?.nivelAtleta || "intermediário"}</strong></span>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 sm:grid-cols-2">
             {(metodologia === "hibrido" || metodologia === "kettlebell_fitness") && moldesHistoricos.length > 0 && (
