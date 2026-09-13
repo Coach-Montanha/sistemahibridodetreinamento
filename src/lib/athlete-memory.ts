@@ -99,7 +99,8 @@ export function parseAthleteMemory(raw: string | null | undefined): AthleteMemor
       const parsed = JSON.parse(trimmed);
       return {
         nivelAtleta: parsed.nivelAtleta || "intermediario",
-        tempoTreinoMeses: typeof parsed.tempoTreinoMeses === "number" ? parsed.tempoTreinoMeses : null,
+        tempoTreinoMeses:
+          typeof parsed.tempoTreinoMeses === "number" ? parsed.tempoTreinoMeses : null,
         lesoes: Array.isArray(parsed.lesoes) ? parsed.lesoes : [],
         equipamentos: Array.isArray(parsed.equipamentos) ? parsed.equipamentos : [],
         cargas1rm: {
@@ -155,13 +156,17 @@ export function formatMemoryForPrompt(athleteName: string, memory: AthleteMemory
   parts.push(`=== MEMÓRIA PERSISTENTE DO ATLETA (V3-CONTEXT ENGINE) ===`);
   parts.push(`- Atleta: ${athleteName || "Atleta"}`);
   if (memory.perfilEstruturado !== false) {
-    parts.push(`- Nível de Treinamento: ${memory.nivelAtleta.toUpperCase()}${memory.tempoTreinoMeses ? ` (~${memory.tempoTreinoMeses} meses de experiência)` : ""}`);
+    parts.push(
+      `- Nível de Treinamento: ${memory.nivelAtleta.toUpperCase()}${memory.tempoTreinoMeses ? ` (~${memory.tempoTreinoMeses} meses de experiência)` : ""}`,
+    );
   }
 
   // Restrições e lesões (Prioridade Máxima de Segurança)
   if (memory.lesoes && memory.lesoes.length > 0) {
     parts.push(`- ⚠️ RESTRIÇÕES E LESÕES (SEGURANÇA OBRIGATÓRIA): ${memory.lesoes.join(", ")}`);
-    parts.push(`  * REGRA CRÍTICA: A IA NÃO DEVE prescrever movimentos que sobrecarreguem ou agravem essas articulações/regiões.`);
+    parts.push(
+      `  * REGRA CRÍTICA: A IA NÃO DEVE prescrever movimentos que sobrecarreguem ou agravem essas articulações/regiões.`,
+    );
   } else if (memory.perfilEstruturado !== false) {
     parts.push(`- Restrições / Lesões: Nenhuma restrição anatômica declarada.`);
   }
@@ -169,7 +174,9 @@ export function formatMemoryForPrompt(athleteName: string, memory: AthleteMemory
   // Equipamentos disponíveis
   if (memory.equipamentos && memory.equipamentos.length > 0) {
     parts.push(`- 🏋️ EQUIPAMENTOS ACESSÍVEIS AO ATLETA: ${memory.equipamentos.join(", ")}`);
-    parts.push(`  * REGRA: Selecione EXCLUSIVAMENTE exercícios executáveis com esses equipamentos.`);
+    parts.push(
+      `  * REGRA: Selecione EXCLUSIVAMENTE exercícios executáveis com esses equipamentos.`,
+    );
   }
 
   // 1RMs e Cargas de Referência
@@ -179,7 +186,8 @@ export function formatMemoryForPrompt(athleteName: string, memory: AthleteMemory
   if (c.agachamentoFrontalKg) cargasAtivas.push(`Agachamento Frontal: ${c.agachamentoFrontalKg}kg`);
   if (c.supinoKg) cargasAtivas.push(`Supino: ${c.supinoKg}kg`);
   if (c.levantamentoTerraKg) cargasAtivas.push(`Levantamento Terra: ${c.levantamentoTerraKg}kg`);
-  if (c.desenvolvimentoMilitarKg) cargasAtivas.push(`Desenvolvimento Militar: ${c.desenvolvimentoMilitarKg}kg`);
+  if (c.desenvolvimentoMilitarKg)
+    cargasAtivas.push(`Desenvolvimento Militar: ${c.desenvolvimentoMilitarKg}kg`);
   if (c.snatchKg) cargasAtivas.push(`Snatch (LPO): ${c.snatchKg}kg`);
   if (c.cleanAndJerkKg) cargasAtivas.push(`Clean & Jerk: ${c.cleanAndJerkKg}kg`);
   if (c.snatchKbKg) cargasAtivas.push(`Snatch Kettlebell: ${c.snatchKbKg}kg`);
@@ -190,7 +198,9 @@ export function formatMemoryForPrompt(athleteName: string, memory: AthleteMemory
   if (cargasAtivas.length > 0) {
     parts.push(`- 🎯 CARGAS DE REFERÊNCIA / 1RMs CONHECIDOS:`);
     cargasAtivas.forEach((item) => parts.push(`  * ${item}`));
-    parts.push(`  * REGRA: Calcule as sugestões de carga (%) respeitando estes números como base real.`);
+    parts.push(
+      `  * REGRA: Calcule as sugestões de carga (%) respeitando estes números como base real.`,
+    );
   }
 
   // Diretrizes estratégicas do treinador
