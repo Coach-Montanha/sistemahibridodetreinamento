@@ -53,10 +53,10 @@ function AuthPage() {
         <Card className="p-6">
           <Tabs value={tab} onValueChange={(v) => setTab(v === "cadastro" ? "cadastro" : "login")}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" id="auth-tab-login">
+              <TabsTrigger value="login" id="auth-tab-login" data-testid="tab-login">
                 Entrar
               </TabsTrigger>
-              <TabsTrigger value="cadastro" id="auth-tab-cadastro">
+              <TabsTrigger value="cadastro" id="auth-tab-cadastro" data-testid="tab-cadastro">
                 Criar conta
               </TabsTrigger>
             </TabsList>
@@ -101,6 +101,7 @@ function LoginForm({ onDone }: { onDone: () => void }) {
         <Input
           id="li-email"
           type="email"
+          data-testid="input-login-email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -111,6 +112,7 @@ function LoginForm({ onDone }: { onDone: () => void }) {
         <Input
           id="li-pw"
           type="password"
+          data-testid="input-login-password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -119,7 +121,7 @@ function LoginForm({ onDone }: { onDone: () => void }) {
       <label className="flex items-center gap-2 text-sm text-muted-foreground">
         <Checkbox defaultChecked disabled /> Lembrar de mim (sessão persistente)
       </label>
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" data-testid="btn-submit-login" className="w-full" disabled={loading}>
         {loading ? "Entrando..." : "Entrar"}
       </Button>
     </form>
@@ -167,13 +169,14 @@ function SignupForm({ onDone }: { onDone: () => void }) {
     <form onSubmit={handle} className="mt-4 space-y-4">
       <div>
         <Label htmlFor="su-nome">Seu nome</Label>
-        <Input id="su-nome" required value={nome} onChange={(e) => setNome(e.target.value)} />
+        <Input id="su-nome" data-testid="input-signup-nome" required value={nome} onChange={(e) => setNome(e.target.value)} />
       </div>
       <div>
         <Label htmlFor="su-email">E-mail</Label>
         <Input
           id="su-email"
           type="email"
+          data-testid="input-signup-email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -184,6 +187,7 @@ function SignupForm({ onDone }: { onDone: () => void }) {
         <Input
           id="su-pw"
           type="password"
+          data-testid="input-signup-password"
           required
           minLength={8}
           value={password}
@@ -191,7 +195,7 @@ function SignupForm({ onDone }: { onDone: () => void }) {
         />
         <p className="mt-1 text-xs text-muted-foreground">Mínimo 8 caracteres.</p>
       </div>
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" data-testid="btn-submit-signup" className="w-full" disabled={loading}>
         {loading ? "Criando..." : "Criar conta de treinador"}
       </Button>
     </form>
