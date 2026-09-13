@@ -26,6 +26,7 @@ export interface AthleteMemory {
   estiloPreferido?: string | null;
   observacoesGerais?: string | null;
   atualizadoEm?: string;
+  perfilEstruturado?: boolean;
 }
 
 export const COMMON_INJURIES_LIST = [
@@ -58,13 +59,9 @@ export const COMMON_EQUIPMENT_LIST = [
 
 export const DEFAULT_ATHLETE_MEMORY: AthleteMemory = {
   nivelAtleta: "intermediario",
-  tempoTreinoMeses: 12,
+  tempoTreinoMeses: null,
   lesoes: [],
-  equipamentos: [
-    "Kettlebells (diversos pesos)",
-    "Halteres (pares leves e médios)",
-    "Barra Olímpica e Anilhas",
-  ],
+  equipamentos: [],
   cargas1rm: {
     agachamentoCostasKg: null,
     agachamentoFrontalKg: null,
@@ -82,6 +79,7 @@ export const DEFAULT_ATHLETE_MEMORY: AthleteMemory = {
   estiloPreferido: "",
   observacoesGerais: "",
   atualizadoEm: new Date().toISOString(),
+  perfilEstruturado: false,
 };
 
 /**
@@ -121,6 +119,7 @@ export function parseAthleteMemory(raw: string | null | undefined): AthleteMemor
         estiloPreferido: parsed.estiloPreferido || "",
         observacoesGerais: parsed.observacoesGerais || "",
         atualizadoEm: parsed.atualizadoEm || new Date().toISOString(),
+        perfilEstruturado: true,
       };
     } catch {
       // Ignora erro de parse e trata como string livre abaixo
@@ -142,6 +141,7 @@ export function serializeAthleteMemory(memory: AthleteMemory): string {
   const payload = {
     ...memory,
     atualizadoEm: new Date().toISOString(),
+    perfilEstruturado: true,
   };
   return JSON.stringify(payload);
 }
@@ -154,13 +154,15 @@ export function formatMemoryForPrompt(athleteName: string, memory: AthleteMemory
 
   parts.push(`=== MEMÓRIA PERSISTENTE DO ATLETA (V3-CONTEXT ENGINE) ===`);
   parts.push(`- Atleta: ${athleteName || "Atleta"}`);
-  parts.push(`- Nível de Treinamento: ${memory.nivelAtleta.toUpperCase()}${memory.tempoTreinoMeses ? ` (~${memory.tempoTreinoMeses} meses de experiência)` : ""}`);
+  if (memory.perfilEstruturado !== false) {
+    parts.push(`- Nível de Treinamento: ${memory.nivelAtleta.toUpperCase()}${memory.tempoTreinoMeses ? ` (~${memory.tempoTreinoMeses} meses de experiência)` : ""}`);
+  }
 
   // Restrições e lesões (Prioridade Máxima de Segurança)
   if (memory.lesoes && memory.lesoes.length > 0) {
     parts.push(`- ⚠️ RESTRIÇÕES E LESÕES (SEGURANÇA OBRIGATÓRIA): ${memory.lesoes.join(", ")}`);
     parts.push(`  * REGRA CRÍTICA: A IA NÃO DEVE prescrever movimentos que sobrecarreguem ou agravem essas articulações/regiões.`);
-  } else {
+  } else if (memory.perfilEstruturado !== false) {
     parts.push(`- Restrições / Lesões: Nenhuma restrição anatômica declarada.`);
   }
 

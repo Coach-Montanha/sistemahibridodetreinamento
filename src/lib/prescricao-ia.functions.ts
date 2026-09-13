@@ -330,7 +330,7 @@ export const prescribeTrainingWithAi = createServerFn({ method: "POST" })
         .select("id, nome, observacoes")
         .eq("id", targetStudentId)
         .maybeSingle();
-      if (student) {
+      if (student?.observacoes?.trim()) {
         const parsedMemory = parseAthleteMemory(student.observacoes);
         memoriaAtletaPrompt = formatMemoryForPrompt(student.nome, parsedMemory);
       }
